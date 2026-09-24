@@ -1,0 +1,39 @@
+# Dependencies
+node_modules/
+ceiba-app/node_modules/
+
+# Production build
+dist/
+ceiba-app/dist/
+dist-ssr/
+ceiba-app/dist-ssr/
+
+# Environment files
+*.local
+.env.local
+ceiba-app/.env.local
+
+# Python cache & logs
+__pycache__/
+*.py[cod]
+*$py.class
+*.log
+logs/
+
+# Excel temporary lock files
+~$*.xlsx
+*.tmp
+
+# Operating System files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE & Editor files
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln

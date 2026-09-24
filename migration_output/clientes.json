@@ -1,0 +1,2368 @@
+[
+  {
+    "doc_cliente": "52466375",
+    "nombre": "ANA MILENA CHAVES/JOSE IGNACIO DIAZ",
+    "celular": "311 5303163",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "46645364",
+    "nombre": "MARIA EUGENIA RIOS/ARTURO CARRILLO MEJIA",
+    "celular": "316 3162386",
+    "direccion": null,
+    "ciudad": "BOYACA"
+  },
+  {
+    "doc_cliente": "1000001654",
+    "nombre": "FREDY LEANDRO CASTRO DULCEY",
+    "celular": "300 5655877",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "1016011597",
+    "nombre": "DIVIANGI PAOLA LARREA AVILA",
+    "celular": "320 3658707",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "1065606738",
+    "nombre": "DIANA CAROLINA SANTIAGO BELLO",
+    "celular": "324 4168643",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "51803549",
+    "nombre": "MARTHA EUGENIA OCAMPO GOMEZ",
+    "celular": 3223810013,
+    "direccion": null,
+    "ciudad": "ACACIAS"
+  },
+  {
+    "doc_cliente": "49595489",
+    "nombre": "JOSSY XIMENA CASTELLANOS CARRILLO",
+    "celular": "305 4524007",
+    "direccion": null,
+    "ciudad": "BOSCONIA"
+  },
+  {
+    "doc_cliente": "36622525",
+    "nombre": "BETTY ENCARNACION CARRILLO",
+    "celular": "304 5900648",
+    "direccion": null,
+    "ciudad": "ACACIAS"
+  },
+  {
+    "doc_cliente": "7182722",
+    "nombre": "EDGAR VICENTE CARDENAS LOPEZ",
+    "celular": "313 2213086",
+    "direccion": null,
+    "ciudad": "TUNJA"
+  },
+  {
+    "doc_cliente": "41627694",
+    "nombre": "RAQUEL ABELLA VALBUENA",
+    "celular": "316 3901345",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "1026277934",
+    "nombre": "SAMANTA VALENSUELA BARRAZA",
+    "celular": null,
+    "direccion": null,
+    "ciudad": null
+  },
+  {
+    "doc_cliente": "1121947747",
+    "nombre": "LUISA FERNANDA GOMEZ CARRERO/JUAN DAVID REY",
+    "celular": "310 6673835",
+    "direccion": null,
+    "ciudad": "VILLAVICENCIO"
+  },
+  {
+    "doc_cliente": "26203383",
+    "nombre": "FATIMA RAMIREZ MORALES",
+    "celular": "313 22006339",
+    "direccion": null,
+    "ciudad": "MONTERIA"
+  },
+  {
+    "doc_cliente": "51648764",
+    "nombre": "MARIA YOLANDA CARACAS LEÓN",
+    "celular": "321 4612934",
+    "direccion": null,
+    "ciudad": null
+  },
+  {
+    "doc_cliente": "1007157001",
+    "nombre": "LEIDY JOHANNA SAENZ/JHOJAN STIVEN GUTIERREZ",
+    "celular": "301 2669937",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "41795576",
+    "nombre": "AURA ALICIA SAENZ",
+    "celular": "312 3756562",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "1007157000",
+    "nombre": "EDUINXON ALEXANDER SAENZ PINZON",
+    "celular": "301 7284433",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "51578847",
+    "nombre": "LUZ MYRIAM DÍAZ",
+    "celular": "312 3492087",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "1085039584",
+    "nombre": "ALEXIS JOSE PABA MARTINEZ",
+    "celular": "34 62419 4900",
+    "direccion": null,
+    "ciudad": "EL BANCO"
+  },
+  {
+    "doc_cliente": "1024499636",
+    "nombre": "DANNA LIZETH ALVAREZ SANCHEZ",
+    "celular": "310 240 1772",
+    "direccion": null,
+    "ciudad": "CUNDINAMARCA"
+  },
+  {
+    "doc_cliente": "1015408595",
+    "nombre": "LUIS AGUSTO PALACIOS RODRIGUEZ",
+    "celular": 3228636376,
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "1012356817",
+    "nombre": "YULEY SERRANO PAVA/DIEGO FERNANDO BUITRAGO",
+    "celular": "311 2085098",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "1030701120",
+    "nombre": "ANDRÉS FELIPE CARDONA ARCHILA",
+    "celular": "315 4450034",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "1123433099",
+    "nombre": "JEIDER HERNEY POVEDA ROSO",
+    "celular": 3195907896,
+    "direccion": null,
+    "ciudad": "CASTILLA LA NUEVA"
+  },
+  {
+    "doc_cliente": "1123085644",
+    "nombre": "MILENA JOHANNA COCA MEJIA/YEISON ALBERTO MONROY",
+    "celular": "313 3458707",
+    "direccion": null,
+    "ciudad": "GUAMAL"
+  },
+  {
+    "doc_cliente": "1003519576",
+    "nombre": "YARID MARIANA MONROY VIVAS",
+    "celular": "704 2989061",
+    "direccion": null,
+    "ciudad": "FUSAGASUGA"
+  },
+  {
+    "doc_cliente": "4157914",
+    "nombre": "LUIS ENRIQUE ALARCON CRUZ",
+    "celular": "316 3355530",
+    "direccion": null,
+    "ciudad": "BOYACA"
+  },
+  {
+    "doc_cliente": "86011972",
+    "nombre": "JOSÉ ALCIDES QUINTERO GAITAN",
+    "celular": "322 2458447",
+    "direccion": null,
+    "ciudad": "GRANADA"
+  },
+  {
+    "doc_cliente": "1032411465",
+    "nombre": "NORLEIDY GARZON SANCHEZ",
+    "celular": "310 2983071",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "39664442",
+    "nombre": "LUZ DARY MANCERA CAMELO",
+    "celular": "321 3212040",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "1123513435",
+    "nombre": "YULY PAOLA POVEDA ROSO",
+    "celular": "320 8381815",
+    "direccion": null,
+    "ciudad": "CASTILLA LA NUEVA"
+  },
+  {
+    "doc_cliente": "1006837128",
+    "nombre": "DIEGO FABIAN GRANADA SILVA",
+    "celular": "321 4573910",
+    "direccion": null,
+    "ciudad": "GRANADA"
+  },
+  {
+    "doc_cliente": "79925440",
+    "nombre": "OSCAR ESNEIDER PEREZ RODRIGUEZ",
+    "celular": "310 3309150",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "51734969",
+    "nombre": "NOHELIA ALZATE GIRALDO",
+    "celular": "301 4003174",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "79254901",
+    "nombre": "ORLANDO ANTONIO MESA PLATA",
+    "celular": "313 8876930",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "51781576",
+    "nombre": "LUCINDA CLAVIJO CLAVIJO/LUIS ROBERTO MENDEZ",
+    "celular": "321 445 4526",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "1122653962",
+    "nombre": "DIEGO FABIAN REY BOBADILLA",
+    "celular": "322 4398529",
+    "direccion": null,
+    "ciudad": "RESTREPO"
+  },
+  {
+    "doc_cliente": "1121906209",
+    "nombre": "WILMER STEVEN ROMERO CESPEDES",
+    "celular": "318 4910833",
+    "direccion": null,
+    "ciudad": "VILLAVICENCIO"
+  },
+  {
+    "doc_cliente": "1016038981",
+    "nombre": "ANDREA MILENA SEGURA SEGURA",
+    "celular": "313 3023199",
+    "direccion": null,
+    "ciudad": "ACACIAS"
+  },
+  {
+    "doc_cliente": "51823486",
+    "nombre": "MARIA EUGENIA SEGURA SEGURA",
+    "celular": "310 7831185",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "1067465637",
+    "nombre": "EMILIANO SEGURA SEGURA",
+    "celular": "314 3934068",
+    "direccion": null,
+    "ciudad": "CUNDINAMARCA"
+  },
+  {
+    "doc_cliente": "1000515503",
+    "nombre": "EDGAR SANTIAGO SEGURA PRIETO",
+    "celular": "322 2619134",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "1019987010",
+    "nombre": "IVAN DARIO SEGURA",
+    "celular": "302 7064860",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "1234791108",
+    "nombre": "MARIA JULIETH AGUILERA/MIGUEL ANGEL AGUILERA",
+    "celular": "310 8639797",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "51565729",
+    "nombre": "MARIA ELVIRA GONZALEZ DE HERNANDEZ",
+    "celular": 3107694546,
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "39629726",
+    "nombre": "MARITZA VIVAS GARZON/WILBER MAURICIO MONROY",
+    "celular": "1 (980) 780-1604",
+    "direccion": null,
+    "ciudad": "FUSAGASUGA"
+  },
+  {
+    "doc_cliente": "39797652",
+    "nombre": "ROSALBA VELANDIA AYALA/LUCAS PACHON ROZO",
+    "celular": 3202512298,
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "194393",
+    "nombre": "JESUS MARIA CASTILLO BARACALDO",
+    "celular": "313 2450133",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "1000467332",
+    "nombre": "SAMUEL ANDRES BARRETO DONCEL",
+    "celular": 3183282991,
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "1012317659",
+    "nombre": "JOSE DANIEL BARRETO DONCEL",
+    "celular": 3183282991,
+    "direccion": null,
+    "ciudad": "GUAMAL"
+  },
+  {
+    "doc_cliente": "1122126040",
+    "nombre": "DIANA MARCELA CARRANZA OSPINA",
+    "celular": "322 3165311",
+    "direccion": null,
+    "ciudad": "PUERTO RICO - META"
+  },
+  {
+    "doc_cliente": "79703676",
+    "nombre": "LUIS ALEXANDER HERNANDEZ VERA",
+    "celular": "320 4329783",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "7060277",
+    "nombre": "YESID LOPEZ GUEVARA",
+    "celular": 3212903833,
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "1120373816",
+    "nombre": "ANGIE CATHERINE FORERO CALDERON",
+    "celular": 3208895598,
+    "direccion": null,
+    "ciudad": "GRANADA"
+  },
+  {
+    "doc_cliente": "1006780320",
+    "nombre": "YULIETH TATIANA MOZO SANCHEZ",
+    "celular": "310 2714006",
+    "direccion": null,
+    "ciudad": "ACACIAS"
+  },
+  {
+    "doc_cliente": "86070732",
+    "nombre": "ALBEIRO BERNAL BOCANEGRA",
+    "celular": "314 3417339",
+    "direccion": null,
+    "ciudad": "VILLAVICENCIO"
+  },
+  {
+    "doc_cliente": "36068421",
+    "nombre": "ANDREA VIOLET CANO",
+    "celular": "313 4226619",
+    "direccion": null,
+    "ciudad": "NEIVA"
+  },
+  {
+    "doc_cliente": "80014270",
+    "nombre": "EDWIN GILDARDO VILLARREAL VARON",
+    "celular": null,
+    "direccion": null,
+    "ciudad": "IBAGUE"
+  },
+  {
+    "doc_cliente": "1022447197",
+    "nombre": "JUAN DAVID FORERO YAZO",
+    "celular": "320 2337426",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "74242785",
+    "nombre": "ABEL SAENZ",
+    "celular": 3008564112,
+    "direccion": null,
+    "ciudad": "MONIQUIRA"
+  },
+  {
+    "doc_cliente": "79280833",
+    "nombre": "CESAR AUGUSTO LOPEZ BUITRAGO",
+    "celular": "312 4463921",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "79208053",
+    "nombre": "FRANCISCO JAVIER BARON OCHOA",
+    "celular": 3176715590,
+    "direccion": null,
+    "ciudad": "SOACHA"
+  },
+  {
+    "doc_cliente": "80415697",
+    "nombre": "JOSE GIRALDO BARRETO FUENTES",
+    "celular": 3108460446,
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "1108930492",
+    "nombre": "JOSE IGNACIO GOMEZ SAENZ",
+    "celular": "320 4516578",
+    "direccion": null,
+    "ciudad": "GUAMO"
+  },
+  {
+    "doc_cliente": "52453694",
+    "nombre": "LUZ MARINA AMAZO MARTINEZ",
+    "celular": "310 7973161",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "1015413041",
+    "nombre": "DIANA CAROLINA RUSSI MANCERA",
+    "celular": 3167874723,
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "1000620103",
+    "nombre": "OSCAR JAVIER VARGAS DIAZ",
+    "celular": 3133043714,
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "52273485",
+    "nombre": "LAURA ELENA BELLO CARDENAS",
+    "celular": 3163755156,
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "1031123614",
+    "nombre": "CAROLINA MARTINEZ RIVEROS",
+    "celular": "311 2457461",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "1031172.28",
+    "nombre": "GUILLERMO MARTINEZ RIVEROS",
+    "celular": "301 4052793",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "11518087",
+    "nombre": "LUIS DAVID RAMIREZ/CLAUDIA MARIELA CARDENAS",
+    "celular": 3213686913,
+    "direccion": null,
+    "ciudad": "CUNDINAMARCA"
+  },
+  {
+    "doc_cliente": "86087171",
+    "nombre": "FREDY ANDRES OSORIO ARDILA",
+    "celular": 3212300326,
+    "direccion": null,
+    "ciudad": "VILLAVICENCIO"
+  },
+  {
+    "doc_cliente": "51721050",
+    "nombre": "OLGA MORALES LOZANO",
+    "celular": "305 8089976",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "1122139852",
+    "nombre": "LAURA DANIELA BENITO CESPEDES",
+    "celular": "320 9213646",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "17525927",
+    "nombre": "ADOLFO PORRAS GAVANZO",
+    "celular": "(505) 518-2841",
+    "direccion": null,
+    "ciudad": "SARAVENA"
+  },
+  {
+    "doc_cliente": "51837833",
+    "nombre": "AURORA LUCIA PAEZ CALDERON",
+    "celular": "(818)339-3162",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "1000455690",
+    "nombre": "NICOL CAMILA MADERO MARTINEZ",
+    "celular": 31327007647,
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "1022336606",
+    "nombre": "VICTOR ALBERTO PINZON GOMEZ",
+    "celular": "1 2137163413",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "1000777024",
+    "nombre": "HAROLD MANUEL ABONDANO ACOSTA",
+    "celular": "321 5919644",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "1026290719",
+    "nombre": "SEBASTIÁN JARAMILLO RICO",
+    "celular": "312 3456895",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "1016089293",
+    "nombre": "PAULA LORENA CARRILLO ALBINO",
+    "celular": "315 5285828",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "80124566",
+    "nombre": "LUIS FRANCISCO RUIZ FLOREZ",
+    "celular": "321 4255668",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "1123086527",
+    "nombre": "SHIRLEY CAROLINA RIVERA HURTADO",
+    "celular": "317 3847965",
+    "direccion": null,
+    "ciudad": "GUAMAL"
+  },
+  {
+    "doc_cliente": "11245295",
+    "nombre": "MILTON JAVIER LINARES DURAN",
+    "celular": "317 6463024",
+    "direccion": null,
+    "ciudad": "SAN BERNARDO"
+  },
+  {
+    "doc_cliente": "80796827",
+    "nombre": "DEIBER GUILLERMO MENDIETA REYES",
+    "celular": "312 3745812",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "1022972190",
+    "nombre": "DARLY NATALY ALONSO CASTRO",
+    "celular": "311 4928927",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "AU128371",
+    "nombre": "JULIETH JASBLEIDY MURILLO MORENO",
+    "celular": 3115462650,
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "1030596282",
+    "nombre": "FRANCY JOHANNA MUÑOZ HERNANDEZ",
+    "celular": "324 3464448",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "35528466",
+    "nombre": "OFELIA CANTOR GONZALEZ/MARIA DEL CARMEN SANCHEZ",
+    "celular": "311 2775313",
+    "direccion": null,
+    "ciudad": "FACATATIVA"
+  },
+  {
+    "doc_cliente": "79825156",
+    "nombre": "URIEL ANTONIO POLANIA CASTRO",
+    "celular": "322 3730241",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "52308282",
+    "nombre": "MARTHA LUCILA NAVARRETE RUIZ",
+    "celular": "314 4640302",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "36087977",
+    "nombre": "CONSUELO CALVO SUAREZ",
+    "celular": "314 4515293",
+    "direccion": null,
+    "ciudad": "CAMPO ALEGRE"
+  },
+  {
+    "doc_cliente": "1122124479",
+    "nombre": "CRISTIAN ALBERTO ALDANA PEÑA",
+    "celular": 3115462650,
+    "direccion": null,
+    "ciudad": "ACACIAS"
+  },
+  {
+    "doc_cliente": "51574402",
+    "nombre": "MARTHA ALCIRA BAQUERO BOGOTÁ",
+    "celular": "312 5008251",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "1023884020",
+    "nombre": "NURY JULIETH RODRIGUEZ CASTILLO",
+    "celular": "313 4965683",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "3000045",
+    "nombre": "ABRAHAM HERIBERTO VILLALOBOS PARDO",
+    "celular": "313 4913227",
+    "direccion": null,
+    "ciudad": "CHOACHI"
+  },
+  {
+    "doc_cliente": "6125297",
+    "nombre": "JOHAN ENRIQUE RODRIGUEZ GONZALEZ",
+    "celular": "320 5263806",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "1018452541",
+    "nombre": "BRIGITH STEFANIA CASTRO VILLARREAL",
+    "celular": "314 3745646",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "1120363208",
+    "nombre": "CHRISTIAM CAMILO VILLADA GONZALEZ",
+    "celular": "320 3645605",
+    "direccion": null,
+    "ciudad": "GRANADA"
+  },
+  {
+    "doc_cliente": "39626591",
+    "nombre": "YENNY RAQUEL MAYORGA RAMIREZ",
+    "celular": "313 5735526",
+    "direccion": null,
+    "ciudad": "FUSAGASUGA"
+  },
+  {
+    "doc_cliente": "51628192",
+    "nombre": "MARIA CARMENZA MARTINEZ CRUZ",
+    "celular": "314 6441429",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "18562673",
+    "nombre": "JORGE ADRIAN DUQUE VILLADA",
+    "celular": 3182421399,
+    "direccion": null,
+    "ciudad": "MISTRATO"
+  },
+  {
+    "doc_cliente": "1151205259",
+    "nombre": "WILMER ANDRES SEPULVEDA SUAREZ",
+    "celular": "313 4273961",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "1123084145",
+    "nombre": "YULY CONSTANZA TORRES GARCES",
+    "celular": "313 7254517",
+    "direccion": null,
+    "ciudad": "GUAMAL"
+  },
+  {
+    "doc_cliente": "51814478",
+    "nombre": "BERNARDA ORDOÑEZ NARVAEZ",
+    "celular": 3132241986,
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "53073614",
+    "nombre": "LILIANA PAOLA SALAMANCA FORERO",
+    "celular": "321 3532241",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "40401366",
+    "nombre": "INGRID MAYERLY MORENO GARCIA",
+    "celular": "313 3675934",
+    "direccion": null,
+    "ciudad": "VILLAVICENCIO"
+  },
+  {
+    "doc_cliente": "20689187",
+    "nombre": "MARCELA VALENZUELA RAMIREZ/WILSON PULIDO PULIDO",
+    "celular": "313 4879827",
+    "direccion": null,
+    "ciudad": "CUNDINAMARCA"
+  },
+  {
+    "doc_cliente": "40383204",
+    "nombre": "LUCY STELLA GÓMEZ AGUILERA",
+    "celular": "313 3250400",
+    "direccion": null,
+    "ciudad": "VILLAVICENCIO"
+  },
+  {
+    "doc_cliente": "35461903",
+    "nombre": "ANA FIDELIGNA RODRIGUEZ DE TORRES",
+    "celular": "300 4853933",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "1123542575",
+    "nombre": "NERLY MAYERLI CONTRERAS PARRADO",
+    "celular": "320 2485875",
+    "direccion": null,
+    "ciudad": "CASTILLA LA NUEVA"
+  },
+  {
+    "doc_cliente": "32293031",
+    "nombre": "AMANDA PATRICIA LEON MARTINEZ",
+    "celular": "313 8305573",
+    "direccion": null,
+    "ciudad": "CHIGORODO"
+  },
+  {
+    "doc_cliente": "80751815",
+    "nombre": "DIEGO FERNANDO ÁLVAREZ ROJAS",
+    "celular": 3208592418,
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "1055314687",
+    "nombre": "HAROLD STIVEN SANCHEZ GAVIRIA/LAURA CRISTINA RIOS",
+    "celular": "302 3143046",
+    "direccion": null,
+    "ciudad": "TIBASOSA"
+  },
+  {
+    "doc_cliente": "74300927",
+    "nombre": "CARLOS ARTURO ALVAREZ",
+    "celular": "322 9409910",
+    "direccion": null,
+    "ciudad": "SANTA ROSA"
+  },
+  {
+    "doc_cliente": "1000627467",
+    "nombre": "CARLOS SANTIAGO ÁLVAREZ CANTOR",
+    "celular": 3175844742,
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "80420993",
+    "nombre": "GERMAN SANCHEZ PINEDA",
+    "celular": "322 9020252",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "5238988",
+    "nombre": "PABLO FLORES IZTETZI",
+    "celular": "408 4202710",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "1013097355",
+    "nombre": "CARLOS SEBASTIÁN ESCOBAR ESCOBAR",
+    "celular": "302 3677411",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "35485787",
+    "nombre": "AURA YAMILE TOVAR GOMEZ",
+    "celular": "321 4037004",
+    "direccion": null,
+    "ciudad": "TOLIMA"
+  },
+  {
+    "doc_cliente": "97470921",
+    "nombre": "LUIS FELIPE OBANDO CHAMORRO",
+    "celular": "313 262 0281",
+    "direccion": null,
+    "ciudad": "SIBUNDOY"
+  },
+  {
+    "doc_cliente": "1020718075",
+    "nombre": "WILLIAN RICARDO BAUTISTA CASTELLANOS",
+    "celular": "320 3359320",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "1123088498",
+    "nombre": "STEVEN ANDRES BAUTISTA AVILA",
+    "celular": "311 7297039",
+    "direccion": null,
+    "ciudad": "GUAMAL"
+  },
+  {
+    "doc_cliente": "52748357",
+    "nombre": "CLAUDELBY DIAZ VELANDIA",
+    "celular": "311 8330760",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "80115506",
+    "nombre": "RODULFO URIBE VARGAS ARISMENDI",
+    "celular": "320 8557457",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "1023887740",
+    "nombre": "JENNY PAOLA CRIALES GONGORA",
+    "celular": "322 7207989",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "52468915",
+    "nombre": "JENNY ASTRID AVILA FORERO",
+    "celular": "321 3353882",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "1123123456",
+    "nombre": "LUZ ELVIRA HERRERA SAENZ",
+    "celular": "314 5520807",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "1024491345",
+    "nombre": "DIEGO FERNANDO CUBILLOS GOMEZ",
+    "celular": "313 4965683",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "1122129530",
+    "nombre": "LORENA RUEDA RUBIO",
+    "celular": "310 3359991",
+    "direccion": null,
+    "ciudad": "ACACIAS"
+  },
+  {
+    "doc_cliente": "43580643",
+    "nombre": "GLORIA INES VALENCIA CÓMBITA",
+    "celular": "319 0580368",
+    "direccion": null,
+    "ciudad": "MEDELLIN"
+  },
+  {
+    "doc_cliente": "79349961",
+    "nombre": "MARCO ELÍAS ROMERO ROMERO",
+    "celular": "316 5313577",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "91517826",
+    "nombre": "JAIR CASTRO BAUTISTA",
+    "celular": "316 4486523",
+    "direccion": null,
+    "ciudad": "BUCARAMANGA"
+  },
+  {
+    "doc_cliente": "91015211",
+    "nombre": "JHON ALEXANDER PEREIRA AGUILLON",
+    "celular": "319 4189629",
+    "direccion": null,
+    "ciudad": "BARBOSA"
+  },
+  {
+    "doc_cliente": "39565334",
+    "nombre": "ROSA MARIA MARTINEZ MENDOZA",
+    "celular": "320 4725767",
+    "direccion": null,
+    "ciudad": "GIRARDOT"
+  },
+  {
+    "doc_cliente": "1095485625",
+    "nombre": "FABIO URVIN CAICEDO ALVAREZ",
+    "celular": "321 2761364",
+    "direccion": null,
+    "ciudad": "FLORIAN"
+  },
+  {
+    "doc_cliente": "1123514539",
+    "nombre": "ANGELA LIZETH BOHORQUEZ ACOSTA",
+    "celular": "321 4716732",
+    "direccion": null,
+    "ciudad": "CASTILLA LA NUEVA"
+  },
+  {
+    "doc_cliente": "51998133",
+    "nombre": "ELSA GLADIS VACCA VARELA",
+    "celular": "312 5302676",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "40331802",
+    "nombre": "DIANA MARCELA NOVOA POVEDA",
+    "celular": "312 5713404",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "1018500361",
+    "nombre": "DANIELA ROCIO ROMERO CARRILLO",
+    "celular": 3183860457,
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "1000601795",
+    "nombre": "CRISTIAN YECID MOSQUERA JIMENEZ",
+    "celular": "320 4013688",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "52291922",
+    "nombre": "MARTHA ROCIO CARRILLO PARDO",
+    "celular": "302 8568193",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "40400865",
+    "nombre": "BRIYITH NATALIA FLOREZ TORRES",
+    "celular": "310 2519327",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "1120366874",
+    "nombre": "JHORMAN JOSE MONTAÑO GUTIERREZ",
+    "celular": "310 3172280",
+    "direccion": null,
+    "ciudad": "FUENTE DE ORO"
+  },
+  {
+    "doc_cliente": "1022963444",
+    "nombre": "SERGIO ANDRES OZUNA CASTILLO",
+    "celular": "318 3705481",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "40185248",
+    "nombre": "SANDRA MILENA NOVOA MARTINEZ",
+    "celular": "313 2261761",
+    "direccion": null,
+    "ciudad": "VILLAVICENCIO"
+  },
+  {
+    "doc_cliente": "1123515128",
+    "nombre": "KATHERIN BOHORQUEZ ACOSTA",
+    "celular": "314 2653516",
+    "direccion": null,
+    "ciudad": "CASTILLA LA NUEVA"
+  },
+  {
+    "doc_cliente": "52146076",
+    "nombre": "AURA DORA REYES BALANTA",
+    "celular": "1(408)544-9317",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "1016070396",
+    "nombre": "SEBASTIAN RAMIREZ ZABALA",
+    "celular": "305 706 4519",
+    "direccion": null,
+    "ciudad": "GUAMAL"
+  },
+  {
+    "doc_cliente": "1020768739",
+    "nombre": "YULI JASLEIVY PATARROYO MONTAÑO",
+    "celular": "301 2348921",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "1022922726",
+    "nombre": "ANNY TATIANA CARRILLO VANEGAS",
+    "celular": "313 8838353",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "1120379285",
+    "nombre": "YEISON STEVEN IGLESIAS LUGO",
+    "celular": "310 8639830",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "1016020671",
+    "nombre": "LUISA FERNANDA GUAQUETA SIERRA",
+    "celular": 3215953595,
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "1192785017",
+    "nombre": "YULIET NATALIA COMBITA/JULIO CESAR CÓMBITA BECERRA",
+    "celular": "314 4243726",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "1010169284",
+    "nombre": "JOHN EDISSON GALLEGO MARTIN",
+    "celular": "320 5770676",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "1023871083",
+    "nombre": "YURI VIVIANA PEREZ PEREZ",
+    "celular": "323 3413095",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "80391616",
+    "nombre": "JULIO CESAR COTRINO GONZALEZ",
+    "celular": "38 57709914",
+    "direccion": null,
+    "ciudad": "CHOACHI"
+  },
+  {
+    "doc_cliente": "1115912470",
+    "nombre": "YEISON ROJAS REY",
+    "celular": 3232386785,
+    "direccion": null,
+    "ciudad": "TAURAMENA"
+  },
+  {
+    "doc_cliente": "1026567833",
+    "nombre": "LIZETH NATALY ZAMUDIO TIBAVIZCO",
+    "celular": "(551)300-9686",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "86081300",
+    "nombre": "JAINER ALEXANDER BENITO PEÑA",
+    "celular": "1 (669) 3179996",
+    "direccion": null,
+    "ciudad": "VILLAVICENCIO"
+  },
+  {
+    "doc_cliente": "19460864",
+    "nombre": "GILBERTO TORRES OCHOA",
+    "celular": 3133769779,
+    "direccion": null,
+    "ciudad": "BOYACA"
+  },
+  {
+    "doc_cliente": "24016435",
+    "nombre": "MARIA BLANCA AURORA VARGAS MARTINEZ",
+    "celular": 3142622708,
+    "direccion": null,
+    "ciudad": "CUNDINAMARCA"
+  },
+  {
+    "doc_cliente": "35251405",
+    "nombre": "ADRIANA MARIA RIOS CRUZ",
+    "celular": "315 7286932",
+    "direccion": null,
+    "ciudad": "FUSAGASUGA"
+  },
+  {
+    "doc_cliente": "52192366",
+    "nombre": "ANA LILIA GONZALEZ RODRIGUEZ",
+    "celular": "310 7423283",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "1001056917",
+    "nombre": "NICOLE DAHIANNA REYES ORTIZ",
+    "celular": "300 5963476",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "51902462",
+    "nombre": "ALEXANDRA MARIA GARZON VILLAGRAN",
+    "celular": "322 4333427",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "26637467",
+    "nombre": "NUBIA MARIA VIDAL MARTINEZ",
+    "celular": "314 3429811",
+    "direccion": null,
+    "ciudad": "PUERTO LEGUISAMO"
+  },
+  {
+    "doc_cliente": "1033759555",
+    "nombre": "WENDY CAROLINE PALMA/VICTOR MANUEL MENDEZ CLAVIJO",
+    "celular": "311 5959102",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "1003837445",
+    "nombre": "JOSE ALEXANDER TORRES MALAGON",
+    "celular": "318 3384331",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "1121951446",
+    "nombre": "FABIAN CAMILO PEÑA MEJIA",
+    "celular": 3138312685,
+    "direccion": null,
+    "ciudad": "VILLAVICENCIO"
+  },
+  {
+    "doc_cliente": "1005325597",
+    "nombre": "MAURICIO HERNANDEZ DIAZ",
+    "celular": "314 7248179",
+    "direccion": null,
+    "ciudad": "GIRON"
+  },
+  {
+    "doc_cliente": "1120561410",
+    "nombre": "WILLIAM ALEXANDER BALANTA ARGUELLO",
+    "celular": "313 4944786",
+    "direccion": null,
+    "ciudad": "SAN JOSE DEL GUAVIARE"
+  },
+  {
+    "doc_cliente": "7254068",
+    "nombre": "DALINGER LOZANO BETANCOURT",
+    "celular": "311 2729912",
+    "direccion": null,
+    "ciudad": "PUERTO BOYACA"
+  },
+  {
+    "doc_cliente": "1048846527",
+    "nombre": "MICHEL JULIANA JIMENEZ FERNANDEZ",
+    "celular": "34 602 53 42 89",
+    "direccion": null,
+    "ciudad": "ACACIAS"
+  },
+  {
+    "doc_cliente": "30003983",
+    "nombre": "NURY ALBINA MEDINA ALONSO",
+    "celular": "321 4463749",
+    "direccion": null,
+    "ciudad": "GRANADA"
+  },
+  {
+    "doc_cliente": "40188745",
+    "nombre": "NAIDU ZULAY MARTINEZ GOMEZ",
+    "celular": "311 4570513",
+    "direccion": null,
+    "ciudad": "VILLAVICENCIO"
+  },
+  {
+    "doc_cliente": "1026566131",
+    "nombre": "JOSE ALEXANDER OBREGOZO BAUTISTA",
+    "celular": "310 3361853",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "1123088056",
+    "nombre": "JOHAN STIVEN SUAREZ OROZCO",
+    "celular": 3023258176,
+    "direccion": null,
+    "ciudad": null
+  },
+  {
+    "doc_cliente": "1032368239",
+    "nombre": "WILMER GELVEZ ROJAS",
+    "celular": "321 3760397",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "52518917",
+    "nombre": "MONICA SOFIA ARJONA LOMBANA",
+    "celular": "(385)770-8903",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "52749030",
+    "nombre": "NEREIDA PATRICIA TOBAR ALVARADO",
+    "celular": "320 2704497",
+    "direccion": null,
+    "ciudad": "PUERTO LEGUIZAMO"
+  },
+  {
+    "doc_cliente": "1233691661",
+    "nombre": "LEIDY TATIANA MARTINEZ BEJARANO",
+    "celular": "313 4364082",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "1000931056",
+    "nombre": "YENIFER PAOLA CARDENAS LOPEZ",
+    "celular": "313 2898725",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "91447706",
+    "nombre": "WILLIAM PEINADO TORRES",
+    "celular": "317 3535854",
+    "direccion": null,
+    "ciudad": "BARRANCABERMEJA"
+  },
+  {
+    "doc_cliente": "1122133824",
+    "nombre": "LIZBETH TATIANA JARAMILLO/JOHN JAMES ROJAS DUARTE",
+    "celular": 3212340788,
+    "direccion": null,
+    "ciudad": "ACACIAS"
+  },
+  {
+    "doc_cliente": "60437750",
+    "nombre": "MARIA ONEIDA VARGAS AGUILAR",
+    "celular": "321 922 2294",
+    "direccion": null,
+    "ciudad": "TIBU"
+  },
+  {
+    "doc_cliente": "1013659372",
+    "nombre": "ROBINSON IGNACIO GUZMAN MORALES",
+    "celular": "300 6671212",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "51809131",
+    "nombre": "MARIA GAVI GARCIA ROMERO",
+    "celular": "317 5486218",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "1024466442",
+    "nombre": "HEIDY JAEL OSPINA/CRISTIAN RAMIRO MARTINEZ CARDENAS",
+    "celular": "312 4223698",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "41104347",
+    "nombre": "JAEL OSPINA DUQUE",
+    "celular": "310 3283360",
+    "direccion": null,
+    "ciudad": "PUERTO ASIS"
+  },
+  {
+    "doc_cliente": "1123084408",
+    "nombre": "JOHN ALEXIS BERMUDEZ VASQUEZ",
+    "celular": "310 3725012",
+    "direccion": null,
+    "ciudad": "GUAMAL"
+  },
+  {
+    "doc_cliente": "79381548",
+    "nombre": "LUIS FERNANDO AREVALO GOMEZ",
+    "celular": "310 3165210",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "1073675433",
+    "nombre": "LUZ ANGELA CASTILLO/EDWIN EDUARDO MONTENEGRO",
+    "celular": 3204349846,
+    "direccion": null,
+    "ciudad": "SOACHA"
+  },
+  {
+    "doc_cliente": "1024487358",
+    "nombre": "JHON SEBASTIAN ZAMBRANO IPUZ",
+    "celular": "300 6073542",
+    "direccion": null,
+    "ciudad": "LA CALERA"
+  },
+  {
+    "doc_cliente": "53.092.54",
+    "nombre": "DEICY VIVIANA IPUZ MORALES",
+    "celular": "300 6248228",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "40316170",
+    "nombre": "TULIA ETELVINA VELASQUEZ RODRIGUEZ",
+    "celular": "310 3196914",
+    "direccion": null,
+    "ciudad": "GUAMAL"
+  },
+  {
+    "doc_cliente": "19326462",
+    "nombre": "JOSE MARIA REDONDO FUQUENE",
+    "celular": 3145043778,
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "35331451",
+    "nombre": "ANA UVELDI PLAZAS MONTAÑA",
+    "celular": "313 8514321",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "3003269",
+    "nombre": "JOSE ISIDRO MONCADA CASTRO",
+    "celular": "311 5550833",
+    "direccion": null,
+    "ciudad": "CHOCONTA"
+  },
+  {
+    "doc_cliente": "1031170929",
+    "nombre": "JHOHAN STIVEN TOCORA REYES",
+    "celular": "311 4045183",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "17111343",
+    "nombre": "PABLO EMILIO REDONDO FUNEQUE",
+    "celular": 3126955020,
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "52340806",
+    "nombre": "MARIA DE LOS ANGELES REDONDO FORERO",
+    "celular": 3213264637,
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "24042150",
+    "nombre": "GLORIA ESPERANZA CÓMBITA PIÑEROS",
+    "celular": "311 8646590",
+    "direccion": null,
+    "ciudad": "SANTANA"
+  },
+  {
+    "doc_cliente": "17446233",
+    "nombre": "VÍCTOR JULIO AVILA GUTIERREZ/ MARTHA MILENA BALLEN",
+    "celular": "311 2542610",
+    "direccion": null,
+    "ciudad": "GUAMAL"
+  },
+  {
+    "doc_cliente": "79630058",
+    "nombre": "OSCAR IVÁN RIAÑO SOTELO",
+    "celular": "314 2730069",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "80748335",
+    "nombre": "HERNAN SANCHEZ DIAZ/LUISA FERNANDA ECHEVERRY",
+    "celular": 3007984586,
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "28968097",
+    "nombre": "CARMEN TULIA RODRIGUEZ RESTREPO",
+    "celular": 3212972579,
+    "direccion": null,
+    "ciudad": "VALLE SAN JUAN"
+  },
+  {
+    "doc_cliente": "1014262739",
+    "nombre": "DANIAN RAMIRO LOPEZ URIETA",
+    "celular": 31427004734,
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "1022946569",
+    "nombre": "JUAN CAMILO PÉREZ MOYA",
+    "celular": "320 4194581",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "53038048",
+    "nombre": "ANGIE CAROLINA PEREZ MOYA",
+    "celular": "316 4345064",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "19341869",
+    "nombre": "URIAS GONZALEZ PINEDA",
+    "celular": 3208459214,
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "1023871514",
+    "nombre": "CLAUDIA CECILIA CASTILLO CARRILLO",
+    "celular": "315 3731052",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "1006837327",
+    "nombre": "HEYDI ESMITH GARCIA RUIZ",
+    "celular": "322 7859390",
+    "direccion": null,
+    "ciudad": "GUAMAL"
+  },
+  {
+    "doc_cliente": "1000933299",
+    "nombre": "ANGIE MILENA DIMAS MONTEALEGRE",
+    "celular": "321 2540675",
+    "direccion": null,
+    "ciudad": "GUAMAL"
+  },
+  {
+    "doc_cliente": "11225518151",
+    "nombre": "KENNYA SALOME ALMANZAR TIVIÑO",
+    "celular": "302 5477297",
+    "direccion": null,
+    "ciudad": "VILLAVICENCIO"
+  },
+  {
+    "doc_cliente": "1023931306",
+    "nombre": "MICHAEL NICOLAS VILLALOBOS DIAZ",
+    "celular": 3195330454,
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "1013595287",
+    "nombre": "KATHERINE VILLALOBOS DIAZ",
+    "celular": 3185441574,
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "20482861",
+    "nombre": "RITA OBDILIA VILLALOBOS PARDO",
+    "celular": "311 2573603",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "52206638",
+    "nombre": "MAGDA YOLANDA REYES MARTIN",
+    "celular": "316 8553149",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "40317080",
+    "nombre": "ADRIANA MARCELA PAEZ RAMIREZ",
+    "celular": 3102325085,
+    "direccion": null,
+    "ciudad": "GUAMAL"
+  },
+  {
+    "doc_cliente": "52832298",
+    "nombre": "SANDRA PATRICIA ESCOBAR CABALLERO",
+    "celular": "314 3851307",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "53134430",
+    "nombre": "ADRIANA PIEDAD ESCOBAR CABALLERO",
+    "celular": "314 3851307",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "5653855",
+    "nombre": "JOSE ANTONIO CASTILLO TIRADO",
+    "celular": 3237335261,
+    "direccion": null,
+    "ciudad": "GUADALUPE"
+  },
+  {
+    "doc_cliente": "1118468339",
+    "nombre": "YORLIN STIVEN MEDINA ESPINOZA",
+    "celular": 3125478475,
+    "direccion": null,
+    "ciudad": "CASTILLA LA NUEVA"
+  },
+  {
+    "doc_cliente": "79704855",
+    "nombre": "CARLOS ENRIQUE SANCHEZ GOMEZ",
+    "celular": "321 2700299",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "1024498477",
+    "nombre": "HASBLEIDY LOZANO MOLINA",
+    "celular": 3124199945,
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "1014207819",
+    "nombre": "JULIAN DAVID RODRIGUEZ ZANABRIA",
+    "celular": "312 3865816",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "12168951",
+    "nombre": "BILLAMIR CHILITO CARVAJAL",
+    "celular": "320 8215913",
+    "direccion": null,
+    "ciudad": "ISNOS"
+  },
+  {
+    "doc_cliente": "1033797541",
+    "nombre": "YENCY CHILITO SANCHEZ",
+    "celular": 3173742256,
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "55055222",
+    "nombre": "ELENA DIAZ",
+    "celular": 3174471834,
+    "direccion": null,
+    "ciudad": "GARZON"
+  },
+  {
+    "doc_cliente": "86076632",
+    "nombre": "JHON ALEXANDER AGUDELO CASTAÑO",
+    "celular": "320 2731106",
+    "direccion": null,
+    "ciudad": "VILLAVICENCIO"
+  },
+  {
+    "doc_cliente": "1123084746",
+    "nombre": "VIVIANA ANDREA RUBIO ORTIZ",
+    "celular": "312 5882521",
+    "direccion": null,
+    "ciudad": "GUAMAL"
+  },
+  {
+    "doc_cliente": "1005623628",
+    "nombre": "FABIOLA CARDOZO MORALES",
+    "celular": "315 7780291",
+    "direccion": null,
+    "ciudad": "PIEDECUESTA"
+  },
+  {
+    "doc_cliente": "1010028380",
+    "nombre": "ALISSON TATIANA SANDOVAL PEREZ",
+    "celular": 3162348505,
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "1012322926",
+    "nombre": "LEIDY MARIELA CÓMBITA/LUIS EDUARDO RODRIGUEZ VALENCIA",
+    "celular": "322 3288930",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "1030624398",
+    "nombre": "EULIS FABIAN GARCIA NOSCUE",
+    "celular": "311 2139946",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "26565837",
+    "nombre": "LUZ MARY LUNA VARGAS",
+    "celular": "316 6333397",
+    "direccion": null,
+    "ciudad": "SAN GIL"
+  },
+  {
+    "doc_cliente": "1024584408",
+    "nombre": "JERLY ALEJANDRA GONZALEZ MARIN",
+    "celular": 3177050820,
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "1053807937",
+    "nombre": "JESSICA YULIETH MORA TORRES",
+    "celular": 3112111249,
+    "direccion": null,
+    "ciudad": "MANIZALES"
+  },
+  {
+    "doc_cliente": "1072716688",
+    "nombre": "RUTH DENIS ALVAREZ BUITRAGO",
+    "celular": "315 2178337",
+    "direccion": null,
+    "ciudad": "CHIA"
+  },
+  {
+    "doc_cliente": "22824418",
+    "nombre": "TERESA DE JESUS TORRES CHAVEZ",
+    "celular": "321 4592013",
+    "direccion": null,
+    "ciudad": "MORALES"
+  },
+  {
+    "doc_cliente": "3082564",
+    "nombre": "ARLEY DARIO ORDOÑEZ ORDOÑEZ",
+    "celular": "314 3720685",
+    "direccion": null,
+    "ciudad": "DE LA PEÑA"
+  },
+  {
+    "doc_cliente": "40276377",
+    "nombre": "DAMARIS PEDREROS MENDOZA",
+    "celular": "310 2552780",
+    "direccion": null,
+    "ciudad": "VISTA HERMOSA"
+  },
+  {
+    "doc_cliente": "52098786",
+    "nombre": "DORIS LILI ZAMBRANO ROA",
+    "celular": "311 4699387",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "4935694",
+    "nombre": "OMAR LUNA VARGAS",
+    "celular": 3015657616,
+    "direccion": null,
+    "ciudad": "SAN AGUSTIN"
+  },
+  {
+    "doc_cliente": "79419209",
+    "nombre": "LUO KENNEDY LUNA VARGAS",
+    "celular": "314 3779143",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "1022359509",
+    "nombre": "MARTHA ELENA ABRIL BARRERA",
+    "celular": "310 2726650",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "17349654",
+    "nombre": "JHON HAROLD ROMERO ALVAREZ",
+    "celular": "321 892 4506",
+    "direccion": null,
+    "ciudad": "VILLAVICENCIO"
+  },
+  {
+    "doc_cliente": "1002752322",
+    "nombre": "ANDRES FELIPE VILLEGAS HERNANDEZ",
+    "celular": "313 7514415",
+    "direccion": null,
+    "ciudad": "SAMANA"
+  },
+  {
+    "doc_cliente": "16114600",
+    "nombre": "JOSE NODIER HERNANDEZ HERNANDEZ",
+    "celular": "311 3577047",
+    "direccion": null,
+    "ciudad": "SAMANA"
+  },
+  {
+    "doc_cliente": "1022949696",
+    "nombre": "KAROL DANIELA MONROY MESA",
+    "celular": "320 2417289",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "52879600",
+    "nombre": "LIDA JAZMIN MESA IBAÑEZ",
+    "celular": 3132052153,
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "1003825830",
+    "nombre": "MIGUEL CAMILO SANCHEZ MONROY",
+    "celular": "320 9544975",
+    "direccion": null,
+    "ciudad": "ZIPAQUIRA"
+  },
+  {
+    "doc_cliente": "4083953",
+    "nombre": "JOSE MIGUEL SANCHEZ VARGAS",
+    "celular": "314 3272301",
+    "direccion": null,
+    "ciudad": "CORRALES"
+  },
+  {
+    "doc_cliente": "24234675",
+    "nombre": "SONIA PATRICIA RODRIGUEZ OICATA",
+    "celular": "311 2647133",
+    "direccion": null,
+    "ciudad": "BOYACA"
+  },
+  {
+    "doc_cliente": "41690982",
+    "nombre": "MARIA OFELIA BUSTOS CASTRO",
+    "celular": "321 4594729",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "10089119",
+    "nombre": "ANGEL MESIAS RIOS AMORTEGUI",
+    "celular": "320 239424",
+    "direccion": null,
+    "ciudad": null
+  },
+  {
+    "doc_cliente": "1031143370",
+    "nombre": "LINDA MARIA PULIDO RUEDA",
+    "celular": "310 6332445",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "1018508631",
+    "nombre": "JAIME ERNESTO MARTINEZ GONZALEZ",
+    "celular": "314 3745646",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "39004387",
+    "nombre": "ESTHER JULIA GARAVITO MENDOZA",
+    "celular": "310 4396277",
+    "direccion": null,
+    "ciudad": "CIENAGA"
+  },
+  {
+    "doc_cliente": "79473407",
+    "nombre": "RUBEN DARIO REYES MARTIN",
+    "celular": "311 4711725",
+    "direccion": null,
+    "ciudad": "GUAMAL"
+  },
+  {
+    "doc_cliente": "1098821361",
+    "nombre": "JHONATAN DANIEL AVILA CABALLERO",
+    "celular": "(925)260-999",
+    "direccion": null,
+    "ciudad": "BUCARAMANGA"
+  },
+  {
+    "doc_cliente": "1007414917",
+    "nombre": "SHARON ANDREA FAJARDO HERNANDEZ",
+    "celular": 3143758712,
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "74451711",
+    "nombre": "CARLOS EDUARDO BELTRAN PEDROZA",
+    "celular": null,
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "17447237",
+    "nombre": "LEONARDO RAMIREZ BARAJAS",
+    "celular": "320 8695872",
+    "direccion": null,
+    "ciudad": null
+  },
+  {
+    "doc_cliente": "1072654548",
+    "nombre": "LUIS EDUARDO BAQUERO VILLABONA",
+    "celular": 3115526312,
+    "direccion": null,
+    "ciudad": "CHIA"
+  },
+  {
+    "doc_cliente": "1022985365",
+    "nombre": "NICOLÁS ALVARADO GARCIA",
+    "celular": "300 8747208",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "52238278",
+    "nombre": "MARIA DEL CARMEN LEAL CAMACHO",
+    "celular": "303 4617445",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "20705455",
+    "nombre": "NANCY RODRIGUEZ MARTINEZ",
+    "celular": "312 5231958",
+    "direccion": null,
+    "ciudad": "LA PEÑA"
+  },
+  {
+    "doc_cliente": "3082121",
+    "nombre": "WALTER LOZANO PULGARIN",
+    "celular": "310 5545776",
+    "direccion": null,
+    "ciudad": "LA PEÑA"
+  },
+  {
+    "doc_cliente": "1097970725",
+    "nombre": "ANDRES FELIPE OTERO/MAYLETH SUSANA SALGADO BOHORQUEZ",
+    "celular": "322 7738738",
+    "direccion": null,
+    "ciudad": "CHIMA"
+  },
+  {
+    "doc_cliente": "51911802",
+    "nombre": "YALILE PÉREZ DUARTE",
+    "celular": "305 8516481",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "52484654",
+    "nombre": "LAURA MARIA VALENTIN ROSARIO",
+    "celular": "301 2019087",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "1006701180",
+    "nombre": "LINA MARIA ARCINIEGAS OLARTE",
+    "celular": "320 7512477",
+    "direccion": null,
+    "ciudad": "CASTILLA LA NUEVA"
+  },
+  {
+    "doc_cliente": "23497880",
+    "nombre": "SONIA SALINAS ALARCON",
+    "celular": "311 5660769",
+    "direccion": null,
+    "ciudad": "CHINQUINQUIRA"
+  },
+  {
+    "doc_cliente": "17386102",
+    "nombre": "JOSE ISBELIO RAMIREZ CORTES",
+    "celular": "314 3070913",
+    "direccion": null,
+    "ciudad": "P.LOPEZ"
+  },
+  {
+    "doc_cliente": "52022267",
+    "nombre": "MARISOL SAENZ GONZALEZ",
+    "celular": "310 5504502",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "74188760",
+    "nombre": "OSCAR JAVIER PIRAGAUTA BELLO",
+    "celular": "320 4685913",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "1013112393",
+    "nombre": "HEIDER SANTIAGO ALCANTAR GUERRERO",
+    "celular": "313 2059697",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "1030649974",
+    "nombre": "YINETH ALEJANDRA GUERRERO RUIZ",
+    "celular": "313 2059697",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "1014213403",
+    "nombre": "JUAN DAVID SORIANO RUBIANO",
+    "celular": "320 8460428",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "10720191",
+    "nombre": "MARCOS ORTIZ GUEVARA",
+    "celular": "315 4241207",
+    "direccion": null,
+    "ciudad": null
+  },
+  {
+    "doc_cliente": "52975069",
+    "nombre": "YULI PATRICIA VERJAN ORTIZ",
+    "celular": "305 8092846",
+    "direccion": null,
+    "ciudad": null
+  },
+  {
+    "doc_cliente": "1122120787",
+    "nombre": "SARA ADRIANA CORREAL ORTEGA",
+    "celular": 3222791832,
+    "direccion": null,
+    "ciudad": "ACACIAS"
+  },
+  {
+    "doc_cliente": "1015481243",
+    "nombre": "JEISSON ANDREY HUERTAS CÓMBITA",
+    "celular": "320 5679599",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "1030643652",
+    "nombre": "PAULA YICED HUERTAS CÓMBITA",
+    "celular": "321 3644449",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "1119948298",
+    "nombre": "LISSETH XIOMARA SALGADO BELTRAN",
+    "celular": "302 3364241",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "1001174815",
+    "nombre": "EVELIN YURANY CUBIDES BELTRAN",
+    "celular": "323 9610820",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "1032677361",
+    "nombre": "YURLEY TATIANA CUBIDES BELTRAN",
+    "celular": "321 3168789",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "17414117",
+    "nombre": "JOHN MESIAS GOMEZ CORDON",
+    "celular": "310 5690273",
+    "direccion": null,
+    "ciudad": "ACACIAS"
+  },
+  {
+    "doc_cliente": "39630413",
+    "nombre": "MARIA DENIS RODRIGUEZ DE CHACON",
+    "celular": 3023199369,
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "52797675",
+    "nombre": "YUDY JAZMIN HERNANDEZ PEREIRA",
+    "celular": "323 8310023",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "1121816867",
+    "nombre": "LUZ ADRIANA ADAMEZ FRANCO",
+    "celular": 3112355035,
+    "direccion": null,
+    "ciudad": "VILLAVICENCIO"
+  },
+  {
+    "doc_cliente": "1069740547",
+    "nombre": "JUAN DAVID GUARIN/BIBIANA ANDREA CARDONA DIAZ",
+    "celular": "314 2100045",
+    "direccion": null,
+    "ciudad": "FUSAGASUGA"
+  },
+  {
+    "doc_cliente": "1122133905",
+    "nombre": "YESSICA CASTRO BASTO",
+    "celular": "321 2908253",
+    "direccion": null,
+    "ciudad": "ACACIAS"
+  },
+  {
+    "doc_cliente": "1032415881",
+    "nombre": "LYNA MARCELA VILLALBA ROMERO",
+    "celular": 6892750264,
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "1121897544",
+    "nombre": "INDIRA KATHERINE ARENAS MADRID",
+    "celular": "310 5795834",
+    "direccion": null,
+    "ciudad": "VILLAVICENCIO"
+  },
+  {
+    "doc_cliente": "31037552",
+    "nombre": "MARIA ISABEL REAL GARZON",
+    "celular": "322 3166822",
+    "direccion": null,
+    "ciudad": "CUBARRAL"
+  },
+  {
+    "doc_cliente": "1122146097",
+    "nombre": "MARIA CAMILA FETECUA RODAS",
+    "celular": "1(432)895-2671",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "1.030,522.371",
+    "nombre": "MAIRA ALEJANDRA PRIETO ORTIZ",
+    "celular": "350 5675499",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "80424562",
+    "nombre": "OSCAR JAVIER TOVAR NUÑEZ",
+    "celular": "311 4461450",
+    "direccion": null,
+    "ciudad": "CUNDINAMARCA"
+  },
+  {
+    "doc_cliente": "52622310",
+    "nombre": "YANET PATRICIA VILLAMIL GARNICA",
+    "celular": "312 4530096",
+    "direccion": null,
+    "ciudad": "USAQUEN"
+  },
+  {
+    "doc_cliente": "52865126",
+    "nombre": "NANCY ESPERANZA VILLAMIL GARNICA",
+    "celular": "320 5715996",
+    "direccion": null,
+    "ciudad": null
+  },
+  {
+    "doc_cliente": "9529063",
+    "nombre": "SEGUNDO TIVERIO GOMEZ BOTIA",
+    "celular": "311 5867992",
+    "direccion": null,
+    "ciudad": "sogamoso"
+  },
+  {
+    "doc_cliente": "4178803",
+    "nombre": "JOSE GERMAN PATIÑO CABRERA",
+    "celular": "310 3162079",
+    "direccion": null,
+    "ciudad": "NOBSA"
+  },
+  {
+    "doc_cliente": "1233696477",
+    "nombre": "RICK DAVID FIGUEROA RUBIANO",
+    "celular": "61 425350350",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "1032378132",
+    "nombre": "NATALI JULIETH TORRES MALAGON/OSMAR CAMILO SORIANO RUBIANO",
+    "celular": "311 8472063",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "52915312",
+    "nombre": "DIANA MARCELA SANCHEZ ZANABRIA",
+    "celular": "321 7067145",
+    "direccion": null,
+    "ciudad": "CUNDINAMARCA"
+  },
+  {
+    "doc_cliente": "52854633",
+    "nombre": "YOLANDA RODRIGUEZ SAMUDIO",
+    "celular": 31383623131,
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "1122128330",
+    "nombre": "LUZ MARINA ZAMUDIO",
+    "celular": 3142223124,
+    "direccion": null,
+    "ciudad": "YACOPI"
+  },
+  {
+    "doc_cliente": "80730691",
+    "nombre": "MARCO FIDEL PEREZ VALENZUELA",
+    "celular": "313 8931785",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "1121878935",
+    "nombre": "FABER LEONARDO MARTINEZ PEÑALOSA",
+    "celular": "313 3291947",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "79872109",
+    "nombre": "SAUL OSORIOCARO",
+    "celular": 3219950207,
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "52445752",
+    "nombre": "LIBIA XIOMARA BONILLA ORTIZ",
+    "celular": "316 3499812",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "3134234206",
+    "nombre": "MAIKOL STEBELL ORTIZ",
+    "celular": 3134234206,
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "1054801465",
+    "nombre": "MANUEL ANDRES VARGAS ZAMORA",
+    "celular": "313 5105362",
+    "direccion": null,
+    "ciudad": "TIBANA"
+  },
+  {
+    "doc_cliente": "1104774479",
+    "nombre": "EDICSON TORRES CASTRO",
+    "celular": 3204488324,
+    "direccion": null,
+    "ciudad": "VILLARRICA"
+  },
+  {
+    "doc_cliente": "53129735",
+    "nombre": "MARIA LUCIA PARDO ORJUELA",
+    "celular": "323 3089813",
+    "direccion": null,
+    "ciudad": null
+  },
+  {
+    "doc_cliente": "79820572",
+    "nombre": "LUIS ARMANDO CLAVIJO ZAMBRANO",
+    "celular": "313 7557206",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "19200801",
+    "nombre": "JUAN BAUTISTA CLAVIJO SUSA",
+    "celular": "318 5452034",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "1118471671",
+    "nombre": "KAREN DANIELA ESPINOZA TRUJILLO",
+    "celular": 3204795715,
+    "direccion": null,
+    "ciudad": "CAQUETA"
+  },
+  {
+    "doc_cliente": "1012357004",
+    "nombre": "ANGELA PATRICIA HERNANDEZ TOVAR",
+    "celular": 3045382440,
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "52666137",
+    "nombre": "CARMEN HELENA POLANCO JIMENEZ",
+    "celular": "313 8151030",
+    "direccion": null,
+    "ciudad": "CAJICA"
+  },
+  {
+    "doc_cliente": "80425678",
+    "nombre": "JULIO EDUARDO DAZA PORRAS",
+    "celular": "312 4212250",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "79482659",
+    "nombre": "MARCOLINO ZANGUÑA MOTTA",
+    "celular": "313 4626826",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "1123086720",
+    "nombre": "LAURA SHIRLEY URRIAGO SUAREZ",
+    "celular": "311 4747779",
+    "direccion": null,
+    "ciudad": "GUAMAL"
+  },
+  {
+    "doc_cliente": "40341116",
+    "nombre": "JENNIFER ELIANA BELTRAN GOMEZ",
+    "celular": "322 9375460",
+    "direccion": null,
+    "ciudad": "VILLAVICENCIO"
+  },
+  {
+    "doc_cliente": "1121916665",
+    "nombre": "LUISA FERNANDA AGUDELO AREVALO",
+    "celular": "322 4314032",
+    "direccion": null,
+    "ciudad": "VILLAVICENCIO"
+  },
+  {
+    "doc_cliente": "1045428416",
+    "nombre": "SILVANA DEL PILAR VERGARA RESTREPO",
+    "celular": "34 632 0019195",
+    "direccion": null,
+    "ciudad": "SEGOVIA"
+  },
+  {
+    "doc_cliente": "1022951819",
+    "nombre": "LUIS GONZALO MOISES LADINO/ LEIDY JOHANNA CASALLAS",
+    "celular": "314 4172168",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "1022420085",
+    "nombre": "DIEGO FERNANDO SALAZAR PALACIOS",
+    "celular": "312 6182690",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "36157506",
+    "nombre": "ESNEDA TREJOS FRANCO",
+    "celular": "320 4665702",
+    "direccion": null,
+    "ciudad": "NEIVA"
+  },
+  {
+    "doc_cliente": "1120356454",
+    "nombre": "CAROL DANIELA AMAYA MORENO",
+    "celular": "322 7520769",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "1120354519",
+    "nombre": "MARIA NELLY MORENO LOAIZA",
+    "celular": "321 2471532",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "21185211",
+    "nombre": "LEONILDE AYA LADINO",
+    "celular": 21185211,
+    "direccion": null,
+    "ciudad": "EL CALVARIO"
+  },
+  {
+    "doc_cliente": "321 4632465",
+    "nombre": "DORA EMILCE CASAS GONZALEZ / JAVIER ERNESTO VIDARTE PENNA",
+    "celular": "321 4632465",
+    "direccion": null,
+    "ciudad": "NEIVA"
+  },
+  {
+    "doc_cliente": "51782994",
+    "nombre": "MARIA SOCORRO LASERNA RAMIREZ",
+    "celular": "322 2000181",
+    "direccion": null,
+    "ciudad": "BOGOTA"
+  },
+  {
+    "doc_cliente": "40185452",
+    "nombre": "BLANCA NELLY AYA LADINO",
+    "celular": "310 2869014",
+    "direccion": null,
+    "ciudad": null
+  }
+]

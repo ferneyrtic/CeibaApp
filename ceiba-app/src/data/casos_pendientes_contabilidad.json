@@ -1,0 +1,47 @@
+{
+  "fecha_auditoria": "2026-08-27",
+  "estado": "PENDIENTE_CONFIRMACION_CONTABILIDAD",
+  "descuadre_saldo_financiado": [
+    { "lote": "LC2 - 41 - 16", "cliente": "NANCY ESPERANZA VILLAMIL GARZON", "precio_venta": 28000000, "cuota_inicial": 4000000, "saldo_excel": 28000000, "saldo_propuesto": 24000000, "cuota_mensual": 1000000, "plazo": 24 },
+    { "lote": "LC2 - 41 - 17", "cliente": "SEGUNDO TIVERIO GOMEZ BOTIA", "precio_venta": 28000000, "cuota_inicial": 4000000, "saldo_excel": 28000000, "saldo_propuesto": 24000000, "cuota_mensual": 1000000, "plazo": 24 },
+    { "lote": "LC2 - 41 - 8", "cliente": "LYNA MARCELA VILLALBA ROMERO", "precio_venta": 28000000, "cuota_inicial": 4000000, "saldo_excel": 28000000, "saldo_propuesto": 24000000, "cuota_mensual": 1000000, "plazo": 24 },
+    { "lote": "LC2 - 41 - 9", "cliente": "LYNA MARCELA VILLALBA ROMERO", "precio_venta": 28000000, "cuota_inicial": 4000000, "saldo_excel": 28000000, "saldo_propuesto": 24000000, "cuota_mensual": 1000000, "plazo": 24 },
+    { "lote": "LC2 - 42 - 11", "cliente": "FABER LEONARDO MARTINEZ PEÑA", "precio_venta": 28000000, "cuota_inicial": 9000000, "saldo_excel": 52000000, "saldo_propuesto": 19000000, "cuota_mensual": 1000000, "plazo": 24 },
+    { "lote": "LC2 - 42 - 12", "cliente": "ELISA RAMOS", "precio_venta": 33000000, "cuota_inicial": 4000000, "saldo_excel": 24000000, "saldo_propuesto": 29000000, "cuota_mensual": 1000000, "plazo": 24 },
+    { "lote": "LC2 - 42 - 6", "cliente": null, "precio_venta": 28000000, "cuota_inicial": 0, "saldo_excel": 0, "saldo_propuesto": 28000000, "cuota_mensual": 0, "plazo": 0 },
+    { "lote": "LC2 - 43 - 10", "cliente": "MANUEL ANDRES VARGAS ZAMORA", "precio_venta": 28000000, "cuota_inicial": 4000000, "saldo_excel": 28000000, "saldo_propuesto": 24000000, "cuota_mensual": 1000000, "plazo": 24 },
+    { "lote": "LC2 - 44 - 14", "cliente": "CARMEN HELENA POLANCO JIMENEZ", "precio_venta": 28000000, "cuota_inicial": 4000000, "saldo_excel": 28000000, "saldo_propuesto": 24000000, "cuota_mensual": 1000000, "plazo": 24 },
+    { "lote": "LC2 - 44 - 15", "cliente": "CARMEN HELENA POLANCO JIMENEZ", "precio_venta": 28000000, "cuota_inicial": 4000000, "saldo_excel": 28000000, "saldo_propuesto": 24000000, "cuota_mensual": 1000000, "plazo": 24 },
+    { "lote": "LC2 - 44 - 16", "cliente": "JULIO EDUARDO DAZA PORRAS", "precio_venta": 28000000, "cuota_inicial": 4000000, "saldo_excel": 28000000, "saldo_propuesto": 24000000, "cuota_mensual": 1000000, "plazo": 24 },
+    { "lote": "LC2 - 44 - 6", "cliente": "LUIS ARMANDO CLAVIJO ZAMBRANO", "precio_venta": 28000000, "cuota_inicial": 4000000, "saldo_excel": 28000000, "saldo_propuesto": 24000000, "cuota_mensual": 1000000, "plazo": 24 },
+    { "lote": "LC2 - 45 - 5", "cliente": "SILVANA DEL PILAR VERGARA REYES", "precio_venta": 28000000, "cuota_inicial": 4168000, "saldo_excel": 28000000, "saldo_propuesto": 23832000, "cuota_mensual": 951300, "plazo": 24 },
+    { "lote": "LC2 - 48 - 6", "cliente": "BLANCA NELLY AYA LADINO", "precio_venta": 23871825, "cuota_inicial": 4000000, "saldo_excel": 23871825, "saldo_propuesto": 19871825, "cuota_mensual": 822200, "plazo": 24 },
+    { "lote": "LC2 - 21 - 7", "cliente": null, "precio_venta": 25000000, "cuota_inicial": 0, "saldo_excel": 0, "saldo_propuesto": 25000000, "cuota_mensual": 0, "plazo": 0 },
+    { "lote": "LC2 - 32 - 16", "cliente": "HEYDI ESMITH GARCIA RUIZ", "precio_venta": 58275350, "cuota_inicial": 10000000, "saldo_excel": 48275000, "saldo_propuesto": 48275350, "cuota_mensual": 1809200, "plazo": 30 }
+  ],
+  "desfase_cuota_vs_plazo": [
+    { "lote": "LC2 - 37 - 12", "cliente": "JHONATAN DANIEL AVILA CABALLERO", "saldo_financiado": 20000000, "plazo_excel": 24, "cuota_excel": 2000000, "cuota_teorica_24m": 833333, "plazo_teorico_cuota2m": 10 },
+    { "lote": "LC2 - 43 - 8 Y 9", "cliente": "MAIKOL STEBELL ORTIZ", "saldo_financiado": 20000000, "plazo_excel": 24, "cuota_excel": 1958300, "cuota_teorica_24m": 833333, "es_lote_doble": true },
+    { "lote": "LC2 - 32 - 16", "cliente": "HEYDI ESMITH GARCIA RUIZ", "saldo_financiado": 48275000, "plazo_excel": 30, "cuota_excel": 1809200, "cuota_teorica_30m": 1609167 },
+    { "lote": "LC2 - 44 - 7", "cliente": "JUAN BAUTISTA CLAVIJO SUSA", "saldo_financiado": 24000000, "plazo_excel": 23, "cuota_excel": 1000000, "cuota_teorica_23m": 1043478 },
+    { "lote": "LC2 - 45 - 5", "cliente": "SILVANA DEL PILAR VERGARA REYES", "saldo_financiado": 28000000, "plazo_excel": 24, "cuota_excel": 951300, "cuota_teorica_24m": 1166667 },
+    { "lote": "LC2 - 48 - 6", "cliente": "BLANCA NELLY AYA LADINO", "saldo_financiado": 23871825, "plazo_excel": 24, "cuota_excel": 822200, "cuota_teorica_24m": 994659 }
+  ],
+  "lotes_sin_datos_completos": [
+    { "lote": "LC2 - 27 - 12", "nombre": "JEISSON VILLANUEVA GARCIA", "precio_venta": 30000000, "falta": "CEDULA_Y_CELULAR" },
+    { "lote": "LC2 - 29 - 10", "nombre": "WILMER GELVEZ ROJAS", "precio_venta": 30000000, "falta": "CEDULA_Y_CELULAR" },
+    { "lote": "LC2 - 35 - 3", "nombre": null, "precio_venta": 28000000, "falta": "NOMBRE_CEDULA_CELULAR" },
+    { "lote": "LC2 - 42 - 9", "nombre": null, "precio_venta": 28000000, "falta": "NOMBRE_CEDULA_CELULAR" },
+    { "lote": "LC2 - 42 - 10", "nombre": null, "precio_venta": 28000000, "falta": "NOMBRE_CEDULA_CELULAR" },
+    { "lote": "LC2 - 44 - 4", "nombre": null, "precio_venta": 28000000, "falta": "NOMBRE_CEDULA_CELULAR" },
+    { "lote": "LC2 - 44 - 9", "nombre": null, "precio_venta": 28000000, "falta": "NOMBRE_CEDULA_CELULAR" },
+    { "lote": "LC2 - 45 - 4", "nombre": null, "precio_venta": 28000000, "falta": "NOMBRE_CEDULA_CELULAR" }
+  ],
+  "lotes_agrupados": [
+    { "registro": "LC1 - 2 Y 3", "clientes": "ANA MILENA CHAVES / JOSE IGNACIO DIAZ", "manzana": "1", "lotes": ["2", "3"] },
+    { "registro": "LC1 - 11 - 6 Y 7", "clientes": "JOSE IGNACIO GOMEZ SAENZ", "manzana": "11", "lotes": ["6", "7"] },
+    { "registro": "LC2 - 41 - 5 - 6 Y 7", "clientes": "SARA ADRIANA CORREAL ORTEGA", "manzana": "41", "lotes": ["5", "6", "7"] },
+    { "registro": "LC2 - 43 - 8 Y 9", "clientes": "MAIKOL STEBELL ORTIZ", "manzana": "43", "lotes": ["8", "9"] },
+    { "registro": "LC2 - 44 - 5 Y 12", "clientes": "LUIS ARMANDO CLAVIJO ZAMBRANO", "manzana": "44", "lotes": ["5", "12"] }
+  ]
+}

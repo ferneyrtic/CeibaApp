@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Recordatorio Sonoro ⏰</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif; }
+    body {
+      background: #11111b;
+      color: #cdd6f4;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    .card {
+      background: #1e1e2e;
+      border-radius: 16px;
+      padding: 28px;
+      width: 100%;
+      max-width: 440px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      border: 1px solid #313244;
+      text-align: center;
+    }
+    h1 { font-size: 1.4rem; color: #89b4fa; margin-bottom: 6px; }
+    p.subtitle { font-size: 0.85rem; color: #a6adc8; margin-bottom: 18px; }
+    .timer-box {
+      background: #181825;
+      border: 2px solid #45475a;
+      border-radius: 12px;
+      padding: 18px;
+      margin-bottom: 18px;
+      transition: all 0.3s;
+    }
+    .timer-box.overdue {
+      border-color: #f38ba8;
+      background: #261b24;
+    }
+    .timer-tag {
+      font-size: 0.75rem;
+      font-weight: bold;
+      color: #89b4fa;
+      letter-spacing: 1px;
+      margin-bottom: 4px;
+    }
+    .timer-display {
+      font-size: 3.6rem;
+      font-weight: bold;
+      font-family: monospace;
+      color: #a6e3a1;
+      letter-spacing: 2px;
+      transition: color 0.3s;
+    }
+    .timer-display.overdue {
+      color: #f38ba8;
+    }
+    .timer-status {
+      font-size: 0.9rem;
+      color: #bac2de;
+      margin-top: 5px;
+    }
+    .controls-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 15px;
+      text-align: left;
+    }
+    .control-group label {
+      display: block;
+      font-size: 0.8rem;
+      color: #fab387;
+      margin-bottom: 4px;
+      font-weight: bold;
+    }
+    .control-group input, .control-group select {
+      width: 100%;
+      background: #313244;
+      border: 1px solid #45475a;
+      border-radius: 8px;
+      padding: 8px 10px;
+      color: #fff;
+      font-size: 0.95rem;
+    }
+    .btn-group {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    button {
+      cursor: pointer;
+      border: none;
+      border-radius: 8px;
+      padding: 12px;
+      font-size: 1rem;
+      font-weight: bold;
+      transition: opacity 0.2s, transform 0.1s;
+    }
+    button:active { transform: scale(0.98); }
+    .btn-main {
+      flex: 2;
+      background: #a6e3a1;
+      color: #11111b;
+    }
+    .btn-main.paused {
+      background: #f9e2af;
+    }
+    .btn-main.reactivate {
+      background: #89b4fa;
+      color: #11111b;
+      animation: pulse 1.5s infinite;
+    }
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.03); }
+      100% { transform: scale(1); }
+    }
+    .btn-reset {
+      flex: 1;
+      background: #f38ba8;
+      color: #11111b;
+    }
+    .btn-sound {
+      width: 100%;
+      background: #45475a;
+      color: #cdd6f4;
+      font-size: 0.85rem;
+      padding: 8px;
+      margin-bottom: 15px;
+    }
+    .stats {
+      font-size: 0.8rem;
+      color: #6c7086;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="card">
+    <h1>⏰ RECORDATORIO SONORO</h1>
+    <p class="subtitle">Conteo de tiempo transcurrido tras la alarma</p>
+
+    <div class="timer-box" id="timerBox">
+      <div class="timer-tag" id="timerTag">TIEMPO CONFIGURADO</div>
+      <div class="timer-display" id="timer">05:00</div>
+      <div class="timer-status" id="status">Listo para iniciar</div>
+    </div>
+
+    <div class="controls-grid">
+      <div class="control-group">
+        <label>⏱ Minutos:</label>
+        <input type="number" id="minutes" value="5" min="0" max="180">
+      </div>
+      <div class="control-group">
+        <label>⏱ Segundos:</label>
+        <input type="number" id="seconds" value="0" min="0" max="59">
+      </div>
+    </div>
+
+    <div class="control-group" style="text-align: left; margin-bottom: 12px;">
+      <label>🔔 Tipo de Sonido:</label>
+      <select id="soundType">
+        <option value="chime">Melodía Campanada (4 tonos)</option>
+        <option value="beep">Doble Beep</option>
+        <option value="soft">Tono Suave Zen</option>
+      </select>
+    </div>
+
+    <button class="btn-sound" onclick="playSound()">🔊 Probar Sonido</button>
+
+    <div class="btn-group">
+      <button class="btn-main" id="btnToggle" onclick="handleAction()">▶ INICIAR</button>
+      <button class="btn-reset" onclick="resetTimer()">⏹ REINICIAR</button>
+    </div>
+
+    <div class="stats" id="stats">Recordatorios emitidos: 0</div>
+  </div>
+
+  <script>
+    let timerInterval = null;
+    let state = "IDLE"; // "IDLE", "COUNTDOWN", "PAUSED", "OVERDUE"
+    let remainingSeconds = 300;
+    let overdueSeconds = 0;
+    let soundCount = 0;
+
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+    function playTone(freq, duration, delay = 0) {
+      setTimeout(() => {
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.value = freq;
+        gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + duration);
+      }, delay);
+    }
+
+    function playSound() {
+      const type = document.getElementById('soundType').value;
+      if (type === 'chime') {
+        playTone(523.25, 0.2, 0);
+        playTone(659.25, 0.2, 150);
+        playTone(783.99, 0.25, 300);
+        playTone(1046.50, 0.5, 480);
+      } else if (type === 'beep') {
+        playTone(880, 0.15, 0);
+        playTone(880, 0.25, 200);
+      } else {
+        playTone(440, 0.4, 0);
+        playTone(554.37, 0.6, 250);
+      }
+    }
+
+    function getTargetSeconds() {
+      const m = parseInt(document.getElementById('minutes').value) || 0;
+      const s = parseInt(document.getElementById('seconds').value) || 0;
+      return Math.max(1, (m * 60) + s);
+    }
+
+    function updateUI() {
+      const timerDisplay = document.getElementById('timer');
+      const timerBox = document.getElementById('timerBox');
+      const timerTag = document.getElementById('timerTag');
+      const btnToggle = document.getElementById('btnToggle');
+      const status = document.getElementById('status');
+
+      if (state === "IDLE") {
+        timerBox.className = "timer-box";
+        timerDisplay.className = "timer-display";
+        timerTag.textContent = "TIEMPO CONFIGURADO";
+        timerTag.style.color = "#89b4fa";
+        btnToggle.textContent = "▶ INICIAR";
+        btnToggle.className = "btn-main";
+        status.textContent = "Listo para iniciar";
+        const m = Math.floor(remainingSeconds / 60);
+        const s = remainingSeconds % 60;
+        timerDisplay.textContent = `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+      }
+      else if (state === "COUNTDOWN") {
+        timerBox.className = "timer-box";
+        timerDisplay.className = "timer-display";
+        timerTag.textContent = "⏱ TIEMPO RESTANTE";
+        timerTag.style.color = "#89b4fa";
+        btnToggle.textContent = "⏸ PAUSAR";
+        btnToggle.className = "btn-main paused";
+        status.textContent = "En ejecución (segundo plano activo)";
+        const m = Math.floor(remainingSeconds / 60);
+        const s = remainingSeconds % 60;
+        timerDisplay.textContent = `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+      }
+      else if (state === "PAUSED") {
+        timerTag.textContent = "⏸ EN PAUSA";
+        timerTag.style.color = "#fab387";
+        btnToggle.textContent = "▶ CONTINUAR";
+        btnToggle.className = "btn-main";
+        status.textContent = "Temporizador pausado";
+      }
+      else if (state === "OVERDUE") {
+        timerBox.className = "timer-box overdue";
+        timerDisplay.className = "timer-display overdue";
+        timerTag.textContent = "⚠️ TIEMPO PASADO DESDE QUE SONÓ";
+        timerTag.style.color = "#f38ba8";
+        btnToggle.textContent = "🔁 REACTIVAR (NUEVO CICLO)";
+        btnToggle.className = "btn-main reactivate";
+        const m = Math.floor(overdueSeconds / 60);
+        const s = overdueSeconds % 60;
+        timerDisplay.textContent = `+${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+        status.textContent = `⏰ Sonó hace ${m}m ${s}s sin reactivar`;
+      }
+    }
+
+    function handleAction() {
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+
+      if (state === "IDLE") {
+        remainingSeconds = getTargetSeconds();
+        state = "COUNTDOWN";
+        updateUI();
+        timerInterval = setInterval(tick, 1000);
+      } else if (state === "COUNTDOWN") {
+        state = "PAUSED";
+        clearInterval(timerInterval);
+        updateUI();
+      } else if (state === "PAUSED") {
+        state = "COUNTDOWN";
+        updateUI();
+        timerInterval = setInterval(tick, 1000);
+      } else if (state === "OVERDUE") {
+        // Reactivar
+        remainingSeconds = getTargetSeconds();
+        state = "COUNTDOWN";
+        clearInterval(timerInterval);
+        updateUI();
+        timerInterval = setInterval(tick, 1000);
+      }
+    }
+
+    function resetTimer() {
+      clearInterval(timerInterval);
+      state = "IDLE";
+      remainingSeconds = getTargetSeconds();
+      overdueSeconds = 0;
+      updateUI();
+    }
+
+    function tick() {
+      if (state === "COUNTDOWN") {
+        if (remainingSeconds > 0) {
+          remainingSeconds--;
+          updateUI();
+        } else {
+          // Sonar alarma y pasar a OVERDUE
+          soundCount++;
+          document.getElementById('stats').textContent = `Recordatorios emitidos: ${soundCount}`;
+          playSound();
+
+          if (Notification.permission === 'granted') {
+            new Notification('⏰ ¡Tiempo Cumplido!', { body: 'Han pasado los 5 minutos. Haz clic para reactivar.' });
+          }
+
+          state = "OVERDUE";
+          overdueSeconds = 0;
+          updateUI();
+        }
+      } else if (state === "OVERDUE") {
+        overdueSeconds++;
+        updateUI();
+      }
+    }
+
+    // Inicializar
+    remainingSeconds = getTargetSeconds();
+    updateUI();
+
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission();
+    }
+  </script>
+</body>
+</html>
