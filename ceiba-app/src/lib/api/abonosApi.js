@@ -1,4 +1,5 @@
 import { supabase } from '../supabase';
+import { registrarAccion } from './auditApi';
 
 /**
  * Detecta contratos donde el último pago registrado es un abono extraordinario
@@ -219,6 +220,35 @@ export async function aplicarAmortizacion(caso, customOptions = {}) {
     if (r.error) throw r.error;
   }
 
+  // Registrar en el Log de Auditoría
+  try {
+    const lotStr = caso.id_lote || '—';
+    const clientStr = caso.cliente || '—';
+    const amortCount = (cuotasParaAmortizar || []).length;
+    const valPagadoStr = (caso.valor_pagado || 0).toLocaleString('es-CO');
+    const desc = `Amortización de ${amortCount} cuotas aplicada por abono de $${valPagadoStr} del ${caso.fecha_pago || ''}. ${marcarPagadoTotal ? 'Lote y contrato marcados como PAGADO EN SU TOTALIDAD.' : ''}`;
+
+    await registrarAccion({
+      modulo: 'ABONOS_EXTRAORDINARIOS',
+      accion: 'AMORTIZACION_APLICADA',
+      lote_id_str: lotStr,
+      lote_id: caso.lote_id,
+      cliente_nombre: clientStr,
+      descripcion: desc,
+      detalles: {
+        venta_id: caso.venta_id,
+        cuota_abono_id: caso.ultima_cuota_id,
+        cuota_abono_num: caso.ultima_cuota_num,
+        valor_pagado: caso.valor_pagado,
+        cuotas_amortizadas_nums: (cuotasParaAmortizar || []).map(c => c.numero_cuota),
+        marcarPagadoTotal,
+        observacion_aplicada: observacionPrincipal
+      }
+    });
+  } catch (logErr) {
+    console.warn('Aviso guardando log de amortización:', logErr);
+  }
+
   return {
     cuotas_amortizadas: (cuotasParaAmortizar || []).length,
     observacion_aplicada: observacionPrincipal,
@@ -231,12 +261,27 @@ export async function aplicarAmortizacion(caso, customOptions = {}) {
 /**
  * Guarda/actualiza la observación de una cuota específica.
  */
-export async function guardarObservacionCuota(cuotaId, observacion) {
+export async function guardarObservacionCuota(cuotaId, observacion, metadata = {}) {
   const { error } = await supabase
     .from('cuotas')
     .update({ observacion: observacion || null })
     .eq('id', cuotaId);
 
   if (error) throw error;
+
+  // Registrar en el Log de Auditoría
+  try {
+    await registrarAccion({
+      modulo: 'CUOTAS',
+      accion: 'OBSERVACION_CUOTA_GUARDADA',
+      lote_id_str: metadata.lote_id_str || '—',
+      cliente_nombre: metadata.cliente_nombre || '—',
+      descripcion: `Observación actualizada en cuota #${metadata.numero_cuota || cuotaId}: "${observacion || 'Observación borrada'}"`,
+      detalles: { cuotaId, observacion, ...metadata }
+    });
+  } catch (logErr) {
+    console.warn('Aviso guardando log de observación:', logErr);
+  }
+
   return true;
 }

@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   Zap, RefreshCw, AlertTriangle, CheckCircle2, Eye,
-  ChevronDown, ChevronUp, Edit2, Save, X, ArrowRight, Info
+  ChevronDown, ChevronUp, Edit2, Save, X, ArrowRight, Info, ShieldCheck
 } from 'lucide-react';
 import { detectarAbonosExtraordinarios, aplicarAmortizacion, guardarObservacionCuota } from '../lib/api/abonosApi';
 import { formatCOP, formatDate } from '../utils/helpers';
+import ModalHistorialAcciones from './ModalHistorialAcciones';
 
 // ─── Badge de nivel ───────────────────────────────────────────────────────────
 function NivelBadge({ nivel, cuotas }) {
@@ -495,6 +496,7 @@ export default function AbonosExtraordinariosView({ onVerExtracto }) {
   const [error, setError] = useState(null);
   const [filtroNivel, setFiltroNivel] = useState('Todos');
   const [refresh, setRefresh] = useState(0);
+  const [showHistorialLogs, setShowHistorialLogs] = useState(false);
 
   const cargar = useCallback(async () => {
     setLoading(true);
@@ -534,15 +536,30 @@ export default function AbonosExtraordinariosView({ onVerExtracto }) {
             Pagos que cubren 2 o más cuotas mensuales. Revisa y aplica la amortización con vista previa.
           </div>
         </div>
-        <button
-          className="btn btn-ghost"
-          style={{ fontSize: 12, gap: 6 }}
-          onClick={() => setRefresh(r => r + 1)}
-          disabled={loading}
-        >
-          <RefreshCw size={14} style={loading ? { animation: 'spin 1s linear infinite' } : {}} />
-          Recargar
-        </button>
+
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <button
+            className="btn btn-ghost"
+            style={{
+              fontSize: 12, gap: 6, padding: '7px 12px', fontWeight: 700,
+              color: '#0369a1', borderColor: '#bae6fd', background: '#f0f9ff'
+            }}
+            onClick={() => setShowHistorialLogs(true)}
+            title="Ver registro auditable de acciones y amortizaciones"
+          >
+            <ShieldCheck size={14} /> 📋 Historial de Acciones
+          </button>
+
+          <button
+            className="btn btn-ghost"
+            style={{ fontSize: 12, gap: 6 }}
+            onClick={() => setRefresh(r => r + 1)}
+            disabled={loading}
+          >
+            <RefreshCw size={14} style={loading ? { animation: 'spin 1s linear infinite' } : {}} />
+            Recargar
+          </button>
+        </div>
         <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </div>
 
@@ -633,6 +650,12 @@ export default function AbonosExtraordinariosView({ onVerExtracto }) {
             />
           ))}
         </div>
+      )}
+
+      {showHistorialLogs && (
+        <ModalHistorialAcciones
+          onClose={() => setShowHistorialLogs(false)}
+        />
       )}
     </div>
   );

@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { Plus, Search, X, MapPin, RefreshCw, Eye, Check, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Plus, Search, X, MapPin, RefreshCw, Eye, Check, CheckCircle2, AlertCircle, Tag } from 'lucide-react';
 import { getLotes, updateLote } from '../lib/api/lotes';
+import { getCasosEspeciales, obtenerBadgeCasoEspecial } from '../lib/api/casosEspecialesApi';
+import { registrarAccion } from '../lib/api/auditApi';
 import { formatCOP, getEstadoBadge } from '../utils/helpers';
 import Modal from '../components/Modal';
 import Pagination from '../components/Pagination';
@@ -9,6 +11,7 @@ const ESTADOS = ['Todos', 'VENDIDO', 'PAGADO EN SU TOTALIDAD', 'DISPONIBLE', 'EN
 
 export default function Lotes() {
   const [allLotes, setAllLotes]     = useState([]);
+  const [casosEspeciales, setCasosEspeciales] = useState([]);
   const [loading, setLoading]       = useState(true);
   const [search, setSearch]         = useState('');
   const [filtroEstado, setFiltro]   = useState('Todos');
@@ -24,8 +27,12 @@ export default function Lotes() {
   const fetchLotes = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await getLotes();
+      const [data, casos] = await Promise.all([
+        getLotes(),
+        getCasosEspeciales()
+      ]);
       setAllLotes(data || []);
+      setCasosEspeciales(casos || []);
     } catch (err) {
       console.error('Error cargando lotes:', err);
     } finally {
@@ -41,11 +48,26 @@ export default function Lotes() {
     if (!loteId || !nuevoEstado) return;
     setStatusLoadingId(loteId);
     try {
+      const lotePrev = allLotes.find(l => l.id === loteId);
       await updateLote(loteId, { estado: nuevoEstado });
       setAllLotes(prev => prev.map(l => l.id === loteId ? { ...l, estado: nuevoEstado } : l));
       setSelected(prev => prev && prev.id === loteId ? { ...prev, estado: nuevoEstado } : prev);
       setStatusMsg({ type: 'success', text: `Estado actualizado a "${nuevoEstado}" con éxito.` });
       setTimeout(() => setStatusMsg(null), 4000);
+
+      // Registrar acción en auditoría
+      try {
+        await registrarAccion({
+          modulo: 'LOTES',
+          accion: 'ESTADO_LOTE_CAMBIADO',
+          lote_id: loteId,
+          lote_id_str: lotePrev?.id_lote || `Lote ${loteId}`,
+          descripcion: `Cambio de estado del lote ${lotePrev?.id_lote || loteId} a "${nuevoEstado}" (anterior: "${lotePrev?.estado || '—'}")`,
+          detalles: { loteId, estadoAnterior: lotePrev?.estado, nuevoEstado }
+        });
+      } catch (logErr) {
+        console.warn('Aviso guardando log de lote:', logErr);
+      }
     } catch (err) {
       console.error('Error al actualizar estado:', err);
       setStatusMsg({ type: 'error', text: 'Error al cambiar estado: ' + (err.message || err) });
@@ -214,11 +236,21 @@ export default function Lotes() {
                   {paginatedLotes.map((l, idx) => {
                     const badge = getEstadoBadge(l.estado);
                     const rowNum = (page - 1) * pageSize + idx + 1;
+                    const especial = obtenerBadgeCasoEspecial(l.id_lote, casosEspeciales);
                     return (
                       <tr key={l.id} style={{ cursor: 'pointer' }} onClick={() => setSelected(l)}>
                         <td style={{ color: 'var(--text-muted)', fontSize: 11 }}>{rowNum}</td>
                         <td style={{ fontWeight: 700, fontFamily: 'monospace', color: 'var(--text-primary)' }}>
-                          {l.id_lote}
+                          <div>{l.id_lote}</div>
+                          {especial && (
+                            <span style={{
+                              display: 'inline-flex', alignItems: 'center', gap: 3,
+                              fontSize: 9.5, fontWeight: 700, padding: '1px 6px',
+                              borderRadius: 4, background: especial.bg, color: especial.color, marginTop: 2
+                            }}>
+                              <span>{especial.icon || '📌'}</span> {especial.text}
+                            </span>
+                          )}
                         </td>
                         <td>{l.etapa ? `Etapa ${l.etapa}` : '—'}</td>
                         <td>{l.manzana ? `Mz ${l.manzana}` : '—'}</td>
@@ -393,7 +425,33 @@ export default function Lotes() {
             </div>
           </div>
 
-          {selected.observacion && (
+          {(() => {
+            const especial = obtenerBadgeCasoEspecial(selected.id_lote, casosEspeciales);
+            if (!especial) return null;
+            return (
+              <div style={{
+                marginTop: 16, padding: '12px 14px', borderRadius: 8,
+                background: especial.bg, border: `1px solid ${especial.color}40`
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                  <span>{especial.icon || '📌'}</span>
+                  <span style={{ fontSize: 12, fontWeight: 800, color: especial.color }}>
+                    CASO ESPECIAL: {especial.titulo || especial.text} ({especial.estado})
+                  </span>
+                </div>
+                <div style={{ fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.4 }}>
+                  {especial.rawCaso?.observacion}
+                </div>
+                {especial.monto > 0 && (
+                  <div style={{ fontSize: 11, fontWeight: 700, color: especial.color, marginTop: 4 }}>
+                    Monto involucrado: {formatCOP(especial.monto)}
+                  </div>
+                )}
+              </div>
+            );
+          })()}
+
+          {selected.observacion && !obtenerBadgeCasoEspecial(selected.id_lote, casosEspeciales) && (
             <div style={{ marginTop: 16, padding: 12, background: 'var(--bg-base)', borderRadius: 8 }}>
               <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)', marginBottom: 4 }}>
                 Observaciones:

@@ -2,14 +2,19 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   AlertTriangle, Clock, CheckCircle2, Search,
   RefreshCw, DollarSign, TrendingUp, Users, FileText, X,
-  Plus, Edit2, Download, Table, Calendar, ArrowRight, ShieldAlert, Zap
+  Plus, Edit2, Download, Table, Calendar, ArrowRight, ShieldAlert, Zap,
+  ShieldCheck, Tag
 } from 'lucide-react';
 
+import { useAuth } from '../context/AuthContext';
 import { getCartera, getCarteraStats, getCuotasByVenta, clearCarteraCache } from '../lib/api/cartera';
 import { formatCOP, formatDate } from '../utils/helpers';
 import { exportEstadoCuentaMatrizPDF, exportEstadoCuentaInformePDF, exportEstadoCuentaPDF } from '../utils/exportEstadoCuenta';
 import EstadoCuentaMatrizView from '../components/EstadoCuentaMatrizView';
 import AbonosExtraordinariosView from '../components/AbonosExtraordinariosView';
+import CasosEspecialesView from '../components/CasosEspecialesView';
+import ModalHistorialAcciones from '../components/ModalHistorialAcciones';
+import { getCasosEspeciales, obtenerBadgeCasoEspecial } from '../lib/api/casosEspecialesApi';
 import Modal from '../components/Modal';
 import ModalAbonoCascada from '../components/ModalAbonoCascada';
 import ModalEditarCuota from '../components/ModalEditarCuota';
@@ -17,24 +22,10 @@ import ModalEditarContrato from '../components/ModalEditarContrato';
 import Pagination from '../components/Pagination';
 
 
-const FILTROS = ['Todos', 'Con Saldo', 'En Mora', 'Pagado', 'Sin Gestión', '🚨 Casos Críticos (>180 días)'];
+const FILTROS = ['Todos', 'Con Saldo', 'En Mora', 'Pagado', 'Sin Gestión', '🚨 Casos Críticos (>180 días)', '📌 Casos Especiales'];
 
-function getCasoEspecialTag(idLote) {
-  if (!idLote) return null;
-  const s = idLote.toUpperCase().replace(/\s+/g, '');
-  if (s.includes('LC2-28-2') || s.includes('LC2-28-3')) {
-    return { text: 'Dinero en Tránsito ($6M)', bg: '#fef3c7', color: '#b45309' };
-  }
-  if (s.includes('LC1-4-5')) {
-    return { text: 'Permuta Parcial (Vehículo)', bg: '#ede9fe', color: '#6d28d9' };
-  }
-  if (s.includes('LC1-20-3')) {
-    return { text: 'Descuento Asesor ($1.5M)', bg: '#fee2e2', color: '#b91c1c' };
-  }
-  if (s.includes('LC2-27-12')) {
-    return { text: 'Titular en Trámite', bg: '#e0f2fe', color: '#0369a1' };
-  }
-  return null;
+function getCasoEspecialTag(idLote, listaCasos = []) {
+  return obtenerBadgeCasoEspecial(idLote, listaCasos);
 }
 
 function PctBar({ valor, total }) {
@@ -62,17 +53,22 @@ function KpiCard({ color, icon, value, label, sub, subColor }) {
 }
 
 export default function Cartera() {
+  const { user } = useAuth();
   const [allCartera, setAllCartera]   = useState([]);
   const [stats, setStats]             = useState(null);
   const [loading, setLoading]         = useState(true);
   const [search, setSearch]           = useState('');
   const [filtro, setFiltro]           = useState('Todos');
 
+  // Casos especiales y auditoría
+  const [casosEspeciales, setCasosEspeciales] = useState([]);
+  const [showModalLogs, setShowModalLogs]     = useState(false);
+
   // Paginación
   const [page, setPage]               = useState(1);
   const [pageSize, setPageSize]       = useState(50);
 
-  // Modo de vista: 'general' (Matriz completa) o 'verificacion' (Diagnóstico Lote por Lote)
+  // Modo de vista: 'general' | 'verificacion' | 'abonos' | 'casos_especiales'
   const [vistaModo, setVistaModo]     = useState('general');
   const [filtroVerif, setFiltroVerif] = useState('Todos'); // 'Todos' | 'Al Día' | 'En Mora' | 'Críticos' | 'Saldados'
   const [pageVerif, setPageVerif]     = useState(1);
@@ -94,12 +90,14 @@ export default function Cartera() {
     setLoading(true);
     try {
       if (force) clearCarteraCache();
-      const [data, s] = await Promise.all([
+      const [data, s, casos] = await Promise.all([
         getCartera({ forceRefresh: force }),
         getCarteraStats(force),
+        getCasosEspeciales(),
       ]);
       setAllCartera(data || []);
       setStats(s);
+      setCasosEspeciales(casos || []);
     } catch (e) {
       console.error('Error cargando cartera:', e);
     } finally {
@@ -110,6 +108,10 @@ export default function Cartera() {
   useEffect(() => {
     load();
   }, [load]);
+
+  const casosEspecialesActivosCount = useMemo(() => {
+    return (casosEspeciales || []).filter(c => c.estado !== 'RESUELTO').length;
+  }, [casosEspeciales]);
 
   // Filtrado 100% en memoria (0.1ms sin peticiones de red repetitivas)
   const filteredCartera = useMemo(() => {
@@ -126,6 +128,8 @@ export default function Cartera() {
         result = result.filter(v => !v.fecha_venta && v.saldo > 0);
       } else if (filtro === '🚨 Casos Críticos (>180 días)' || filtro === 'Casos Críticos') {
         result = result.filter(v => v.es_critico && v.saldo > 0);
+      } else if (filtro === '📌 Casos Especiales') {
+        result = result.filter(v => Boolean(getCasoEspecialTag(v.id_lote || v.lotes?.id_lote, casosEspeciales)));
       }
     }
 
@@ -143,7 +147,7 @@ export default function Cartera() {
     }
 
     return result;
-  }, [allCartera, filtro, search]);
+  }, [allCartera, filtro, search, casosEspeciales]);
 
   // Paginación para mantener la tabla liviana y reactiva
   const paginatedCartera = useMemo(() => {
@@ -331,7 +335,7 @@ export default function Cartera() {
 
       {/* ── Selector de Modo de Vista ── */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, borderBottom: '2px solid var(--border)', paddingBottom: 12, flexWrap: 'wrap', gap: 10 }}>
-        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
           <button
             className={`btn ${vistaModo === 'general' ? 'btn-primary' : 'btn-ghost'}`}
             style={{ fontSize: 13, gap: 8, padding: '8px 16px', fontWeight: 700 }}
@@ -340,6 +344,7 @@ export default function Cartera() {
             <Table size={16} />
             Matriz de Cartera General
           </button>
+
           <button
             className={`btn ${vistaModo === 'verificacion' ? 'btn-primary' : 'btn-ghost'}`}
             style={{
@@ -353,6 +358,7 @@ export default function Cartera() {
             <ShieldAlert size={16} />
             🔍 Verificación Lote por Lote (Al Día / En Mora)
           </button>
+
           <button
             className={`btn ${vistaModo === 'abonos' ? 'btn-primary' : 'btn-ghost'}`}
             style={{
@@ -366,18 +372,55 @@ export default function Cartera() {
             <Zap size={16} />
             ⚡ Abonos Extraordinarios
           </button>
+
+          <button
+            className={`btn ${vistaModo === 'casos_especiales' ? 'btn-primary' : 'btn-ghost'}`}
+            style={{
+              fontSize: 13, gap: 8, padding: '8px 16px', fontWeight: 700,
+              background: vistaModo === 'casos_especiales' ? '#6d28d9' : undefined,
+              borderColor: vistaModo === 'casos_especiales' ? '#5b21b6' : undefined,
+              color: vistaModo === 'casos_especiales' ? '#fff' : undefined
+            }}
+            onClick={() => setVistaModo('casos_especiales')}
+          >
+            <Tag size={15} />
+            📌 Casos Especiales & Observaciones
+            {casosEspecialesActivosCount > 0 && (
+              <span style={{
+                background: vistaModo === 'casos_especiales' ? '#fff' : '#6d28d9',
+                color: vistaModo === 'casos_especiales' ? '#6d28d9' : '#fff',
+                fontSize: 10.5, fontWeight: 900, padding: '1px 6px', borderRadius: 10, marginLeft: 4
+              }}>
+                {casosEspecialesActivosCount}
+              </span>
+            )}
+          </button>
         </div>
 
-        {vistaModo === 'verificacion' && (
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
           <button
             className="btn btn-ghost"
-            style={{ fontSize: 12, gap: 6, color: '#16a34a', borderColor: '#bbf7d0', background: '#f0fdf4', fontWeight: 700 }}
-            onClick={exportarVerificacionExcel}
-            title="Descargar auditoría lote por lote en Excel"
+            style={{
+              fontSize: 12, gap: 6, padding: '8px 14px', fontWeight: 700,
+              color: '#0369a1', borderColor: '#bae6fd', background: '#f0f9ff'
+            }}
+            onClick={() => setShowModalLogs(true)}
+            title="Ver registro auditable de acciones, amortizaciones y cambios"
           >
-            <Download size={14} /> Exportar Auditoría a Excel
+            <ShieldCheck size={15} /> 📋 Historial de Acciones
           </button>
-        )}
+
+          {vistaModo === 'verificacion' && (
+            <button
+              className="btn btn-ghost"
+              style={{ fontSize: 12, gap: 6, color: '#16a34a', borderColor: '#bbf7d0', background: '#f0fdf4', fontWeight: 700 }}
+              onClick={exportarVerificacionExcel}
+              title="Descargar auditoría lote por lote en Excel"
+            >
+              <Download size={14} /> Exportar Auditoría a Excel
+            </button>
+          )}
+        </div>
       </div>
 
       {vistaModo === 'general' && (
@@ -443,7 +486,7 @@ export default function Cartera() {
                         const rowIdx = (page - 1) * pageSize + i + 1;
                         const saldoColor = (v.saldo || 0) <= 0 ? '#16a34a'
                           : (v.cuotas_vencidas > 0) ? '#dc2626' : '#d97706';
-                        const especial = getCasoEspecialTag(v.id_lote || v.lotes?.id_lote);
+                        const especial = getCasoEspecialTag(v.id_lote || v.lotes?.id_lote, casosEspeciales);
 
                         return (
                           <tr key={v.id} style={{ cursor: 'pointer' }} onClick={() => openDetalle(v)}>
@@ -453,8 +496,21 @@ export default function Cartera() {
                                 {v.id_lote || v.lotes?.id_lote || '—'}
                               </div>
                               {especial && (
-                                <span style={{ display: 'inline-block', fontSize: 9, fontWeight: 700,
-                                  padding: '2px 6px', borderRadius: 4, background: especial.bg, color: especial.color, marginTop: 2 }}>
+                                <span
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setVistaModo('casos_especiales');
+                                  }}
+                                  style={{
+                                    display: 'inline-flex', alignItems: 'center', gap: 4,
+                                    fontSize: 9.5, fontWeight: 700,
+                                    padding: '2px 7px', borderRadius: 4,
+                                    background: especial.bg, color: especial.color, marginTop: 3,
+                                    cursor: 'pointer', border: `1px solid ${especial.color}40`
+                                  }}
+                                  title="Caso Especial Activo. Clic para gestionar en pestaña Casos Especiales."
+                                >
+                                  <span>{especial.icon || '📌'}</span>
                                   {especial.text}
                                 </span>
                               )}
@@ -627,7 +683,7 @@ export default function Cartera() {
               <tbody>
                 {paginatedVerif.map((v, i) => {
                   const rowIdx = (pageVerif - 1) * pageSizeVerif + i + 1;
-                  const especial = getCasoEspecialTag(v.id_lote || v.lotes?.id_lote);
+                  const especial = getCasoEspecialTag(v.id_lote || v.lotes?.id_lote, casosEspeciales);
                   const isSaldado = (v.saldo || 0) <= 0;
                   const isMora = (v.cuotas_vencidas || 0) > 0;
                   const montoMoraEstimado = (v.cuotas_vencidas || 0) * (v.valor_cuota || 0);
@@ -640,8 +696,21 @@ export default function Cartera() {
                           {v.id_lote || v.lotes?.id_lote || '—'}
                         </div>
                         {especial && (
-                          <span style={{ display: 'inline-block', fontSize: 9, fontWeight: 700,
-                            padding: '2px 6px', borderRadius: 4, background: especial.bg, color: especial.color, marginTop: 2 }}>
+                          <span
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setVistaModo('casos_especiales');
+                            }}
+                            style={{
+                              display: 'inline-flex', alignItems: 'center', gap: 4,
+                              fontSize: 9.5, fontWeight: 700,
+                              padding: '2px 7px', borderRadius: 4,
+                              background: especial.bg, color: especial.color, marginTop: 3,
+                              cursor: 'pointer', border: `1px solid ${especial.color}40`
+                            }}
+                            title="Caso Especial Activo. Clic para gestionar en pestaña Casos Especiales."
+                          >
+                            <span>{especial.icon || '📌'}</span>
                             {especial.text}
                           </span>
                         )}
@@ -758,6 +827,23 @@ export default function Cartera() {
         </div>
       )}
 
+      {vistaModo === 'casos_especiales' && (
+        <div className="table-container" style={{ padding: '20px' }}>
+          <CasosEspecialesView
+            onOpenEstadoCuenta={(idLote) => {
+              const norm = (str) => (str || '').toUpperCase().replace(/\s+/g, '').replace(/[-_]/g, '');
+              const target = norm(idLote);
+              const venta = allCartera.find(v => {
+                const lStr = norm(v.id_lote || v.lotes?.id_lote);
+                return lStr.includes(target) || target.includes(lStr);
+              });
+              if (venta) openDetalle(venta);
+            }}
+            usuarioActual={user}
+          />
+        </div>
+      )}
+
 
       {/* ── Modal Detalle de Contrato ── */}
       {selected && (
@@ -766,11 +852,11 @@ export default function Cartera() {
             <div>
               <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 8 }}>
                 {selected.id_lote || selected.lotes?.id_lote} — {selected.cliente_nombre || selected.clientes?.nombre}
-                {getCasoEspecialTag(selected.id_lote || selected.lotes?.id_lote) && (
+                {getCasoEspecialTag(selected.id_lote || selected.lotes?.id_lote, casosEspeciales) && (
                   <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 4,
-                    background: getCasoEspecialTag(selected.id_lote || selected.lotes?.id_lote).bg,
-                    color: getCasoEspecialTag(selected.id_lote || selected.lotes?.id_lote).color }}>
-                    {getCasoEspecialTag(selected.id_lote || selected.lotes?.id_lote).text}
+                    background: getCasoEspecialTag(selected.id_lote || selected.lotes?.id_lote, casosEspeciales).bg,
+                    color: getCasoEspecialTag(selected.id_lote || selected.lotes?.id_lote, casosEspeciales).color }}>
+                    {getCasoEspecialTag(selected.id_lote || selected.lotes?.id_lote, casosEspeciales).text}
                   </span>
                 )}
               </div>
@@ -994,6 +1080,13 @@ export default function Cartera() {
             load(true);
             setSelected(null);
           }}
+        />
+      )}
+
+      {/* Modal Historial de Acciones y Auditoría */}
+      {showModalLogs && (
+        <ModalHistorialAcciones
+          onClose={() => setShowModalLogs(false)}
         />
       )}
     </div>

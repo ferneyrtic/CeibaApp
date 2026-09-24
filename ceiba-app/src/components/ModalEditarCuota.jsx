@@ -3,6 +3,7 @@ import { Edit2, X, AlertCircle } from 'lucide-react';
 import Modal from './Modal';
 import { formatCOP } from '../utils/helpers';
 import { actualizarCuotaManual } from '../lib/api/cuotas';
+import { registrarAccion } from '../lib/api/auditApi';
 
 const ESTADOS_VALIDOS = ['AL DÍA', 'POR VENCER', 'VENCIDA', 'PAGA'];
 const MEDIOS_PAGO = ['TRANSFERENCIA', 'EFECTIVO', 'CONSIGNACIÓN', 'CHEQUE', 'DATÁFONO', 'OTRO'];
@@ -60,6 +61,18 @@ export default function ModalEditarCuota({ cuota, onClose, onSuccess }) {
         medio_pago: medioPago || null,
         observacion: obsFinal || null
       });
+
+      // Registrar en el Log de Auditoría
+      try {
+        await registrarAccion({
+          modulo: 'CUOTAS',
+          accion: 'CUOTA_EDITADA_MANUALMENTE',
+          lote_id_str: cuota?.id_lote || cuota?.lote_id_str || `Venta #${cuota.venta_id}`,
+          descripcion: `Edición de cuota #${numeroCuota}: Estado a "${estadoCuota}", pagado: $${Number(valorPagado || 0).toLocaleString('es-CO')}, fecha: ${fechaFinal || 'Sin fecha'}`
+        });
+      } catch (logErr) {
+        console.warn('Aviso guardando log de cuota:', logErr);
+      }
 
       if (onSuccess) onSuccess();
       onClose();

@@ -5,6 +5,7 @@ import { formatCOP } from '../utils/helpers';
 import { updateVenta } from '../lib/api/ventas';
 import { updateCliente, createCliente } from '../lib/api/clientes';
 import { supabase } from '../lib/supabase';
+import { registrarAccion } from '../lib/api/auditApi';
 
 export default function ModalEditarContrato({ venta, onClose, onSuccess }) {
   // Datos del Cliente
@@ -113,6 +114,21 @@ export default function ModalEditarContrato({ venta, onClose, onSuccess }) {
         } catch (syncErr) {
           console.warn('Advertencia al sincronizar estado en lotes:', syncErr);
         }
+      }
+
+      // Registrar en el Log de Auditoría
+      try {
+        await registrarAccion({
+          modulo: 'CONTRATOS',
+          accion: 'CONTRATO_ACTUALIZADO',
+          lote_id_str: venta?.id_lote || venta?.lotes?.id_lote || `Venta #${venta.id}`,
+          lote_id: loteId,
+          cliente_nombre: nombreCliente || '—',
+          descripcion: `Actualización de contrato y cliente: ${nombreCliente}. Precio venta: $${Number(precioVenta || 0).toLocaleString('es-CO')}, Inicial: $${Number(cuotaInicial || 0).toLocaleString('es-CO')}, Estado: ${estadoVenta}`,
+          detalles: { ventaId: venta.id, precioVenta, cuotaInicial, estadoVenta, vendedorNombre }
+        });
+      } catch (logErr) {
+        console.warn('Aviso guardando log de contrato:', logErr);
       }
 
       if (onSuccess) onSuccess();
