@@ -300,10 +300,10 @@ export default function Cartera() {
           label="Valor Total Ventas"
           sub={`${stats?.totalVentas ?? 0} contratos vendidos`} />
         <KpiCard color="green"  icon={<TrendingUp size={18}/>}
-          value={formatCOP(stats?.totalPagado)}
+          value={formatCOP(stats?.totalRecaudado)}
           label="Total Recaudado"
           sub={stats && stats.totalValorVentas > 0
-            ? `${Math.round((stats.totalPagado/stats.totalValorVentas)*100)}% del total`
+            ? `${Math.round((stats.totalRecaudado / stats.totalValorVentas) * 100)}% del total`
             : '—'} />
         <KpiCard color="yellow" icon={<Clock size={18}/>}
           value={formatCOP(stats?.totalSaldo)}
