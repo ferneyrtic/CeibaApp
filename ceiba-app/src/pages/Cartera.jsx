@@ -16,7 +16,6 @@ import CasosEspecialesView from '../components/CasosEspecialesView';
 import ModalHistorialAcciones from '../components/ModalHistorialAcciones';
 import { getCasosEspeciales, obtenerBadgeCasoEspecial } from '../lib/api/casosEspecialesApi';
 import Modal from '../components/Modal';
-import ModalAbonoCascada from '../components/ModalAbonoCascada';
 import ModalEditarCuota from '../components/ModalEditarCuota';
 import ModalEditarContrato from '../components/ModalEditarContrato';
 import ModalRegistrarPagoRecibo from '../components/ModalRegistrarPagoRecibo';
@@ -84,8 +83,6 @@ export default function Cartera() {
   const [activeTab, setActiveTab]     = useState('resumen'); // 'resumen' | 'matriz' | 'cuotas'
 
   // Modales de Acción
-  const [abonoVenta, setAbonoVenta]   = useState(null);
-  const [showAbonoModal, setShowAbonoModal] = useState(false);
   const [editingCuota, setEditingCuota] = useState(null);
   const [editingContrato, setEditingContrato] = useState(null);
 
@@ -288,14 +285,15 @@ export default function Cartera() {
         <div style={{ display: 'flex', gap: 10 }}>
           <button
             className="btn btn-primary"
-            style={{ fontSize: 13, gap: 8, padding: '9px 18px', background: '#16a34a', borderColor: '#15803d' }}
+            style={{ fontSize: 13, gap: 8, padding: '9px 18px', background: '#16a34a', borderColor: '#15803d', fontWeight: 800 }}
             onClick={() => {
-              setAbonoVenta(null);
-              setShowAbonoModal(true);
+              setPagoReciboVenta(null);
+              setPagoReciboCuota(null);
+              setShowModalPagoRecibo(true);
             }}
           >
-            <DollarSign size={16} />
-            Registrar Abono / Pago
+            <Receipt size={17} />
+            Registrar Abono / Pago y Recibo
           </button>
         </div>
       </div>
@@ -911,7 +909,7 @@ export default function Cartera() {
                   setShowModalPagoRecibo(true);
                 }}
               >
-                <Receipt size={14} /> 🧾 Registrar Pago / Recibo
+                <Receipt size={14} /> 💳 Registrar Abono / Pago y Recibo
               </button>
               <button
                 className="btn btn-ghost"
@@ -1234,19 +1232,7 @@ export default function Cartera() {
         </Modal>
       )}
 
-      {/* Modal Abono Cascada */}
-      {showAbonoModal && (
-        <ModalAbonoCascada
-          venta={abonoVenta}
-          ventaPreseleccionada={abonoVenta}
-          allVentas={allCartera}
-          onClose={() => { setShowAbonoModal(false); setAbonoVenta(null); }}
-          onSuccess={() => {
-            load(true);
-            if (selected) refreshCuotas(selected.id);
-          }}
-        />
-      )}
+
 
 
       {/* Modal Editar Cuota Individual */}

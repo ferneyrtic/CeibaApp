@@ -366,7 +366,7 @@ export default function ReciboCajaView({ recibo, onClose, onPrint, autoDownload 
                   CIUDAD:
                 </div>
                 <div style={{ padding: '6px 12px', fontSize: 12, fontWeight: 700, color: '#0f172a' }}>
-                  {recibo.ciudad || 'Bogotá D.C.'}
+                  Acacías
                 </div>
               </div>
 
@@ -425,7 +425,7 @@ export default function ReciboCajaView({ recibo, onClose, onPrint, autoDownload 
               </div>
             </div>
 
-            {/* FILA 2: PAGADO A / PAGADO POR */}
+            {/* FILA 2: PAGADO A (SIEMPRE PROYECTO CAMPESTRE LA CEIBA) */}
             <div style={{
               display: 'flex',
               alignItems: 'center',
@@ -448,26 +448,13 @@ export default function ReciboCajaView({ recibo, onClose, onPrint, autoDownload 
               <div style={{
                 padding: '6px 14px',
                 fontSize: 13,
-                fontWeight: 800,
-                color: '#0f172a',
+                fontWeight: 900,
+                color: '#166534',
                 flex: 1,
-                textTransform: 'uppercase'
+                letterSpacing: 0.5
               }}>
-                {recibo.cliente_nombre || '—'}
+                PROYECTO CAMPESTRE LA CEIBA
               </div>
-              {recibo.lote_id_str && (
-                <div style={{
-                  padding: '4px 10px',
-                  marginRight: 8,
-                  background: '#e2e8f0',
-                  borderRadius: 4,
-                  fontSize: 11,
-                  fontWeight: 800,
-                  fontFamily: 'monospace'
-                }}>
-                  Lote {recibo.lote_id_str}
-                </div>
-              )}
             </div>
 
             {/* FILA 3: VALOR EN LETRAS */}
@@ -572,7 +559,7 @@ export default function ReciboCajaView({ recibo, onClose, onPrint, autoDownload 
               <div style={{ flex: 1.2 }}>
                 <div style={{ borderBottom: '1.5px solid #475569', width: '85%', marginBottom: 4 }} />
                 <div style={{ fontSize: 9.5, fontWeight: 800, color: '#475569', letterSpacing: 0.5 }}>
-                  FIRMA DE RECIBIDO
+                  FIRMA DE RECIBIDO {recibo.cliente_nombre ? `· ${recibo.cliente_nombre.toUpperCase()}` : ''}
                 </div>
               </div>
 

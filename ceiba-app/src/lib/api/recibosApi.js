@@ -253,6 +253,8 @@ export const crearReciboCaja = async (datosRecibo) => {
   const payload = {
     ...datosRecibo,
     numero_recibo,
+    pagado_a: 'PROYECTO CAMPESTRE LA CEIBA',
+    ciudad: 'Acacías',
     valor: valorNum,
     valor_letras,
     created_at: datosRecibo.created_at || new Date().toISOString()
@@ -286,18 +288,21 @@ export const crearReciboCaja = async (datosRecibo) => {
 };
 
 /**
- * Registra un pago/abono a una cuota o contrato, genera el recibo y actualiza el saldo.
+ * Registra un pago/abono (individual o en cascada multi-cuotas), genera el recibo oficial y actualiza cartera.
  */
 export const registrarPagoConRecibo = async ({
   ventaId,
   cuotaId = null,
+  afectaciones = null,
   monto,
   fechaPago = new Date().toISOString().slice(0, 10),
   medioPago = 'TRANSFERENCIA',
+  banco = '',
+  referenciaPago = '',
   concepto = '',
   observaciones = '',
   registradoPor = 'Secretaría',
-  ciudad = 'Bogotá D.C.',
+  ciudad = 'Acacías',
   loteIdStr = '',
   clienteNombre = '',
   clienteDoc = ''
@@ -310,13 +315,81 @@ export const registrarPagoConRecibo = async ({
   // 1. Obtener siguiente número de recibo consecutivo
   const numero_recibo = await obtenerSiguienteNumeroRecibo();
 
-  // 2. Si hay cuota específica, actualizarla en Supabase
-  let cuotaActualizada = null;
+  let cuotasActualizadas = [];
   let esPagoCompleto = false;
   let saldoRestanteCuota = 0;
   let numeroCuota = null;
+  let cuotasInfoStr = '';
 
-  if (cuotaId) {
+  // 2. CASO A: Múltiples cuotas afectadas en cascada
+  if (afectaciones && Array.isArray(afectaciones) && afectaciones.length > 0) {
+    const numerosCuotas = afectaciones.map(a => a.numero_cuota);
+    numeroCuota = numerosCuotas[0];
+    cuotasInfoStr = `Cuotas ${numerosCuotas.join(', ')}`;
+
+    for (const a of afectaciones) {
+      const { data: cuota, error: cErr } = await supabase
+        .from('cuotas')
+        .select('*')
+        .eq('id', a.id)
+        .single();
+
+      if (cuota) {
+        const yaPag = Number(cuota.valor_pagado) || 0;
+        const abonoItem = Number(a.valor_abono) || 0;
+        const nuevoPag = yaPag + abonoItem;
+        const valCuota = Number(cuota.valor_cuota) || 0;
+        const comp = a.completo || nuevoPag >= valCuota;
+        const nuevoEst = comp ? 'PAGA' : (cuota.estado_cuota === 'VENCIDA' ? 'VENCIDA' : 'AL DÍA');
+
+        const notaRecibo = `Recibo #${numero_recibo} ($${abonoItem.toLocaleString('es-CO')}) el ${fechaPago}`;
+        const obsFinal = cuota.observacion
+          ? `${cuota.observacion} | ${notaRecibo}`.trim()
+          : notaRecibo;
+
+        let hist = [];
+        if (cuota.comprobante_url) {
+          try {
+            const p = JSON.parse(cuota.comprobante_url);
+            hist = Array.isArray(p) ? p : [p];
+          } catch (e) {}
+        }
+        hist.push({
+          numero_recibo,
+          fecha_pago: fechaPago,
+          valor: abonoItem,
+          medio_pago: medioPago,
+          banco,
+          referencia: referenciaPago,
+          es_pago_completo: comp
+        });
+
+        const { data: updated } = await supabase
+          .from('cuotas')
+          .update({
+            valor_pagado: nuevoPag,
+            estado_cuota: nuevoEst,
+            fecha_pago: fechaPago,
+            medio_pago: medioPago,
+            observacion: obsFinal,
+            comprobante_url: JSON.stringify(hist)
+          })
+          .eq('id', a.id)
+          .select()
+          .single();
+
+        if (updated) cuotasActualizadas.push(updated);
+      }
+    }
+
+    const ultima = afectaciones[afectaciones.length - 1];
+    if (ultima && !ultima.completo) {
+      saldoRestanteCuota = Math.max(0, (Number(ultima.valor_cuota) || 0) - (Number(ultima.nuevo_pagado) || 0));
+    }
+    esPagoCompleto = afectaciones.every(a => a.completo);
+
+  // 2. CASO B: Cuota individual seleccionada
+  } else if (cuotaId) {
     const { data: cuota, error: cErr } = await supabase
       .from('cuotas')
       .select('*')
@@ -333,7 +406,6 @@ export const registrarPagoConRecibo = async ({
     esPagoCompleto = nuevoPagado >= valCuota;
     saldoRestanteCuota = Math.max(0, valCuota - nuevoPagado);
 
-    // Nuevo estado de cuota
     let nuevoEstado = cuota.estado_cuota;
     if (esPagoCompleto) {
       nuevoEstado = 'PAGA';
@@ -341,36 +413,11 @@ export const registrarPagoConRecibo = async ({
       nuevoEstado = cuota.estado_cuota === 'VENCIDA' ? 'VENCIDA' : 'AL DÍA';
     }
 
-    // Concepto del recibo
-    const conceptoFinal = concepto || (
-      numeroCuota
-        ? `Abono a Cuota #${numeroCuota} lote ${loteIdStr || ''}${esPagoCompleto ? ' (Totalidad)' : ' (Abono Parcial)'}`.trim()
-        : `Pago / Abono contrato lote ${loteIdStr || ''}`.trim()
-    );
+    const notaRecibo = `Recibo #${numero_recibo} ($${montoNum.toLocaleString('es-CO')}) el ${fechaPago}`;
+    const obsFinal = cuota.observacion
+      ? `${cuota.observacion} | ${notaRecibo}`.trim()
+      : notaRecibo;
 
-    // Recibo objeto para incrustar en la cuota (comprobante_url)
-    const reciboParaCuota = {
-      numero_recibo,
-      fecha_pago: fechaPago,
-      valor: montoNum,
-      valor_letras: numeroALetrasCOP(montoNum),
-      medio_pago: medioPago,
-      concepto: conceptoFinal,
-      observaciones: observaciones || '',
-      es_pago_completo: esPagoCompleto,
-      saldo_restante_cuota: saldoRestanteCuota,
-      cliente_nombre: clienteNombre,
-      cliente_doc: clienteDoc,
-      lote_id_str: loteIdStr,
-      venta_id: ventaId,
-      cuota_id: cuotaId,
-      numero_cuota: numeroCuota,
-      ciudad,
-      registrado_por: registradoPor,
-      created_at: new Date().toISOString()
-    };
-
-    // Actualizar historial de recibos dentro de comprobante_url
     let historialRecibos = [];
     if (cuota.comprobante_url) {
       try {
@@ -379,13 +426,15 @@ export const registrarPagoConRecibo = async ({
         else if (parsed && typeof parsed === 'object') historialRecibos = [parsed];
       } catch (e) {}
     }
-    historialRecibos.push(reciboParaCuota);
-
-    // Nota de observación con el recibo
-    const notaRecibo = `Recibo #${numero_recibo} ($${montoNum.toLocaleString('es-CO')}) el ${fechaPago}`;
-    const obsFinal = cuota.observacion
-      ? `${cuota.observacion} | ${notaRecibo}`.trim()
-      : notaRecibo;
+    historialRecibos.push({
+      numero_recibo,
+      fecha_pago: fechaPago,
+      valor: montoNum,
+      medio_pago: medioPago,
+      banco,
+      referencia: referenciaPago,
+      es_pago_completo: esPagoCompleto
+    });
 
     const { data: cUpdated, error: uErr } = await supabase
       .from('cuotas')
@@ -402,10 +451,30 @@ export const registrarPagoConRecibo = async ({
       .single();
 
     if (uErr) throw uErr;
-    cuotaActualizada = cUpdated;
+    cuotasActualizadas = [cUpdated];
+  }
 
-    // Verificar si todas las cuotas del contrato están cubiertas
+  // 3. Actualizar saldo del contrato / venta
+  if (ventaId) {
     try {
+      const vFrom = supabase.from('ventas');
+      if (vFrom && typeof vFrom.select === 'function') {
+        const { data: vActual } = await vFrom
+          .select('saldo, abonos')
+          .eq('id', ventaId)
+          .single();
+
+        if (vActual) {
+          const nuevoSaldo = Math.max(0, (Number(vActual.saldo) || 0) - montoNum);
+          const nuevosAbonos = (Number(vActual.abonos) || 0) + montoNum;
+          if (typeof vFrom.update === 'function') {
+            await vFrom
+              .update({ saldo: nuevoSaldo, abonos: nuevosAbonos })
+              .eq('id', ventaId);
+          }
+        }
+      }
+
       const { data: todasCuotas } = await supabase
         .from('cuotas')
         .select('estado_cuota, valor_cuota, valor_pagado')
@@ -423,35 +492,45 @@ export const registrarPagoConRecibo = async ({
     }
   }
 
-  // 3. Concepto final
+  // 4. Concepto y Observaciones finales
   const conceptoFinal = concepto || (
     numeroCuota
-      ? `Abono a Cuota #${numeroCuota} lote ${loteIdStr || ''}${esPagoCompleto ? ' (Totalidad)' : ' (Abono Parcial)'}`.trim()
-      : `Pago / Abono contrato lote ${loteIdStr || ''}`.trim()
+      ? `Abono a Cuota #${numeroCuota} - ${loteIdStr || ''} - Titular: ${clienteNombre || ''}`.trim()
+      : `Pago / Abono contrato - ${loteIdStr || ''} - Titular: ${clienteNombre || ''}`.trim()
   );
 
-  // 4. Crear el recibo de caja (con fallback seguro que nunca arroja error RLS)
+  const obsFinal = observaciones || (
+    medioPago === 'TRANSFERENCIA'
+      ? `Transferencia a cuenta ${banco || 'Bancolombia'}${referenciaPago ? ` · Ref: ${referenciaPago}` : ''}`
+      : `Pago en Efectivo recibido en oficina${referenciaPago ? ` · Ref: ${referenciaPago}` : ''}`
+  );
+
+  // 5. Crear el recibo oficial
   const reciboEmitido = await crearReciboCaja({
     numero_recibo,
+    pagado_a: 'PROYECTO CAMPESTRE LA CEIBA',
+    ciudad: 'Acacías',
     venta_id: ventaId,
     cuota_id: cuotaId,
     numero_cuota: numeroCuota,
+    afectaciones: afectaciones || undefined,
     lote_id_str: loteIdStr,
     cliente_nombre: clienteNombre,
     cliente_doc: clienteDoc,
-    ciudad,
     fecha_pago: fechaPago,
     valor: montoNum,
     valor_letras: numeroALetrasCOP(montoNum),
     concepto: conceptoFinal,
     medio_pago: medioPago,
-    observaciones: observaciones || '',
+    banco: banco || undefined,
+    referencia_pago: referenciaPago || undefined,
+    observaciones: obsFinal,
     es_pago_completo: esPagoCompleto,
     saldo_restante_cuota: saldoRestanteCuota,
     registrado_por: registradoPor
   });
 
-  // 5. Registrar en Log de Auditoría
+  // 6. Auditoría
   try {
     await registrarAccion({
       modulo: 'RECIBOS_CAJA',
@@ -465,6 +544,8 @@ export const registrarPagoConRecibo = async ({
 
   return {
     recibo: reciboEmitido,
-    cuotaActualizada
+    cuotaActualizada: cuotasActualizadas[0] || null,
+    cuotasActualizadas
   };
 };
+
