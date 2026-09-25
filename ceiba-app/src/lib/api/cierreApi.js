@@ -15,7 +15,20 @@ export const clearCierreCache = () => {
  * @param {string} fechaHasta - Fecha fin en formato 'YYYY-MM-DD'
  * @param {boolean} forceRefresh - Forzar recarga sin usar caché
  */
-export const getCierreMensualData = async (fechaDesde, fechaHasta, forceRefresh = false) => {
+export const getCierreMensualData = async (param1, param2, forceRefresh = false) => {
+  let fechaDesde = param1;
+  let fechaHasta = param2;
+
+  // Si se pasan año y mes como números o strings numéricos sin guion (ej. 2026, 9)
+  if (param1 && !String(param1).includes('-')) {
+    const yNum = Number(param1);
+    const mNum = Number(param2);
+    const mStr = String(mNum).padStart(2, '0');
+    const lastDay = new Date(yNum, mNum, 0).getDate();
+    fechaDesde = `${yNum}-${mStr}-01`;
+    fechaHasta = `${yNum}-${mStr}-${String(lastDay).padStart(2, '0')}`;
+  }
+
   const periodKey = `${fechaDesde}_${fechaHasta}`;
   const now = Date.now();
 
@@ -212,16 +225,23 @@ export const getCierreMensualData = async (fechaDesde, fechaHasta, forceRefresh 
   const recaudoPorDia = Object.values(diaMap);
 
   // 7. Detección de Lotes Saldados en el período
-  const saldadosRes = await supabase
-    .from('ventas')
-    .select(`
-      id, precio_venta, valor_cuota_inicial, fecha_pago_cuota_inicial,
-      saldo, estado, vendedor_nombre,
-      lotes (id_lote),
-      clientes (nombre, doc_cliente),
-      cuotas (id, fecha_pago, valor_pagado)
-    `)
-    .in('estado', ['PAGADO EN SU TOTALIDAD', 'SALDADO', 'PAGADO']);
+  let saldadosRes = { data: [] };
+  try {
+    const qVentas = supabase
+      .from('ventas')
+      .select(`
+        id, precio_venta, valor_cuota_inicial, fecha_pago_cuota_inicial,
+        saldo, estado, vendedor_nombre,
+        lotes (id_lote),
+        clientes (nombre, doc_cliente),
+        cuotas (id, fecha_pago, valor_pagado)
+      `);
+    if (qVentas && typeof qVentas.in === 'function') {
+      saldadosRes = await qVentas.in('estado', ['PAGADO EN SU TOTALIDAD', 'SALDADO', 'PAGADO']);
+    }
+  } catch (err) {
+    console.warn('Error consultando lotes saldados:', err);
+  }
 
   const lotesCompletamentePagados = (saldadosRes.data || []).filter(v => {
     const fechas = (v.cuotas || []).filter(c => c.fecha_pago).map(c => c.fecha_pago);

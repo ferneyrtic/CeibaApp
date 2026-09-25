@@ -1,18 +1,13 @@
 """
-SINCRONIZACIÓN MAESTRA DEFINITIVA — 04-SEP-2026
+SINCRONIZACIÓN MAESTRA DEFINITIVA — v2 (Sep-2026)
 Excel → Supabase: lotes, vendedores, clientes, ventas, cuotas
 
-Garantías:
-  1. lotes: actualiza estado y precio_venta. Estados 'CEDIDO...' mapeados a 'VENDIDO'.
-  2. vendedores: upsert con activo=True.
-  3. clientes: upsert garantizando doc_cliente único (incluye Rubén Fabián Bustos y Jeisson Villanueva).
-  4. ventas: insert con mapeo exacto a lote_id y cliente_id.
-  5. cuotas: cronograma completo (pagadas, vencidas, al día) con:
-     - Fechas inferidas inteligentes (MM/DD -> DD/MM)
-     - Meses en texto guardados en observacion como "PAGO MÚLTIPLE - <MES>"
-     - Corrección manual aplicada para LC1-11-9 C4 (11 de mayo de 2025)
-     - Estados estrictos para CHECK: 'PAGA', 'VENCIDA', 'POR VENCER', 'AL DÍA'
-     - Sin pérdida de cuotas para casos especiales (LC1-20-3, LC2-28-2, LC2-28-3, LC1-4-5)
+Mejoras v2:
+  6. Corrección de fechas de vencimiento para días 30 y 31 del mes:
+     - Cuando dias_pago es 30 ó 31, forzar las fechas de vencimiento
+       al último día real del mes correspondiente (28/29/30/31).
+  7. Estado de cuotas dinámico con fecha de hoy (no hardcoded).
+  8. Actualiza fecha_pago_cuota_inicial para LC2-42-7 (2026-05-01).
 """
 import openpyxl, sys, re, json, math, time, urllib.request, ssl, calendar
 from datetime import datetime, date
@@ -24,6 +19,7 @@ BASE = 'https://qatfoxmarddsocnwycgy.supabase.co/rest/v1/'
 KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFhdGZveG1hcmRkc29jbnd5Y2d5Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MzE1NTI0MiwiZXhwIjoyMDk4NzMxMjQyfQ.cR2f5MTxRt3Tl0ZzDQJ0fFtFFnVelWq0sE5bV4chp0s'
 ctx  = ssl.create_default_context()
 BATCH = 100
+TODAY = date.today().strftime('%Y-%m-%d')
 
 MESES_TEXTO = {
     'ENERO': 1, 'FEBRERO': 2, 'MARZO': 3, 'ABRIL': 4,
@@ -50,6 +46,11 @@ def norm(val):
     if not val: return ''
     s = str(val).strip().upper()
     return re.sub(r'\s+', ' ', s).replace(' - ','-').replace(' -','-').replace('- ','-')
+
+def end_of_month_date(y, m, d):
+    """Returns 'YYYY-MM-DD' clamping d to the real last day of month m in year y."""
+    last = calendar.monthrange(y, m)[1]
+    return f'{y:04d}-{m:02d}-{min(d, last):02d}'
 
 def inferir_fecha(val):
     """
@@ -114,9 +115,64 @@ def map_estado_cuota(est, is_pag, f_venc):
         if 'VENC' in eu: return 'VENCIDA'
         if 'POR VENCER' in eu: return 'POR VENCER'
         if 'AL D' in eu: return 'AL DÍA'
-    if f_venc and f_venc < '2026-09-04':
+    # Estado dinámico basado en fecha de hoy
+    if f_venc and f_venc < TODAY:
         return 'VENCIDA'
     return 'AL DÍA'
+
+def extract_day_from_dias_pago(dias_pago_str):
+    """Extracts the numeric day from 'dias_pago' field. Returns int or None."""
+    if not dias_pago_str:
+        return None
+    m = re.search(r'\b(\d{1,2})\b', str(dias_pago_str))
+    if m:
+        d = int(m.group(1))
+        if 1 <= d <= 31:
+            return d
+    return None
+
+def fix_end_of_month_if_needed(fv_str, expected_day):
+    """
+    If expected_day is 30 or 31, and the stored fecha_vencimiento
+    has drifted (e.g. 2026-07-01 instead of 2026-06-30), fix it.
+    For days 28-31, always snap to last day of the month from the year/month.
+    """
+    if not fv_str or not expected_day:
+        return fv_str
+    if expected_day < 28:
+        return fv_str  # No correction needed for days < 28
+    
+    # Parse the stored date
+    try:
+        y, m, d = int(fv_str[:4]), int(fv_str[5:7]), int(fv_str[8:10])
+    except:
+        return fv_str
+    
+    last_day = calendar.monthrange(y, m)[1]
+    
+    # For expected_day 30 or 31: the vencimiento should be min(expected_day, last_day)
+    correct_day = min(expected_day, last_day)
+    
+    if d != correct_day:
+        # Check if the stored date is just "overflowed" to next month
+        # e.g., June 30+1 = July 1 should stay June 30
+        # We detect overflow: if d is 1, 2, or 3 of a month but expected was end-of-prev-month
+        # In that case, go back to previous month's last day
+        if d <= 5:  # possible overflow from previous month
+            # compute what the previous month's last day is
+            prev_m = m - 1 if m > 1 else 12
+            prev_y = y if m > 1 else y - 1
+            prev_last = calendar.monthrange(prev_y, prev_m)[1]
+            # If we expected day 30/31 and prev_last matches
+            if min(expected_day, prev_last) >= d:
+                correct_y = prev_y
+                correct_m = prev_m
+                correct_d = min(expected_day, prev_last)
+                return f'{correct_y:04d}-{correct_m:02d}-{correct_d:02d}'
+        # Otherwise: clamp to correct day in same month
+        return f'{y:04d}-{m:02d}-{correct_day:02d}'
+    
+    return fv_str
 
 def api_req(method, path, data=None, params='', prefer='return=minimal'):
     url = BASE + path + (('?' + params) if params else '')
@@ -150,7 +206,8 @@ def upload_batch(table, records, label, prefer='return=minimal,resolution=ignore
 
 # ═══════════════════════════════════════════════════════
 print("=" * 64)
-print("  🚀 SINCRONIZACIÓN MAESTRA DEFINITIVA — EXCEL -> SUPABASE")
+print("  🚀 SINCRONIZACIÓN MAESTRA DEFINITIVA v2 — EXCEL -> SUPABASE")
+print(f"  📅 Fecha de hoy: {TODAY}")
 print("=" * 64)
 
 print(f"\nCargando {FILE}...")
@@ -177,6 +234,8 @@ for r in ws_l.iter_rows(min_row=3, values_only=True):
     raw = clean(r[3])
     if not raw or raw == 'ID LOTE': continue
     k = norm(raw)
+    if '8-4' in k and 'LC1' in k and '3' not in k:
+        continue  # Consolidado en LC1-8-3 Y 4
     curr = lotes_info.get(k)
     if not curr: continue
 
@@ -209,13 +268,10 @@ for r in ws_v.iter_rows(min_row=3, values_only=True):
     dir_c = clean(r[16]) if len(r) > 16 else None
     ciu  = clean(r[17]) if len(r) > 17 else None
     vend = clean(r[18]) if len(r) > 18 else None
-    estado = clean(r[2])
 
     if nom:
-        # Caso Rubén Fabián Bustos (lotes cedidos sin cédula obligatoria)
         if 'RUBEN' in nom.upper() and 'BUSTOS' in nom.upper() and not doc:
             doc_final = 'CEDIDO-RUBEN-BUSTOS'
-        # Caso Jeisson Villanueva (pendiente de titular definitivo)
         elif 'JEISSON' in nom.upper() and not doc:
             doc_final = 'PENDIENTE-JEISSON-VILLANUEVA'
         elif not doc:
@@ -234,6 +290,16 @@ for r in ws_v.iter_rows(min_row=3, values_only=True):
 
     if vend:
         vendedores_set.add(vend)
+
+# Asegurar cliente para LC1-8-3 Y 4 consolidado
+if 'ESCRITURA-JOHN-ALBERTO-BOHORQUEZ' not in clientes_dict:
+    clientes_dict['ESCRITURA-JOHN-ALBERTO-BOHORQUEZ'] = {
+        'doc_cliente': 'ESCRITURA-JOHN-ALBERTO-BOHORQUEZ',
+        'nombre': 'JOHN ALBERTO BOHORQUEZ',
+        'celular': None,
+        'direccion': None,
+        'ciudad': 'LA CEIBA'
+    }
 
 vend_records = [{'nombre': v, 'activo': True} for v in sorted(vendedores_set)]
 upload_batch('vendedores', vend_records, 'vendedores')
@@ -262,6 +328,9 @@ for idx, r in enumerate(ws_v.iter_rows(min_row=3, values_only=True), 3):
     if not raw or raw == 'ID LOTE': continue
 
     k = norm(raw)
+    if '8-4' in k and 'LC1' in k and '3' not in k:
+        continue  # Consolidado en LC1-8-3 Y 4
+
     lote_uuid = lotes_map.get(k)
     if not lote_uuid:
         print(f"  ⚠️ Lote sin UUID en BD: {raw}")
@@ -286,6 +355,44 @@ for idx, r in enumerate(ws_v.iter_rows(min_row=3, values_only=True), 3):
 
     f_venta, _ = inferir_fecha(r[5])
     f_ci,    _ = inferir_fecha(r[7])
+    
+    # Caso especial LC1-8-3 Y 4 consolidado (John Alberto Bohorquez)
+    raw_lote_norm = norm(raw)
+    if '8-3' in raw_lote_norm and '4' in raw_lote_norm and 'LC1' in raw_lote_norm:
+        cli_uuid = clientes_id_map.get('ESCRITURA-JOHN-ALBERTO-BOHORQUEZ') or cli_uuid
+        r_precio = to_num(r[3]) or 55482000.0
+        vendedor_final = clean(r[18]) or 'JHON ALBERTO'
+        f_venta = f_venta or '2026-09-17'
+        f_ci = f_ci or '2026-09-17'
+        venta_rec = {
+            'lote_id':                  lote_uuid,
+            'cliente_id':               cli_uuid,
+            'vendedor_nombre':          vendedor_final,
+            'estado':                   'PAGADO EN SU TOTALIDAD',
+            'precio_venta':             r_precio,
+            'apartados':                0.0,
+            'fecha_venta':              f_venta,
+            'valor_cuota_inicial':      r_precio,
+            'fecha_pago_cuota_inicial': f_ci,
+            'medio_pago':               clean(r[8]) or 'TRANSFERENCIA',
+            'saldo_financiado':         0.0,
+            'plazo_cuotas':             1,
+            'valor_cuota':              0.0,
+            'dias_pago':                '-',
+            'comision_vendedor':        0.0,
+            'abonos':                   0.0,
+            'descuentos':               0.0,
+            'saldo':                    0.0,
+        }
+        ventas_insert.append(venta_rec)
+        ventas_lote_norm[k] = venta_rec
+        continue
+
+    # Corregir typo LC2-42-7: 1/5/0206 -> 2026-05-01
+    dias_pago_raw = clean(r[12])
+    if '42-7' in raw_lote_norm and 'LC2' in raw_lote_norm and f_ci is None:
+        f_ci = '2026-05-01'
+        print(f"  🔧 LC2-42-7: fecha_pago_cuota_inicial forzada a 2026-05-01 (typo en Excel corregido)")
 
     venta_rec = {
         'lote_id':                  lote_uuid,
@@ -301,7 +408,7 @@ for idx, r in enumerate(ws_v.iter_rows(min_row=3, values_only=True), 3):
         'saldo_financiado':         to_num(r[9]),
         'plazo_cuotas':             int(to_num(r[10])) if to_num(r[10]) else None,
         'valor_cuota':              to_num(r[11]),
-        'dias_pago':                clean(r[12]),
+        'dias_pago':                dias_pago_raw,
         'comision_vendedor':        to_num(r[19]),
         'abonos':                   to_num(r[20]),
         'descuentos':               to_num(r[21]),
@@ -324,6 +431,7 @@ cuotas_insert = []
 lotes_sin_venta = 0
 pagos_multiples = 0
 fechas_invertidas = 0
+fechas_eom_corregidas = 0  # end-of-month corrections
 
 for idx, r in enumerate(ws_p.iter_rows(min_row=4, values_only=True), 4):
     if not any(r): continue
@@ -331,6 +439,9 @@ for idx, r in enumerate(ws_p.iter_rows(min_row=4, values_only=True), 4):
     if not raw or raw == 'ID LOTE': continue
 
     k = norm(raw)
+    if '8-4' in k and 'LC1' in k and '3' not in k:
+        continue  # Consolidado en LC1-8-3 Y 4
+
     lote_uuid = lotes_map.get(k)
     venta_uuid = lote_to_venta_id.get(lote_uuid) if lote_uuid else None
 
@@ -341,6 +452,8 @@ for idx, r in enumerate(ws_p.iter_rows(min_row=4, values_only=True), 4):
     v_rec = ventas_lote_norm.get(k, {})
     plazo_contrato = v_rec.get('plazo_cuotas') or 0
     cuota_contrato = v_rec.get('valor_cuota') or 0.0
+    dias_pago_str  = v_rec.get('dias_pago') or ''
+    expected_day   = extract_day_from_dias_pago(dias_pago_str)
 
     for n in range(1, 37):
         cs = 10 + (n - 1) * 6
@@ -360,9 +473,9 @@ for idx, r in enumerate(ws_p.iter_rows(min_row=4, values_only=True), 4):
 
         # Cuota relevante si: está dentro del plazo del contrato, o tiene pago real / vencida
         if plazo_contrato > 0 and n <= plazo_contrato:
-            pass # Válida de su plan
+            pass  # Válida de su plan
         elif is_pag or is_venc or has_vc:
-            pass # Extra / especial con datos
+            pass  # Extra / especial con datos
         else:
             continue
 
@@ -370,8 +483,18 @@ for idx, r in enumerate(ws_p.iter_rows(min_row=4, values_only=True), 4):
         fv_str, fv_obs = inferir_fecha(fv_raw)
         fp_str, fp_obs = inferir_fecha(fp_raw)
 
+        # ── CORRECCIÓN END-OF-MONTH ──────────────────────────────
+        # Si dias_pago es 28, 29, 30 o 31: corregir fecha_vencimiento
+        # al último día real del mes (o al día esperado si < último día)
+        if expected_day and expected_day >= 28 and fv_str:
+            fv_fixed = fix_end_of_month_if_needed(fv_str, expected_day)
+            if fv_fixed != fv_str:
+                fechas_eom_corregidas += 1
+                fv_str = fv_fixed
+        # ─────────────────────────────────────────────────────────
+
         # Caso especial LC1-11-9 Cuota 4 confirmado por el usuario como 11 de mayo de 2025
-        if '11 - 9' in k and 'LC1' in k and n == 4:
+        if '11-9' in k and 'LC1' in k and n == 4:
             fp_str = '2025-05-11'
             fp_obs = 'Fecha confirmada 11/05/2025'
 
@@ -409,8 +532,9 @@ for idx, r in enumerate(ws_p.iter_rows(min_row=4, values_only=True), 4):
         })
 
 print(f"  ✓ {len(cuotas_insert)} cuotas preparadas para inserción.")
-print(f"    • Pagos múltiples registrados: {pagos_multiples}")
-print(f"    • Fechas inferidas/ajustadas:  {fechas_invertidas}")
+print(f"    • Pagos múltiples registrados:       {pagos_multiples}")
+print(f"    • Fechas inferidas/ajustadas:        {fechas_invertidas}")
+print(f"    • Fechas end-of-month corregidas:    {fechas_eom_corregidas}")
 
 upload_batch('cuotas', cuotas_insert, 'cuotas')
 
@@ -433,4 +557,5 @@ print(f"  • Cuotas PAGADAS:            {cuotas_pagadas_count}")
 print(f"  • Cuotas VENCIDAS (mora):    {cuotas_vencidas_count}")
 print(f"  • Cuotas AL DÍA / FUTURAS:   {cuotas_aldia_count}")
 print(f"  • Recaudo Cuotas en BD:      ${total_recaudo_cuotas:,.2f}")
+print(f"  • Fechas EOM corregidas:     {fechas_eom_corregidas}")
 print("=" * 64)
