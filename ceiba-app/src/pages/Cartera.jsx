@@ -3,7 +3,7 @@ import {
   AlertTriangle, Clock, CheckCircle2, Search,
   RefreshCw, DollarSign, TrendingUp, Users, FileText, X,
   Plus, Edit2, Download, Table, Calendar, ArrowRight, ShieldAlert, Zap,
-  ShieldCheck, Tag
+  ShieldCheck, Tag, Receipt
 } from 'lucide-react';
 
 import { useAuth } from '../context/AuthContext';
@@ -19,6 +19,9 @@ import Modal from '../components/Modal';
 import ModalAbonoCascada from '../components/ModalAbonoCascada';
 import ModalEditarCuota from '../components/ModalEditarCuota';
 import ModalEditarContrato from '../components/ModalEditarContrato';
+import ModalRegistrarPagoRecibo from '../components/ModalRegistrarPagoRecibo';
+import ReciboCajaView from '../components/ReciboCajaView';
+import { obtenerRecibosPorVenta } from '../lib/api/recibosApi';
 import Pagination from '../components/Pagination';
 
 
@@ -85,6 +88,13 @@ export default function Cartera() {
   const [showAbonoModal, setShowAbonoModal] = useState(false);
   const [editingCuota, setEditingCuota] = useState(null);
   const [editingContrato, setEditingContrato] = useState(null);
+
+  // Recibos de Caja Menor
+  const [recibosVenta, setRecibosVenta] = useState([]);
+  const [showModalPagoRecibo, setShowModalPagoRecibo] = useState(false);
+  const [pagoReciboVenta, setPagoReciboVenta] = useState(null);
+  const [pagoReciboCuota, setPagoReciboCuota] = useState(null);
+  const [reciboParaVer, setReciboParaVer] = useState(null);
 
   const load = useCallback(async (force = false) => {
     setLoading(true);
@@ -238,8 +248,12 @@ export default function Cartera() {
     setActiveTab('resumen');
     setLoadingCuotas(true);
     try {
-      const cuotas = await getCuotasByVenta(v.id);
-      setCuotasVenta(cuotas);
+      const [cuotas, recs] = await Promise.all([
+        getCuotasByVenta(v.id),
+        obtenerRecibosPorVenta(v.id)
+      ]);
+      setCuotasVenta(cuotas || []);
+      setRecibosVenta(recs || []);
     } catch (e) {
       console.error(e);
     } finally {
@@ -250,8 +264,12 @@ export default function Cartera() {
   const refreshCuotas = async (ventaId) => {
     if (!ventaId) return;
     try {
-      const cuotas = await getCuotasByVenta(ventaId);
-      setCuotasVenta(cuotas);
+      const [cuotas, recs] = await Promise.all([
+        getCuotasByVenta(ventaId),
+        obtenerRecibosPorVenta(ventaId)
+      ]);
+      setCuotasVenta(cuotas || []);
+      setRecibosVenta(recs || []);
     } catch (e) {
       console.error(e);
     }
@@ -398,6 +416,23 @@ export default function Cartera() {
         </div>
 
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <button
+            className="btn btn-primary"
+            style={{
+              fontSize: 12.5, gap: 7, padding: '8px 16px', fontWeight: 800,
+              background: '#16a34a', borderColor: '#16a34a',
+              boxShadow: '0 2px 4px rgba(22, 163, 74, 0.2)'
+            }}
+            onClick={() => {
+              setPagoReciboVenta(null);
+              setPagoReciboCuota(null);
+              setShowModalPagoRecibo(true);
+            }}
+            title="Registrar abono a cuota o pago parcial y emitir recibo oficial"
+          >
+            <Receipt size={16} /> 💳 Registrar Pago / Recibo
+          </button>
+
           <button
             className="btn btn-ghost"
             style={{
@@ -869,13 +904,14 @@ export default function Cartera() {
             <div style={{ display: 'flex', gap: 8 }}>
               <button
                 className="btn btn-primary"
-                style={{ fontSize: 12, padding: '6px 12px', background: '#16a34a', gap: 6 }}
+                style={{ fontSize: 12, padding: '6px 14px', background: '#16a34a', borderColor: '#16a34a', gap: 6, fontWeight: 700 }}
                 onClick={() => {
-                  setAbonoVenta(selected);
-                  setShowAbonoModal(true);
+                  setPagoReciboVenta(selected);
+                  setPagoReciboCuota(null);
+                  setShowModalPagoRecibo(true);
                 }}
               >
-                <DollarSign size={14} /> Registrar Abono
+                <Receipt size={14} /> 🧾 Registrar Pago / Recibo
               </button>
               <button
                 className="btn btn-ghost"
@@ -885,7 +921,7 @@ export default function Cartera() {
                 <Edit2 size={13} /> Editar Contrato
               </button>
               <button className="btn btn-ghost" style={{ padding: '6px 10px' }}
-                onClick={() => { setSelected(null); setCuotasVenta([]); }}>✕</button>
+                onClick={() => { setSelected(null); setCuotasVenta([]); setRecibosVenta([]); }}>✕</button>
             </div>
           </div>
 
@@ -895,6 +931,7 @@ export default function Cartera() {
               { id: 'resumen', label: 'Resumen Financiero', icon: <FileText size={14} /> },
               { id: 'matriz',  label: 'Estado de Cuenta (Matriz)', icon: <Table size={14} /> },
               { id: 'cuotas',  label: `Tabla de Cuotas (${cuotasVenta.length})`, icon: <Calendar size={14} /> },
+              { id: 'recibos', label: `🧾 Recibos de Caja (${recibosVenta.length})`, icon: <Receipt size={14} /> },
             ].map(tab => (
               <button
                 key={tab.id}
@@ -1006,31 +1043,169 @@ export default function Cartera() {
                       </tr>
                     </thead>
                     <tbody>
-                      {cuotasVenta.map((c) => (
-                        <tr key={c.id} style={{ borderBottom: '1px solid var(--border)' }}>
-                          <td style={{ padding: '6px 10px', fontWeight: 600 }}>Cuota {c.numero_cuota}</td>
-                          <td style={{ padding: '6px 10px' }}>{formatDate(c.fecha_vencimiento)}</td>
-                          <td style={{ padding: '6px 10px', textAlign: 'right' }}>{formatCOP(c.valor_cuota)}</td>
-                          <td style={{ padding: '6px 10px', textAlign: 'right', color: '#16a34a', fontWeight: 600 }}>
-                            {formatCOP(c.valor_pagado)}
-                          </td>
-                          <td style={{ padding: '6px 10px' }}>{c.fecha_pago ? formatDate(c.fecha_pago) : '—'}</td>
-                          <td style={{ padding: '6px 10px', textAlign: 'center' }}>
+                      {cuotasVenta.map((c) => {
+                        const cuotaRecs = recibosVenta.filter(r => r.cuota_id === c.id);
+                        return (
+                          <tr key={c.id} style={{ borderBottom: '1px solid var(--border)' }}>
+                            <td style={{ padding: '6px 10px', fontWeight: 600 }}>
+                              <div>Cuota {c.numero_cuota}</div>
+                              {/* Badges de recibos emitidos en esta cuota */}
+                              {cuotaRecs.length > 0 && (
+                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 3 }}>
+                                  {cuotaRecs.map(r => (
+                                    <button
+                                      key={r.numero_recibo}
+                                      type="button"
+                                      onClick={(e) => { e.stopPropagation(); setReciboParaVer(r); }}
+                                      style={{
+                                        display: 'inline-flex', alignItems: 'center', gap: 3,
+                                        background: '#eff6ff', color: '#1d4ed8', border: '1px solid #bfdbfe',
+                                        padding: '1px 6px', borderRadius: 4, fontSize: 10, fontWeight: 700,
+                                        cursor: 'pointer'
+                                      }}
+                                      title="Ver / Imprimir Recibo Oficial"
+                                    >
+                                      <Receipt size={10} /> Recibo #{r.numero_recibo} ({formatCOP(r.valor)})
+                                    </button>
+                                  ))}
+                                </div>
+                              )}
+                            </td>
+                            <td style={{ padding: '6px 10px' }}>{formatDate(c.fecha_vencimiento)}</td>
+                            <td style={{ padding: '6px 10px', textAlign: 'right' }}>{formatCOP(c.valor_cuota)}</td>
+                            <td style={{ padding: '6px 10px', textAlign: 'right', color: '#16a34a', fontWeight: 600 }}>
+                              {formatCOP(c.valor_pagado)}
+                            </td>
+                            <td style={{ padding: '6px 10px' }}>{c.fecha_pago ? formatDate(c.fecha_pago) : '—'}</td>
+                            <td style={{ padding: '6px 10px', textAlign: 'center' }}>
+                              <span style={{
+                                padding: '2px 8px', borderRadius: 4, fontSize: 10, fontWeight: 700,
+                                background: c.estado_cuota === 'PAGA' ? '#f0f9ff' : c.estado_cuota === 'VENCIDA' ? '#fef2f2' : '#f0fdf4',
+                                color: c.estado_cuota === 'PAGA' ? '#0284c7' : c.estado_cuota === 'VENCIDA' ? '#dc2626' : '#16a34a'
+                              }}>
+                                {c.estado_cuota}
+                              </span>
+                            </td>
+                            <td style={{ padding: '6px 10px', textAlign: 'center' }}>
+                              <div style={{ display: 'flex', gap: 4, justifyContent: 'center' }}>
+                                <button
+                                  className="btn btn-ghost"
+                                  style={{
+                                    padding: '3px 8px', fontSize: 11,
+                                    color: '#15803d', borderColor: '#86efac', background: '#f0fdf4',
+                                    fontWeight: 700, gap: 4
+                                  }}
+                                  onClick={() => {
+                                    setPagoReciboVenta(selected);
+                                    setPagoReciboCuota(c);
+                                    setShowModalPagoRecibo(true);
+                                  }}
+                                  title="Abonar a esta cuota y emitir recibo oficial"
+                                >
+                                  <Receipt size={11} /> Abonar
+                                </button>
+
+                                <button
+                                  className="btn btn-ghost"
+                                  style={{ padding: '3px 8px', fontSize: 11 }}
+                                  onClick={() => setEditingCuota(c)}
+                                  title="Ajuste manual de cuota"
+                                >
+                                  <Edit2 size={11} /> Editar
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* TAB 4: HISTORIAL DE RECIBOS DE CAJA MENOR */}
+          {activeTab === 'recibos' && (
+            <div>
+              {recibosVenta.length === 0 ? (
+                <div style={{ padding: '40px 20px', textAlign: 'center', background: '#f8fafc', borderRadius: 8, border: '1px dashed #cbd5e1' }}>
+                  <Receipt size={36} color="#94a3b8" style={{ margin: '0 auto 10px' }} />
+                  <div style={{ fontSize: 14, fontWeight: 700, color: '#334155' }}>
+                    No hay recibos de caja emitidos para este contrato aún.
+                  </div>
+                  <div style={{ fontSize: 12, color: '#64748b', marginTop: 4, marginBottom: 16 }}>
+                    Cada pago registrado generará su recibo numerado con valor en letras listo para imprimir.
+                  </div>
+                  <button
+                    className="btn btn-primary"
+                    style={{ background: '#16a34a', borderColor: '#16a34a', fontSize: 12.5, padding: '8px 16px', gap: 6, fontWeight: 700 }}
+                    onClick={() => {
+                      setPagoReciboVenta(selected);
+                      setPagoReciboCuota(null);
+                      setShowModalPagoRecibo(true);
+                    }}
+                  >
+                    <Receipt size={15} /> Registrar Pago y Emitir Recibo
+                  </button>
+                </div>
+              ) : (
+                <div style={{ maxHeight: 380, overflowY: 'auto' }}>
+                  <table style={{ width: '100%', fontSize: 12 }}>
+                    <thead>
+                      <tr style={{ background: 'var(--bg-base)' }}>
+                        <th style={{ padding: '8px 10px', textAlign: 'left' }}>Nº Recibo</th>
+                        <th style={{ padding: '8px 10px', textAlign: 'left' }}>Fecha Pago</th>
+                        <th style={{ padding: '8px 10px', textAlign: 'left' }}>Cuota / Concepto</th>
+                        <th style={{ padding: '8px 10px', textAlign: 'right' }}>Valor Pagado</th>
+                        <th style={{ padding: '8px 10px', textAlign: 'center' }}>Medio de Pago</th>
+                        <th style={{ padding: '8px 10px', textAlign: 'center' }}>Acción</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {recibosVenta.map((r) => (
+                        <tr key={r.numero_recibo} style={{ borderBottom: '1px solid var(--border)' }}>
+                          <td style={{ padding: '8px 10px' }}>
                             <span style={{
-                              padding: '2px 8px', borderRadius: 4, fontSize: 10, fontWeight: 700,
-                              background: c.estado_cuota === 'PAGA' ? '#f0f9ff' : c.estado_cuota === 'VENCIDA' ? '#fef2f2' : '#f0fdf4',
-                              color: c.estado_cuota === 'PAGA' ? '#0284c7' : c.estado_cuota === 'VENCIDA' ? '#dc2626' : '#16a34a'
+                              fontFamily: 'monospace', fontWeight: 800, fontSize: 12,
+                              color: '#dc2626', background: '#fef2f2', border: '1px solid #fecaca',
+                              padding: '2px 8px', borderRadius: 4
                             }}>
-                              {c.estado_cuota}
+                              Nº {String(r.numero_recibo).padStart(4, '0')}
                             </span>
                           </td>
-                          <td style={{ padding: '6px 10px', textAlign: 'center' }}>
+                          <td style={{ padding: '8px 10px', fontWeight: 600 }}>{formatDate(r.fecha_pago)}</td>
+                          <td style={{ padding: '8px 10px' }}>
+                            <div style={{ fontWeight: 600, color: '#1e293b' }}>
+                              {r.numero_cuota ? `Cuota #${r.numero_cuota}` : 'Abono / Pago'}
+                              {r.es_pago_completo ? (
+                                <span style={{ marginLeft: 6, fontSize: 10, color: '#15803d', fontWeight: 700 }}>✓ Total</span>
+                              ) : (
+                                <span style={{ marginLeft: 6, fontSize: 10, color: '#d97706', fontWeight: 700 }}>⚠ Parcial</span>
+                              )}
+                            </div>
+                            <div style={{ fontSize: 11, color: '#64748b' }}>{r.concepto}</div>
+                          </td>
+                          <td style={{ padding: '8px 10px', textAlign: 'right', fontWeight: 800, color: '#15803d', fontSize: 13 }}>
+                            {formatCOP(r.valor)}
+                          </td>
+                          <td style={{ padding: '8px 10px', textAlign: 'center' }}>
+                            <span style={{ fontSize: 10.5, background: '#f1f5f9', padding: '2px 8px', borderRadius: 12, fontWeight: 600 }}>
+                              {r.medio_pago || 'Transferencia'}
+                            </span>
+                          </td>
+                          <td style={{ padding: '8px 10px', textAlign: 'center' }}>
                             <button
                               className="btn btn-ghost"
-                              style={{ padding: '3px 8px', fontSize: 11 }}
-                              onClick={() => setEditingCuota(c)}
+                              style={{
+                                padding: '3px 10px', fontSize: 11,
+                                color: '#15803d', borderColor: '#86efac', background: '#f0fdf4',
+                                fontWeight: 700, gap: 4
+                              }}
+                              onClick={() => setReciboParaVer(r)}
+                              title="Ver / Imprimir este recibo oficial"
                             >
-                              <Edit2 size={11} /> Editar
+                              <Eye size={12} /> Ver Recibo
                             </button>
                           </td>
                         </tr>
@@ -1087,6 +1262,32 @@ export default function Cartera() {
       {showModalLogs && (
         <ModalHistorialAcciones
           onClose={() => setShowModalLogs(false)}
+        />
+      )}
+
+      {/* Modal Registrar Pago y Emitir Recibo Oficial */}
+      {showModalPagoRecibo && (
+        <ModalRegistrarPagoRecibo
+          venta={pagoReciboVenta}
+          cuotaPreseleccionada={pagoReciboCuota}
+          allVentas={allCartera}
+          onClose={() => {
+            setShowModalPagoRecibo(false);
+            setPagoReciboVenta(null);
+            setPagoReciboCuota(null);
+          }}
+          onSuccess={() => {
+            load(true);
+            if (selected) refreshCuotas(selected.id);
+          }}
+        />
+      )}
+
+      {/* Modal Ver / Imprimir Recibo Individual */}
+      {reciboParaVer && (
+        <ReciboCajaView
+          recibo={reciboParaVer}
+          onClose={() => setReciboParaVer(null)}
         />
       )}
     </div>

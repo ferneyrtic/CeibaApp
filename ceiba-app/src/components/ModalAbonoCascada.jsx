@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { DollarSign, CheckCircle, AlertCircle, Calendar, ArrowRight, X } from 'lucide-react';
 import Modal from './Modal';
+import SelectorLoteBuscador from './SelectorLoteBuscador';
 import { formatCOP, formatDate } from '../utils/helpers';
 import { simularAbonoCascada, registrarAbonoCascada, getCuotasByVenta } from '../lib/api/cuotas';
 
@@ -143,29 +144,15 @@ export default function ModalAbonoCascada({ venta, ventaPreseleccionada, allVent
       )}
 
       <form onSubmit={handleSubmit}>
-        {/* Selector de Contrato si no vino preseleccionado */}
+        {/* Selector de Contrato con Buscador Interactivo */}
         {!venta && allVentas.length > 0 && (
-          <div style={{ marginBottom: 14 }}>
-            <label style={{ fontSize: 12, fontWeight: 600, display: 'block', marginBottom: 4 }}>
-              Contrato / Lote:
-            </label>
-            <select
-              value={selectedVentaId}
-              onChange={e => setSelectedVentaId(e.target.value)}
-              className="search-input"
-              style={{ width: '100%' }}
-              required
-            >
-              <option value="">Selecciona un lote...</option>
-              {allVentas
-                .filter(v => (v.saldo || 0) > 0 || v.estado === 'VENDIDO')
-                .map(v => (
-                  <option key={v.id} value={v.id}>
-                    {v.id_lote || v.lotes?.id_lote} — {v.cliente_nombre || v.clientes?.nombre} (Saldo: {formatCOP(v.saldo)})
-                  </option>
-                ))}
-            </select>
-          </div>
+          <SelectorLoteBuscador
+            ventas={allVentas.filter(v => (v.saldo || 0) > 0 || v.estado === 'VENDIDO')}
+            selectedVentaId={selectedVentaId}
+            onSelect={(v) => setSelectedVentaId(v ? (v.id || v.venta_id) : '')}
+            label="Contrato / Lote:"
+            placeholder="Buscar por lote (ej. LC1 - 7 - 19) o cliente..."
+          />
         )}
 
         {/* Info del contrato actual */}

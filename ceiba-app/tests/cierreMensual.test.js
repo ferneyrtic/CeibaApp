@@ -112,11 +112,21 @@ describe('cierreApi - getCierreMensualData', () => {
               lte: () => ({
                 order: async () => ({ data: mockIniciales, error: null })
               })
+            }),
+            in: async () => ({ data: [], error: null })
+          })
+        };
+      }
+      if (table === 'datos_maestros') {
+        return {
+          select: () => ({
+            eq: () => ({
+              order: async () => ({ data: [], error: null })
             })
           })
         };
       }
-      return { select: () => ({}) };
+      return { select: () => ({ eq: () => ({ order: async () => ({ data: [] }) }) }) };
     });
 
     const data = await getCierreMensualData(2026, 9, true);

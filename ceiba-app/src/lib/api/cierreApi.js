@@ -1,4 +1,5 @@
 import { supabase } from '../supabase';
+import { obtenerRecibosEnRango } from './recibosApi';
 
 // Cache en memoria por periodo para navegación instantánea
 let cierreCache = {};
@@ -37,8 +38,8 @@ export const getCierreMensualData = async (param1, param2, forceRefresh = false)
     return cierreCache[periodKey];
   }
 
-  // 1. Consultar en paralelo Cuotas y Cuotas Iniciales con fecha de pago en el rango
-  const [cuotasRes, inicialesRes] = await Promise.all([
+  // 1. Consultar en paralelo Cuotas, Cuotas Iniciales y Recibos Oficiales en el rango
+  const [cuotasRes, inicialesRes, recibosRango] = await Promise.all([
     supabase
       .from('cuotas')
       .select(`
@@ -64,7 +65,9 @@ export const getCierreMensualData = async (param1, param2, forceRefresh = false)
       `)
       .gte('fecha_pago_cuota_inicial', fechaDesde)
       .lte('fecha_pago_cuota_inicial', fechaHasta)
-      .order('fecha_pago_cuota_inicial', { ascending: true })
+      .order('fecha_pago_cuota_inicial', { ascending: true }),
+
+    obtenerRecibosEnRango(fechaDesde, fechaHasta).catch(() => [])
   ]);
 
   if (cuotasRes.error) throw cuotasRes.error;
@@ -72,9 +75,14 @@ export const getCierreMensualData = async (param1, param2, forceRefresh = false)
 
   const rawCuotas = cuotasRes.data || [];
   const rawIniciales = inicialesRes.data || [];
+  const rawRecibos = Array.isArray(recibosRango) ? recibosRango : [];
+
+  // Mapear IDs de cuotas que tienen recibos emitidos para evitar duplicados
+  const recibosCuotaIds = new Set(rawRecibos.filter(r => r.cuota_id).map(r => r.cuota_id));
 
   // 2. Normalizar y Unificar en Lista de Ingresos Efectivos
-  const cuotasMes = rawCuotas
+  const cuotasMesLegacy = rawCuotas
+    .filter(c => !recibosCuotaIds.has(c.id))
     .map(c => {
       const valor = c.valor_pagado !== null && c.valor_pagado !== undefined
         ? Number(c.valor_pagado)
@@ -101,6 +109,34 @@ export const getCierreMensualData = async (param1, param2, forceRefresh = false)
       };
     })
     .filter(c => c.valor > 0);
+
+  // Recibos Oficiales emitidos en el período (maneja pagos parciales exactos por día)
+  const recibosIngresos = rawRecibos.map(r => {
+    const valor = Number(r.valor) || 0;
+    return {
+      id: `recibo-${r.numero_recibo}`,
+      rawId: r.cuota_id || r.venta_id,
+      tipo: 'CUOTA_MENSUAL',
+      tipoLabel: r.es_pago_completo ? 'Cuota Mensual' : 'Abono Parcial (Recibo)',
+      concepto: r.concepto || (r.numero_cuota ? `Cuota #${r.numero_cuota}` : 'Abono'),
+      numero_cuota: r.numero_cuota || 0,
+      fecha_pago: r.fecha_pago,
+      fecha_vencimiento: r.fecha_pago,
+      valor,
+      medio_pago: r.medio_pago || 'Transferencia',
+      lote: r.lote_id_str || '—',
+      cliente: r.cliente_nombre || '—',
+      doc_cliente: r.cliente_doc || '—',
+      celular: '—',
+      vendedor: r.vendedor_nombre || 'Secretaría',
+      comprobante_url: null,
+      observacion: `Recibo Oficial #${r.numero_recibo}${r.observaciones ? ' | ' + r.observaciones : ''}`,
+      venta_id: r.venta_id,
+      numero_recibo: r.numero_recibo
+    };
+  }).filter(r => r.valor > 0);
+
+  const cuotasMes = [...cuotasMesLegacy, ...recibosIngresos];
 
   const inicialesMes = rawIniciales
     .map(v => {
