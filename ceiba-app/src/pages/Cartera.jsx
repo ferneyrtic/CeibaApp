@@ -1056,16 +1056,16 @@ export default function Cartera() {
                                     <button
                                       key={r.numero_recibo}
                                       type="button"
-                                      onClick={(e) => { e.stopPropagation(); setReciboParaVer(r); }}
+                                      onClick={(e) => { e.stopPropagation(); setReciboParaVer({ ...r, autoDownload: true }); }}
                                       style={{
-                                        display: 'inline-flex', alignItems: 'center', gap: 3,
+                                        display: 'inline-flex', alignItems: 'center', gap: 4,
                                         background: '#eff6ff', color: '#1d4ed8', border: '1px solid #bfdbfe',
-                                        padding: '1px 6px', borderRadius: 4, fontSize: 10, fontWeight: 700,
+                                        padding: '2px 8px', borderRadius: 4, fontSize: 10.5, fontWeight: 700,
                                         cursor: 'pointer'
                                       }}
-                                      title="Ver / Imprimir Recibo Oficial"
+                                      title="Clic para ver y descargar este Recibo Oficial en PDF"
                                     >
-                                      <Receipt size={10} /> Recibo #{r.numero_recibo} ({formatCOP(r.valor)})
+                                      <Receipt size={11} /> Recibo #{r.numero_recibo} ({formatCOP(r.valor)}) <Download size={11} color="#2563eb" style={{ marginLeft: 2 }} />
                                     </button>
                                   ))}
                                 </div>
@@ -1195,18 +1195,33 @@ export default function Cartera() {
                             </span>
                           </td>
                           <td style={{ padding: '8px 10px', textAlign: 'center' }}>
-                            <button
-                              className="btn btn-ghost"
-                              style={{
-                                padding: '3px 10px', fontSize: 11,
-                                color: '#15803d', borderColor: '#86efac', background: '#f0fdf4',
-                                fontWeight: 700, gap: 4
-                              }}
-                              onClick={() => setReciboParaVer(r)}
-                              title="Ver / Imprimir este recibo oficial"
-                            >
-                              <Eye size={12} /> Ver Recibo
-                            </button>
+                            <div style={{ display: 'flex', gap: 6, justifyContent: 'center' }}>
+                              <button
+                                className="btn btn-ghost"
+                                style={{
+                                  padding: '3px 8px', fontSize: 11,
+                                  color: '#15803d', borderColor: '#86efac', background: '#f0fdf4',
+                                  fontWeight: 700, gap: 4
+                                }}
+                                onClick={() => setReciboParaVer(r)}
+                                title="Ver / Imprimir este recibo oficial"
+                              >
+                                <Eye size={12} /> Ver
+                              </button>
+
+                              <button
+                                className="btn btn-primary"
+                                style={{
+                                  padding: '3px 8px', fontSize: 11,
+                                  background: '#16a34a', borderColor: '#16a34a',
+                                  fontWeight: 700, gap: 4
+                                }}
+                                onClick={() => setReciboParaVer({ ...r, autoDownload: true })}
+                                title="Descargar este recibo oficial en PDF"
+                              >
+                                <Download size={12} /> Descargar PDF
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       ))}

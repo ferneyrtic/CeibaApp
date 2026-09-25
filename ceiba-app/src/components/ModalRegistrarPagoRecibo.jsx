@@ -162,8 +162,11 @@ export default function ModalRegistrarPagoRecibo({
         clienteDoc: cliDoc
       });
 
-      // Abrir recibo generado en pantalla
-      setReciboGenerado(res.recibo);
+      // Abrir recibo generado en pantalla con descarga automática del PDF en el navegador
+      setReciboGenerado({
+        ...res.recibo,
+        autoDownload: true
+      });
 
       if (onSuccess) onSuccess();
     } catch (err) {
@@ -179,6 +182,7 @@ export default function ModalRegistrarPagoRecibo({
     return (
       <ReciboCajaView
         recibo={reciboGenerado}
+        autoDownload={true}
         onClose={() => {
           setReciboGenerado(null);
           onClose();

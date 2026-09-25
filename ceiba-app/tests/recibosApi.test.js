@@ -169,4 +169,42 @@ describe('recibosApi - Gestión de Recibos de Caja Menor', () => {
     expect(cuotaActualizada.fecha_pago).toBe('2026-10-15');
     expect(cuotaActualizada.observacion).toContain('Recibo #3176');
   });
+
+  it('no arroja excepción ni falla si datos_maestros rechaza la fila por violación de RLS', async () => {
+    supabase.from.mockImplementation((table) => {
+      if (table === 'datos_maestros') {
+        return {
+          select: () => ({
+            eq: () => ({
+              order: () => ({
+                limit: async () => ({ data: [], error: null })
+              })
+            })
+          }),
+          insert: () => ({
+            select: () => ({
+              single: async () => ({
+                data: null,
+                error: { code: '42501', message: 'new row violates row-level security policy for table "datos_maestros"' }
+              })
+            })
+          })
+        };
+      }
+      return {
+        select: () => ({ eq: () => ({ single: async () => ({ data: {}, error: null }) }) })
+      };
+    });
+
+    // crearReciboCaja NO debe fallar aunque datos_maestros tenga RLS
+    const res = await crearReciboCaja({
+      monto: 300000,
+      valor: 300000,
+      cliente_nombre: 'Pedro Perez'
+    });
+
+    expect(res).toBeDefined();
+    expect(res.numero_recibo).toBe(3175);
+    expect(res.valor_letras).toBe('TRESCIENTOS MIL PESOS M/CTE');
+  });
 });

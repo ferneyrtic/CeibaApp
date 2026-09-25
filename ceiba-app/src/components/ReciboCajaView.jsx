@@ -1,10 +1,12 @@
-import React, { useRef } from 'react';
-import { Printer, Download, X, Check, Copy } from 'lucide-react';
+import React, { useRef, useState, useEffect } from 'react';
+import { Printer, Download, X, Check, Copy, Loader2 } from 'lucide-react';
 import { formatCOP } from '../utils/helpers';
 import { numeroALetrasCOP } from '../utils/numeroALetras';
 
-export default function ReciboCajaView({ recibo, onClose, onPrint }) {
+export default function ReciboCajaView({ recibo, onClose, onPrint, autoDownload = false }) {
   const reciboRef = useRef(null);
+  const [descargado, setDescargado] = useState(false);
+  const [generandoPdf, setGenerandoPdf] = useState(false);
 
   if (!recibo) return null;
 
@@ -25,6 +27,8 @@ export default function ReciboCajaView({ recibo, onClose, onPrint }) {
   };
 
   const handleDownloadPDF = async () => {
+    if (generandoPdf) return;
+    setGenerandoPdf(true);
     try {
       const { default: html2canvas } = await import('html2canvas');
       const { default: jsPDF } = await import('jspdf');
@@ -48,11 +52,22 @@ export default function ReciboCajaView({ recibo, onClose, onPrint }) {
       const pdfHeight = pdf.internal.pageSize.getHeight();
       pdf.addImage(imgData, 'PNG', 8, 8, pdfWidth - 16, pdfHeight - 16);
       pdf.save(`Recibo_Caja_${numRecibo}_${recibo.lote_id_str || 'Ceiba'}.pdf`);
+      setDescargado(true);
     } catch (err) {
       console.error('Error generando PDF del recibo:', err);
-      window.print();
+    } finally {
+      setGenerandoPdf(false);
     }
   };
+
+  useEffect(() => {
+    if (autoDownload || recibo?.autoDownload) {
+      const timer = setTimeout(() => {
+        handleDownloadPDF();
+      }, 450);
+      return () => clearTimeout(timer);
+    }
+  }, [autoDownload, recibo?.autoDownload]);
 
   return (
     <div style={{
@@ -114,16 +129,46 @@ export default function ReciboCajaView({ recibo, onClose, onPrint }) {
           borderBottom: '1px solid #e2e8f0'
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <span style={{
-              background: '#dcfce7',
-              color: '#15803d',
-              padding: '3px 10px',
-              borderRadius: 20,
-              fontSize: 12,
-              fontWeight: 800
-            }}>
-              ✓ Recibo Registrado en el Sistema
-            </span>
+            {descargado ? (
+              <span style={{
+                background: '#dcfce7',
+                color: '#15803d',
+                padding: '4px 12px',
+                borderRadius: 20,
+                fontSize: 12,
+                fontWeight: 800,
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6
+              }}>
+                <Check size={14} /> Recibo descargado en tu equipo (PDF)
+              </span>
+            ) : generandoPdf ? (
+              <span style={{
+                background: '#e0f2fe',
+                color: '#0284c7',
+                padding: '4px 12px',
+                borderRadius: 20,
+                fontSize: 12,
+                fontWeight: 700,
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6
+              }}>
+                <Loader2 size={14} className="animate-spin" /> Generando y descargando PDF...
+              </span>
+            ) : (
+              <span style={{
+                background: '#dcfce7',
+                color: '#15803d',
+                padding: '3px 10px',
+                borderRadius: 20,
+                fontSize: 12,
+                fontWeight: 800
+              }}>
+                ✓ Recibo Registrado en el Sistema
+              </span>
+            )}
             <span style={{ fontSize: 13, fontWeight: 700, color: '#334155' }}>
               Consecutivo: Nº {numRecibo}
             </span>
@@ -148,6 +193,7 @@ export default function ReciboCajaView({ recibo, onClose, onPrint }) {
 
             <button
               onClick={handleDownloadPDF}
+              disabled={generandoPdf}
               className="btn btn-primary"
               style={{
                 fontSize: 12,
@@ -155,10 +201,12 @@ export default function ReciboCajaView({ recibo, onClose, onPrint }) {
                 padding: '6px 14px',
                 background: '#16a34a',
                 borderColor: '#16a34a',
-                fontWeight: 700
+                fontWeight: 700,
+                opacity: generandoPdf ? 0.7 : 1
               }}
             >
-              <Download size={15} /> Descargar PDF
+              {generandoPdf ? <Loader2 size={15} className="animate-spin" /> : <Download size={15} />}
+              {descargado ? 'Volver a Descargar' : 'Descargar PDF'}
             </button>
 
             <button
