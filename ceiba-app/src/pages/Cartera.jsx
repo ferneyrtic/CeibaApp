@@ -3,7 +3,7 @@ import {
   AlertTriangle, Clock, CheckCircle2, Search,
   RefreshCw, DollarSign, TrendingUp, Users, FileText, X,
   Plus, Edit2, Download, Table, Calendar, ArrowRight, ShieldAlert, Zap,
-  ShieldCheck, Tag, Receipt
+  ShieldCheck, Tag, Receipt, Eye
 } from 'lucide-react';
 
 import { useAuth } from '../context/AuthContext';
@@ -25,6 +25,42 @@ import Pagination from '../components/Pagination';
 
 
 const FILTROS = ['Todos', 'Con Saldo', 'En Mora', 'Pagado', 'Sin Gestión', '🚨 Casos Críticos (>180 días)', '📌 Casos Especiales'];
+
+class ModalDetalleErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+  componentDidCatch(error, errorInfo) {
+    console.error('Error capturado en el detalle del contrato:', error, errorInfo);
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{ padding: 30, textAlign: 'center', background: '#fef2f2', borderRadius: 8, border: '1px solid #fecaca' }}>
+          <AlertTriangle size={32} color="#dc2626" style={{ margin: '0 auto 10px' }} />
+          <div style={{ fontWeight: 700, color: '#991b1b', fontSize: 15, marginBottom: 6 }}>
+            Error al visualizar los datos de este contrato
+          </div>
+          <div style={{ fontSize: 12, color: '#64748b', marginBottom: 16 }}>
+            {this.state.error?.message || 'Error inesperado de renderizado'}
+          </div>
+          <button
+            className="btn btn-ghost"
+            style={{ fontSize: 12, borderColor: '#cbd5e1' }}
+            onClick={() => this.setState({ hasError: false, error: null })}
+          >
+            Reintentar vista
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 function getCasoEspecialTag(idLote, listaCasos = []) {
   return obtenerBadgeCasoEspecial(idLote, listaCasos);
@@ -867,7 +903,8 @@ export default function Cartera() {
       {/* ── Modal Detalle de Contrato ── */}
       {selected && (
         <Modal onClose={() => { setSelected(null); setCuotasVenta([]); }} maxWidth={activeTab === 'matriz' ? 980 : 760}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
+          <ModalDetalleErrorBoundary>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
             <div>
               <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 8 }}>
                 {selected.id_lote || selected.lotes?.id_lote} — {selected.cliente_nombre || selected.clientes?.nombre}
@@ -1224,6 +1261,7 @@ export default function Cartera() {
               )}
             </div>
           )}
+          </ModalDetalleErrorBoundary>
         </Modal>
       )}
 
