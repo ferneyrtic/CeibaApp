@@ -1,6 +1,6 @@
 import { supabase } from '../supabase';
 
-// Cache en memoria por periodo (e.g. '2026-08') para navegación instantánea
+// Cache en memoria por periodo para navegación instantánea
 let cierreCache = {};
 let cierreCacheTime = {};
 
@@ -10,16 +10,13 @@ export const clearCierreCache = () => {
 };
 
 /**
- * Consulta y consolida todos los recaudos reales del mes por Fecha de Pago (Flujo de Caja)
- * @param {number|string} year - Año (e.g. 2026)
- * @param {number|string} month - Mes (1-12 o '01'-'12')
+ * Consulta y consolida todos los recaudos reales del período por Fecha de Pago (Flujo de Caja)
+ * @param {string} fechaDesde - Fecha inicio en formato 'YYYY-MM-DD'
+ * @param {string} fechaHasta - Fecha fin en formato 'YYYY-MM-DD'
  * @param {boolean} forceRefresh - Forzar recarga sin usar caché
  */
-export const getCierreMensualData = async (year, month, forceRefresh = false) => {
-  const yNum = Number(year);
-  const mNum = Number(month);
-  const mStr = String(mNum).padStart(2, '0');
-  const periodKey = `${yNum}-${mStr}`;
+export const getCierreMensualData = async (fechaDesde, fechaHasta, forceRefresh = false) => {
+  const periodKey = `${fechaDesde}_${fechaHasta}`;
   const now = Date.now();
 
   // Cache de 45 segundos si no se solicita refresco forzado
@@ -27,12 +24,7 @@ export const getCierreMensualData = async (year, month, forceRefresh = false) =>
     return cierreCache[periodKey];
   }
 
-  // Rango de fechas exacto del mes seleccionado
-  const lastDay = new Date(yNum, mNum, 0).getDate();
-  const desde = `${yNum}-${mStr}-01`;
-  const hasta = `${yNum}-${mStr}-${String(lastDay).padStart(2, '0')}`;
-
-  // 1. Consultar en paralelo Cuotas y Cuotas Iniciales con fecha de pago en el mes
+  // 1. Consultar en paralelo Cuotas y Cuotas Iniciales con fecha de pago en el rango
   const [cuotasRes, inicialesRes] = await Promise.all([
     supabase
       .from('cuotas')
@@ -45,8 +37,8 @@ export const getCierreMensualData = async (year, month, forceRefresh = false) =>
           clientes (id, nombre, celular, doc_cliente, ciudad)
         )
       `)
-      .gte('fecha_pago', desde)
-      .lte('fecha_pago', hasta)
+      .gte('fecha_pago', fechaDesde)
+      .lte('fecha_pago', fechaHasta)
       .order('fecha_pago', { ascending: true }),
 
     supabase
@@ -57,8 +49,8 @@ export const getCierreMensualData = async (year, month, forceRefresh = false) =>
         lotes (id_lote, manzana, lote, etapa),
         clientes (id, nombre, celular, doc_cliente, ciudad)
       `)
-      .gte('fecha_pago_cuota_inicial', desde)
-      .lte('fecha_pago_cuota_inicial', hasta)
+      .gte('fecha_pago_cuota_inicial', fechaDesde)
+      .lte('fecha_pago_cuota_inicial', fechaHasta)
       .order('fecha_pago_cuota_inicial', { ascending: true })
   ]);
 
@@ -195,12 +187,14 @@ export const getCierreMensualData = async (year, month, forceRefresh = false) =>
     }))
     .sort((a, b) => b.total - a.total);
 
-  // 6. Recaudo por Día del Mes
+  // 6. Recaudo por Día del Rango
   const diaMap = {};
-  for (let d = 1; d <= lastDay; d++) {
-    const dStr = String(d).padStart(2, '0');
-    const fStr = `${yNum}-${mStr}-${dStr}`;
-    diaMap[fStr] = { dia: d, fecha: fStr, cuotasMonto: 0, inicialesMonto: 0, totalDia: 0, count: 0 };
+  let cur = new Date(fechaDesde + 'T12:00:00');
+  const end = new Date(fechaHasta + 'T12:00:00');
+  while (cur <= end) {
+    const fStr = cur.toISOString().slice(0, 10);
+    diaMap[fStr] = { dia: cur.getDate(), fecha: fStr, cuotasMonto: 0, inicialesMonto: 0, totalDia: 0, count: 0 };
+    cur.setDate(cur.getDate() + 1);
   }
 
   todosIngresos.forEach(item => {
@@ -217,14 +211,48 @@ export const getCierreMensualData = async (year, month, forceRefresh = false) =>
 
   const recaudoPorDia = Object.values(diaMap);
 
+  // 7. Detección de Lotes Saldados en el período
+  const saldadosRes = await supabase
+    .from('ventas')
+    .select(`
+      id, precio_venta, valor_cuota_inicial, fecha_pago_cuota_inicial,
+      saldo, estado, vendedor_nombre,
+      lotes (id_lote),
+      clientes (nombre, doc_cliente),
+      cuotas (id, fecha_pago, valor_pagado)
+    `)
+    .in('estado', ['PAGADO EN SU TOTALIDAD', 'SALDADO', 'PAGADO']);
+
+  const lotesCompletamentePagados = (saldadosRes.data || []).filter(v => {
+    const fechas = (v.cuotas || []).filter(c => c.fecha_pago).map(c => c.fecha_pago);
+    if (v.fecha_pago_cuota_inicial) fechas.push(v.fecha_pago_cuota_inicial);
+    if (!fechas.length) return false;
+    const ultimo = fechas.sort().at(-1);
+    return ultimo >= fechaDesde && ultimo <= fechaHasta;
+  }).map(v => {
+    const totalCuotas = (v.cuotas || []).reduce((a, c) => a + (Number(c.valor_pagado) || 0), 0);
+    const totalPagado = totalCuotas + (Number(v.valor_cuota_inicial) || 0);
+    const fechas = (v.cuotas || []).filter(c => c.fecha_pago).map(c => c.fecha_pago);
+    if (v.fecha_pago_cuota_inicial) fechas.push(v.fecha_pago_cuota_inicial);
+    const ultimoPago = fechas.sort().at(-1);
+    return {
+      id: v.id,
+      lote: v.lotes?.id_lote || '—',
+      cliente: v.clientes?.nombre || '—',
+      doc_cliente: v.clientes?.doc_cliente || '—',
+      precio_total: Number(v.precio_venta) || 0,
+      total_pagado: totalPagado,
+      fecha_ultimo_pago: ultimoPago,
+      vendedor: v.vendedor_nombre || 'Sin Asesor',
+      estado: v.estado,
+    };
+  });
+
   const payload = {
     periodo: {
-      year: yNum,
-      month: mNum,
+      desde: fechaDesde,
+      hasta: fechaHasta,
       periodKey,
-      desde,
-      hasta,
-      lastDay,
     },
     kpis: {
       totalRecaudadoMes,
@@ -241,6 +269,7 @@ export const getCierreMensualData = async (year, month, forceRefresh = false) =>
     rankingAsesores,
     desgloseMedios,
     recaudoPorDia,
+    lotesCompletamentePagados,
   };
 
   cierreCache[periodKey] = payload;

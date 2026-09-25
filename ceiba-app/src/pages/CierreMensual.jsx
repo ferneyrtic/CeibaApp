@@ -9,23 +9,6 @@ import { getCierreMensualData, clearCierreCache } from '../lib/api/cierreApi';
 import { formatCOP, formatDate } from '../utils/helpers';
 import Pagination from '../components/Pagination';
 
-const MESES = [
-  { id: '01', name: 'Enero' },
-  { id: '02', name: 'Febrero' },
-  { id: '03', name: 'Marzo' },
-  { id: '04', name: 'Abril' },
-  { id: '05', name: 'Mayo' },
-  { id: '06', name: 'Junio' },
-  { id: '07', name: 'Julio' },
-  { id: '08', name: 'Agosto' },
-  { id: '09', name: 'Septiembre' },
-  { id: '10', name: 'Octubre' },
-  { id: '11', name: 'Noviembre' },
-  { id: '12', name: 'Diciembre' },
-];
-
-const ANIOS = [2024, 2025, 2026, 2027, 2028];
-
 // =============================================
 // EXPORTADORES A EXCEL Y PDF
 // =============================================
@@ -82,7 +65,7 @@ const exportPDFCierre = async (periodo, kpis, items, rankingAsesores, filename) 
   doc.text('LA CEIBA GROUP — INFORME DE CIERRE DE RECAUDOS MENSUALES', 28, 10);
   doc.setFontSize(9.5);
   doc.setFont('helvetica', 'normal');
-  doc.text(`Período Contable: ${periodo.mesNombre} ${periodo.year} (${periodo.desde} al ${periodo.hasta})`, 28, 16);
+  doc.text(`Período: ${periodo.desde} al ${periodo.hasta}`, 28, 16);
 
   // Subtítulo con fecha de generación
   doc.setTextColor(100, 100, 100);
@@ -149,25 +132,25 @@ const exportPDFCierre = async (periodo, kpis, items, rankingAsesores, filename) 
     doc.setFontSize(7);
     doc.setTextColor(150, 150, 150);
     doc.text(`Página ${i} de ${pageCount} — Flujo de Caja por Fecha de Pago · La Ceiba Group`, 14, doc.internal.pageSize.height - 6);
-    doc.text(`Período: ${periodo.mesNombre} ${periodo.year}`, 250, doc.internal.pageSize.height - 6);
+    doc.text(`Período: ${periodo.desde} al ${periodo.hasta}`, 230, doc.internal.pageSize.height - 6);
   }
 
   doc.save(filename);
 };
 
 export default function CierreMensual() {
-  const currentDate = new Date();
-  const currentYear = currentDate.getFullYear();
-  const currentMonth = String(currentDate.getMonth() + 1).padStart(2, '0');
+  const today = new Date();
+  const defaultDesde = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-01`;
+  const defaultHasta = new Date(today.getFullYear(), today.getMonth()+1, 0).toISOString().slice(0,10);
+  const [fechaDesde, setFechaDesde] = useState(defaultDesde);
+  const [fechaHasta, setFechaHasta] = useState(defaultHasta);
 
-  const [selectedYear, setSelectedYear]   = useState(currentYear);
-  const [selectedMonth, setSelectedMonth] = useState(currentMonth);
   const [loading, setLoading]             = useState(true);
   const [error, setError]                 = useState(null);
   const [data, setData]                   = useState(null);
   const [exporting, setExporting]         = useState(false);
 
-  // Pestañas: 'todos' | 'cuotas' | 'iniciales' | 'asesores' | 'medios' | 'diario'
+  // Pestañas: 'todos' | 'cuotas' | 'iniciales' | 'asesores' | 'medios' | 'diario' | 'saldados'
   const [activeTab, setActiveTab]         = useState('todos');
   const [searchTerm, setSearchTerm]       = useState('');
   const [medioFilter, setMedioFilter]     = useState('TODOS');
@@ -177,22 +160,16 @@ export default function CierreMensual() {
   const [page, setPage]                   = useState(1);
   const [pageSize, setPageSize]           = useState(50);
 
-  const mesNombre = MESES.find(m => m.id === String(selectedMonth).padStart(2, '0'))?.name || '';
+  const periodoLabel = `${fechaDesde} al ${fechaHasta}`;
 
   const loadData = useCallback(async (force = false) => {
-    setLoading(true);
-    setError(null);
+    setLoading(true); setError(null);
     try {
-      const res = await getCierreMensualData(selectedYear, selectedMonth, force);
-      setData(res);
-      setPage(1);
-    } catch (e) {
-      console.error(e);
-      setError(e.message || 'Error cargando recaudos del periodo');
-    } finally {
-      setLoading(false);
-    }
-  }, [selectedYear, selectedMonth]);
+      const res = await getCierreMensualData(fechaDesde, fechaHasta, force);
+      setData(res); setPage(1);
+    } catch(e) { console.error(e); setError(e.message || 'Error cargando recaudos del periodo'); }
+    finally { setLoading(false); }
+  }, [fechaDesde, fechaHasta]);
 
   useEffect(() => {
     loadData();
@@ -257,7 +234,7 @@ export default function CierreMensual() {
     if (!data) return;
     setExporting(true);
     try {
-      const periodoLabel = `${mesNombre}_${selectedYear}`;
+      const periodoLabel = `${fechaDesde}_${fechaHasta}`;
 
       const rowsTodos = (data.todosIngresos || []).map(i => ({
         'Fecha de Pago': formatDate(i.fecha_pago),
@@ -311,14 +288,13 @@ export default function CierreMensual() {
     try {
       const periodo = {
         ...data.periodo,
-        mesNombre,
       };
       await exportPDFCierre(
         periodo,
         data.kpis,
         data.todosIngresos || [],
         data.rankingAsesores || [],
-        `Informe_Cierre_Recaudos_${mesNombre}_${selectedYear}.pdf`
+        `Informe_Cierre_Recaudos_${fechaDesde}_${fechaHasta}.pdf`
       );
     } catch (e) {
       alert('Error exportando a PDF: ' + e.message);
@@ -341,31 +317,17 @@ export default function CierreMensual() {
           </div>
         </div>
 
-        {/* SELECTORES DE MES Y AÑO */}
+        {/* SELECTORES DE RANGO DE FECHAS */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#fff', border: '1px solid var(--border)', borderRadius: 8, padding: '4px 10px' }}>
+          <div style={{ display:'flex', alignItems:'center', gap:6, background:'#fff', border:'1px solid var(--border)', borderRadius:8, padding:'6px 12px' }}>
             <Calendar size={15} color="var(--text-muted)" />
-            <select
-              className="filter-select"
-              style={{ border: 'none', background: 'transparent', padding: '4px 6px', fontWeight: 600, fontSize: 13 }}
-              value={selectedMonth}
-              onChange={(e) => setSelectedMonth(e.target.value)}
-            >
-              {MESES.map(m => (
-                <option key={m.id} value={m.id}>{m.name}</option>
-              ))}
-            </select>
-
-            <select
-              className="filter-select"
-              style={{ border: 'none', background: 'transparent', padding: '4px 6px', fontWeight: 600, fontSize: 13, borderLeft: '1px solid var(--border)' }}
-              value={selectedYear}
-              onChange={(e) => setSelectedYear(Number(e.target.value))}
-            >
-              {ANIOS.map(y => (
-                <option key={y} value={y}>{y}</option>
-              ))}
-            </select>
+            <span style={{ fontSize:12, color:'var(--text-muted)', fontWeight:500 }}>Desde</span>
+            <input type="date" value={fechaDesde} onChange={e => setFechaDesde(e.target.value)}
+              style={{ border:'none', background:'transparent', fontSize:13, fontWeight:600, cursor:'pointer', outline:'none', color:'#1e293b' }} />
+            <span style={{ fontSize:12, color:'var(--text-muted)', margin:'0 4px' }}>—</span>
+            <span style={{ fontSize:12, color:'var(--text-muted)', fontWeight:500 }}>Hasta</span>
+            <input type="date" value={fechaHasta} onChange={e => setFechaHasta(e.target.value)}
+              style={{ border:'none', background:'transparent', fontSize:13, fontWeight:600, cursor:'pointer', outline:'none', color:'#1e293b' }} />
           </div>
 
           <button
@@ -420,10 +382,10 @@ export default function CierreMensual() {
               {formatCOP(data.kpis.totalRecaudadoMes)}
             </div>
             <div className="kpi-label" style={{ fontWeight: 700, color: '#166534' }}>
-              Total Dinero Recaudado en {mesNombre}
+              Total Dinero Recaudado en el Período
             </div>
             <div style={{ fontSize: 11, color: '#64748b', marginTop: 4 }}>
-              Ingresos reales ({data.periodo.desde} al {data.periodo.hasta})
+              Ingresos reales ({periodoLabel})
             </div>
           </div>
 
@@ -495,6 +457,7 @@ export default function CierreMensual() {
             { id: 'asesores',  label: '🏆 Recaudo por Asesor',  badge: data?.rankingAsesores?.length },
             { id: 'medios',    label: '💳 Medios de Pago',      badge: data?.desgloseMedios?.length },
             { id: 'diario',    label: '📅 Evolución Diaria',    badge: null },
+            { id: 'saldados',  label: '✅ Lotes Saldados',      badge: data?.lotesCompletamentePagados?.length },
           ].map(tab => (
             <button
               key={tab.id}
@@ -803,7 +766,7 @@ export default function CierreMensual() {
           {activeTab === 'diario' && (
             <div>
               <div style={{ marginBottom: 16, fontSize: 13, color: 'var(--text-muted)' }}>
-                Evolución diaria de las entradas de dinero durante el mes de <strong>{mesNombre} {selectedYear}</strong>.
+                Evolución diaria de las entradas de dinero durante el período <strong>{periodoLabel}</strong>.
               </div>
 
               <div style={{ overflowX: 'auto' }}>
@@ -854,6 +817,56 @@ export default function CierreMensual() {
                   </tbody>
                 </table>
               </div>
+            </div>
+          )}
+
+          {/* TAB 7: LOTES SALDADOS */}
+          {activeTab === 'saldados' && (
+            <div>
+              <div style={{ marginBottom: 16, fontSize: 13, color: 'var(--text-muted)' }}>
+                Lotes que quedaron <strong>completamente pagados</strong> durante el período {periodoLabel}.
+              </div>
+              {(data?.lotesCompletamentePagados || []).length === 0 ? (
+                <div style={{ textAlign: 'center', padding: 40, color: 'var(--text-muted)' }}>
+                  No se registraron lotes completamente saldados en este período.
+                </div>
+              ) : (
+                <div style={{ overflowX: 'auto' }}>
+                  <table className="data-table" style={{ width: '100%', fontSize: 12 }}>
+                    <thead>
+                      <tr style={{ background: '#f0fdf4', color: '#166534', fontSize: 11 }}>
+                        <th style={{ padding: '8px 10px' }}>LOTE</th>
+                        <th style={{ padding: '8px 10px' }}>CLIENTE</th>
+                        <th style={{ padding: '8px 10px', textAlign: 'center' }}>CÉDULA</th>
+                        <th style={{ padding: '8px 10px', textAlign: 'right' }}>PRECIO TOTAL</th>
+                        <th style={{ padding: '8px 10px', textAlign: 'right' }}>TOTAL PAGADO</th>
+                        <th style={{ padding: '8px 10px', textAlign: 'center' }}>ÚLTIMO PAGO</th>
+                        <th style={{ padding: '8px 10px' }}>ASESOR</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(data.lotesCompletamentePagados || []).map(l => (
+                        <tr key={l.id} style={{ borderBottom: '1px solid #dcfce7', background: '#f0fdf4' }}>
+                          <td style={{ padding: '10px', fontWeight: 700, color: '#15803d', fontFamily: 'monospace' }}>
+                            <span style={{ background: '#dcfce7', color: '#15803d', padding: '2px 8px', borderRadius: 6, fontSize: 11, marginRight: 8, fontWeight: 700 }}>✅ SALDADO</span>
+                            {l.lote}
+                          </td>
+                          <td style={{ padding: '10px', fontWeight: 500 }}>{l.cliente}</td>
+                          <td style={{ padding: '10px', textAlign: 'center', color: '#64748b', fontSize: 11 }}>{l.doc_cliente}</td>
+                          <td style={{ padding: '10px', textAlign: 'right', fontWeight: 600, color: '#1e293b' }}>{formatCOP(l.precio_total)}</td>
+                          <td style={{ padding: '10px', textAlign: 'right', fontWeight: 700, color: '#15803d' }}>{formatCOP(l.total_pagado)}</td>
+                          <td style={{ padding: '10px', textAlign: 'center' }}>
+                            <span style={{ background: '#dcfce7', color: '#15803d', padding: '2px 8px', borderRadius: 6, fontSize: 11, fontWeight: 600 }}>
+                              {formatDate(l.fecha_ultimo_pago)}
+                            </span>
+                          </td>
+                          <td style={{ padding: '10px', fontSize: 11, color: '#334155' }}>{l.vendedor}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
           )}
         </div>
