@@ -285,15 +285,15 @@ export default function Cartera() {
         <div style={{ display: 'flex', gap: 10 }}>
           <button
             className="btn btn-primary"
-            style={{ fontSize: 13, gap: 8, padding: '9px 18px', background: '#16a34a', borderColor: '#15803d', fontWeight: 800 }}
+            style={{ fontSize: 13, gap: 8, padding: '9px 18px', background: '#16a34a', borderColor: '#15803d', fontWeight: 800, boxShadow: '0 2px 4px rgba(22, 163, 74, 0.25)' }}
             onClick={() => {
               setPagoReciboVenta(null);
               setPagoReciboCuota(null);
               setShowModalPagoRecibo(true);
             }}
+            title="Abonar a contrato o cuota y emitir recibo oficial"
           >
-            <Receipt size={17} />
-            Registrar Abono / Pago y Recibo
+            <DollarSign size={16} /> 💳 Abonar
           </button>
         </div>
       </div>
@@ -414,22 +414,6 @@ export default function Cartera() {
         </div>
 
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          <button
-            className="btn btn-primary"
-            style={{
-              fontSize: 12.5, gap: 7, padding: '8px 16px', fontWeight: 800,
-              background: '#16a34a', borderColor: '#16a34a',
-              boxShadow: '0 2px 4px rgba(22, 163, 74, 0.2)'
-            }}
-            onClick={() => {
-              setPagoReciboVenta(null);
-              setPagoReciboCuota(null);
-              setShowModalPagoRecibo(true);
-            }}
-            title="Registrar abono a cuota o pago parcial y emitir recibo oficial"
-          >
-            <Receipt size={16} /> 💳 Registrar Pago / Recibo
-          </button>
 
           <button
             className="btn btn-ghost"
@@ -584,14 +568,15 @@ export default function Cartera() {
                               <div style={{ display: 'flex', gap: 6, justifyContent: 'center' }}>
                                 <button
                                   className="btn btn-ghost"
-                                  style={{ fontSize: 11, padding: '4px 8px', color: '#16a34a', borderColor: '#bbf7d0', background: '#f0fdf4' }}
-                                  title="Abonar a este contrato"
+                                  style={{ fontSize: 11, padding: '4px 8px', color: '#16a34a', borderColor: '#bbf7d0', background: '#f0fdf4', fontWeight: 700 }}
+                                  title="Abonar a este contrato y emitir recibo oficial"
                                   onClick={() => {
-                                    setAbonoVenta(v);
-                                    setShowAbonoModal(true);
+                                    setPagoReciboVenta(v);
+                                    setPagoReciboCuota(null);
+                                    setShowModalPagoRecibo(true);
                                   }}
                                 >
-                                  <DollarSign size={12} /> Abonar
+                                  💳 Abonar
                                 </button>
                                 <button
                                   className="btn btn-ghost"
@@ -804,14 +789,15 @@ export default function Cartera() {
                         <div style={{ display: 'flex', gap: 6, justifyContent: 'center' }}>
                           <button
                             className="btn btn-primary"
-                            style={{ fontSize: 11, padding: '4px 8px', gap: 4, background: '#16a34a', borderColor: '#15803d' }}
+                            style={{ fontSize: 11, padding: '4px 8px', gap: 4, background: '#16a34a', borderColor: '#15803d', fontWeight: 700 }}
                             onClick={() => {
-                              setAbonoVenta(v);
-                              setShowAbonoModal(true);
+                              setPagoReciboVenta(v);
+                              setPagoReciboCuota(null);
+                              setShowModalPagoRecibo(true);
                             }}
-                            title="Registrar abono / pago para este lote"
+                            title="Abonar a este contrato y emitir recibo oficial"
                           >
-                            <DollarSign size={12} /> Abonar
+                            💳 Abonar
                           </button>
                           <button
                             className="btn btn-ghost"
@@ -908,8 +894,9 @@ export default function Cartera() {
                   setPagoReciboCuota(null);
                   setShowModalPagoRecibo(true);
                 }}
+                title="Abonar a este contrato y emitir recibo oficial"
               >
-                <Receipt size={14} /> 💳 Registrar Abono / Pago y Recibo
+                💳 Abonar
               </button>
               <button
                 className="btn btn-ghost"
@@ -1143,8 +1130,9 @@ export default function Cartera() {
                       setPagoReciboCuota(null);
                       setShowModalPagoRecibo(true);
                     }}
+                    title="Abonar a este contrato y emitir recibo oficial"
                   >
-                    <Receipt size={15} /> Registrar Pago y Emitir Recibo
+                    💳 Abonar
                   </button>
                 </div>
               ) : (
@@ -1161,68 +1149,75 @@ export default function Cartera() {
                       </tr>
                     </thead>
                     <tbody>
-                      {recibosVenta.map((r) => (
-                        <tr key={r.numero_recibo} style={{ borderBottom: '1px solid var(--border)' }}>
-                          <td style={{ padding: '8px 10px' }}>
-                            <span style={{
-                              fontFamily: 'monospace', fontWeight: 800, fontSize: 12,
-                              color: '#dc2626', background: '#fef2f2', border: '1px solid #fecaca',
-                              padding: '2px 8px', borderRadius: 4
-                            }}>
-                              Nº {String(r.numero_recibo).padStart(4, '0')}
-                            </span>
-                          </td>
-                          <td style={{ padding: '8px 10px', fontWeight: 600 }}>{formatDate(r.fecha_pago)}</td>
-                          <td style={{ padding: '8px 10px' }}>
-                            <div style={{ fontWeight: 600, color: '#1e293b' }}>
-                              {r.numero_cuota ? `Cuota #${r.numero_cuota}` : 'Abono / Pago'}
-                              {r.es_pago_completo ? (
-                                <span style={{ marginLeft: 6, fontSize: 10, color: '#15803d', fontWeight: 700 }}>✓ Total</span>
-                              ) : (
-                                <span style={{ marginLeft: 6, fontSize: 10, color: '#d97706', fontWeight: 700 }}>⚠ Parcial</span>
-                              )}
-                            </div>
-                            <div style={{ fontSize: 11, color: '#64748b' }}>{r.concepto}</div>
-                          </td>
-                          <td style={{ padding: '8px 10px', textAlign: 'right', fontWeight: 800, color: '#15803d', fontSize: 13 }}>
-                            {formatCOP(r.valor)}
-                          </td>
-                          <td style={{ padding: '8px 10px', textAlign: 'center' }}>
-                            <span style={{ fontSize: 10.5, background: '#f1f5f9', padding: '2px 8px', borderRadius: 12, fontWeight: 600 }}>
-                              {r.medio_pago || 'Transferencia'}
-                            </span>
-                          </td>
-                          <td style={{ padding: '8px 10px', textAlign: 'center' }}>
-                            <div style={{ display: 'flex', gap: 6, justifyContent: 'center' }}>
-                              <button
-                                className="btn btn-ghost"
-                                style={{
-                                  padding: '3px 8px', fontSize: 11,
-                                  color: '#15803d', borderColor: '#86efac', background: '#f0fdf4',
-                                  fontWeight: 700, gap: 4
-                                }}
-                                onClick={() => setReciboParaVer(r)}
-                                title="Ver / Imprimir este recibo oficial"
-                              >
-                                <Eye size={12} /> Ver
-                              </button>
+                      {recibosVenta
+                        .filter(r => r && (r.numero_recibo || r.valor))
+                        .map((r, rIdx) => {
+                          const numRec = r.numero_recibo ? String(r.numero_recibo).padStart(4, '0') : '—';
+                          const concStr = typeof r.concepto === 'string' ? r.concepto : (r.numero_cuota ? `Cuota #${r.numero_cuota}` : 'Abono / Pago');
+                          const medStr = typeof r.medio_pago === 'string' ? r.medio_pago : 'Transferencia';
+                          return (
+                            <tr key={r.numero_recibo || r.id || rIdx} style={{ borderBottom: '1px solid var(--border)' }}>
+                              <td style={{ padding: '8px 10px' }}>
+                                <span style={{
+                                  fontFamily: 'monospace', fontWeight: 800, fontSize: 12,
+                                  color: '#dc2626', background: '#fef2f2', border: '1px solid #fecaca',
+                                  padding: '2px 8px', borderRadius: 4
+                                }}>
+                                  Nº {numRec}
+                                </span>
+                              </td>
+                              <td style={{ padding: '8px 10px', fontWeight: 600 }}>{formatDate(r.fecha_pago)}</td>
+                              <td style={{ padding: '8px 10px' }}>
+                                <div style={{ fontWeight: 600, color: '#1e293b' }}>
+                                  {r.numero_cuota ? `Cuota #${r.numero_cuota}` : 'Abono / Pago'}
+                                  {r.es_pago_completo ? (
+                                    <span style={{ marginLeft: 6, fontSize: 10, color: '#15803d', fontWeight: 700 }}>✓ Total</span>
+                                  ) : (
+                                    <span style={{ marginLeft: 6, fontSize: 10, color: '#d97706', fontWeight: 700 }}>⚠ Parcial</span>
+                                  )}
+                                </div>
+                                <div style={{ fontSize: 11, color: '#64748b' }}>{concStr}</div>
+                              </td>
+                              <td style={{ padding: '8px 10px', textAlign: 'right', fontWeight: 800, color: '#15803d', fontSize: 13 }}>
+                                {formatCOP(r.valor)}
+                              </td>
+                              <td style={{ padding: '8px 10px', textAlign: 'center' }}>
+                                <span style={{ fontSize: 10.5, background: '#f1f5f9', padding: '2px 8px', borderRadius: 12, fontWeight: 600 }}>
+                                  {medStr}
+                                </span>
+                              </td>
+                              <td style={{ padding: '8px 10px', textAlign: 'center' }}>
+                                <div style={{ display: 'flex', gap: 6, justifyContent: 'center' }}>
+                                  <button
+                                    className="btn btn-ghost"
+                                    style={{
+                                      padding: '3px 8px', fontSize: 11,
+                                      color: '#15803d', borderColor: '#86efac', background: '#f0fdf4',
+                                      fontWeight: 700, gap: 4
+                                    }}
+                                    onClick={() => setReciboParaVer(r)}
+                                    title="Ver / Imprimir este recibo oficial"
+                                  >
+                                    <Eye size={12} /> Ver
+                                  </button>
 
-                              <button
-                                className="btn btn-primary"
-                                style={{
-                                  padding: '3px 8px', fontSize: 11,
-                                  background: '#16a34a', borderColor: '#16a34a',
-                                  fontWeight: 700, gap: 4
-                                }}
-                                onClick={() => setReciboParaVer({ ...r, autoDownload: true })}
-                                title="Descargar este recibo oficial en PDF"
-                              >
-                                <Download size={12} /> Descargar PDF
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
+                                  <button
+                                    className="btn btn-primary"
+                                    style={{
+                                      padding: '3px 8px', fontSize: 11,
+                                      background: '#16a34a', borderColor: '#16a34a',
+                                      fontWeight: 700, gap: 4
+                                    }}
+                                    onClick={() => setReciboParaVer({ ...r, autoDownload: true })}
+                                    title="Descargar este recibo oficial en PDF"
+                                  >
+                                    <Download size={12} /> Descargar PDF
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
                     </tbody>
                   </table>
                 </div>

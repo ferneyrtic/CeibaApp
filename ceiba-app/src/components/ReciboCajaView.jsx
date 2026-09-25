@@ -1,22 +1,95 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { Printer, Download, X, Check, Copy, Loader2 } from 'lucide-react';
+import { Printer, Download, X, Check, Copy, Loader2, AlertTriangle } from 'lucide-react';
 import { formatCOP } from '../utils/helpers';
 import { numeroALetrasCOP } from '../utils/numeroALetras';
 
-export default function ReciboCajaView({ recibo, onClose, onPrint, autoDownload = false }) {
+// Error Boundary para evitar cualquier pantalla en blanco si falla el renderizado del recibo
+class ReciboErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error, errorInfo) {
+    console.error('Error capturado en ReciboErrorBoundary:', error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(15, 23, 42, 0.75)', display: 'flex',
+          alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: 16
+        }}>
+          <div style={{
+            background: '#fff', borderRadius: 12, padding: 24, maxWidth: 480, width: '100%',
+            textAlign: 'center', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)'
+          }}>
+            <AlertTriangle size={36} color="#dc2626" style={{ margin: '0 auto 12px' }} />
+            <div style={{ fontSize: 16, fontWeight: 800, color: '#991b1b', marginBottom: 8 }}>
+              No se pudo visualizar el recibo de caja
+            </div>
+            <div style={{ fontSize: 12, color: '#64748b', marginBottom: 20 }}>
+              {this.state.error?.message || 'Error inesperado al renderizar el documento'}
+            </div>
+            <button
+              onClick={() => {
+                this.setState({ hasError: false, error: null });
+                if (this.props.onClose) this.props.onClose();
+              }}
+              className="btn btn-primary"
+              style={{ background: '#dc2626', borderColor: '#b91c1c' }}
+            >
+              Cerrar
+            </button>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
+function ReciboCajaContent({ recibo, onClose, onPrint, autoDownload = false }) {
   const reciboRef = useRef(null);
   const [descargado, setDescargado] = useState(false);
   const [generandoPdf, setGenerandoPdf] = useState(false);
 
   if (!recibo) return null;
 
-  const numRecibo = recibo.numero_recibo || 3175;
-  const valorNum = Math.round(Number(recibo.valor) || 0);
-  const valorLetras = recibo.valor_letras || numeroALetrasCOP(valorNum);
+  const numRecibo = recibo?.numero_recibo || 3175;
+  const valorNum = Math.round(Number(recibo?.valor) || 0);
+  const valorLetras = typeof recibo?.valor_letras === 'string' && recibo.valor_letras.trim()
+    ? recibo.valor_letras
+    : numeroALetrasCOP(valorNum);
 
-  // Desglosar fecha (YYYY-MM-DD)
-  const fechaStr = recibo.fecha_pago || new Date().toISOString().slice(0, 10);
-  const [fAnio, fMes, fDia] = fechaStr.split('-');
+  // Desglosar fecha de forma 100% segura (YYYY-MM-DD o variantes)
+  let fAnio = '—', fMes = '—', fDia = '—';
+  try {
+    const rawF = String(recibo?.fecha_pago || recibo?.created_at || '').slice(0, 10);
+    if (rawF && rawF.includes('-')) {
+      const parts = rawF.split('-');
+      if (parts.length === 3) {
+        [fAnio, fMes, fDia] = parts;
+      }
+    }
+  } catch (e) {}
+
+  // Cadena segura de fecha de emisión
+  let emisionStr = new Date().toLocaleString('es-CO');
+  try {
+    if (recibo?.created_at) {
+      const d = new Date(recibo.created_at);
+      if (!isNaN(d.getTime())) {
+        emisionStr = d.toLocaleString('es-CO');
+      }
+    }
+  } catch (e) {}
 
   const handlePrint = () => {
     if (onPrint) {
@@ -30,15 +103,16 @@ export default function ReciboCajaView({ recibo, onClose, onPrint, autoDownload 
     if (generandoPdf) return;
     setGenerandoPdf(true);
     try {
+      if (!reciboRef.current) return;
       const { default: html2canvas } = await import('html2canvas');
       const { default: jsPDF } = await import('jspdf');
 
-      if (!reciboRef.current) return;
-
       const canvas = await html2canvas(reciboRef.current, {
-        scale: 2.5,
+        scale: 2,
         useCORS: true,
-        backgroundColor: '#ffffff'
+        allowTaint: true,
+        backgroundColor: '#ffffff',
+        logging: false
       });
 
       const imgData = canvas.toDataURL('image/png');
@@ -51,10 +125,29 @@ export default function ReciboCajaView({ recibo, onClose, onPrint, autoDownload 
       const pdfWidth = pdf.internal.pageSize.getWidth();
       const pdfHeight = pdf.internal.pageSize.getHeight();
       pdf.addImage(imgData, 'PNG', 8, 8, pdfWidth - 16, pdfHeight - 16);
-      pdf.save(`Recibo_Caja_${numRecibo}_${recibo.lote_id_str || 'Ceiba'}.pdf`);
+      pdf.save(`Recibo_Caja_${numRecibo}_${recibo?.lote_id_str || 'Ceiba'}.pdf`);
       setDescargado(true);
     } catch (err) {
-      console.error('Error generando PDF del recibo:', err);
+      console.warn('html2canvas falló, usando generador directo jsPDF:', err);
+      try {
+        const { default: jsPDF } = await import('jspdf');
+        const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a5' });
+        doc.setFontSize(16);
+        doc.text('PROYECTO CAMPESTRE LA CEIBA', 14, 20);
+        doc.setFontSize(12);
+        doc.text(`RECIBO DE CAJA MENOR Nº ${numRecibo}`, 14, 30);
+        doc.setFontSize(10);
+        doc.text(`Ciudad: Acacías | Fecha: ${fDia}/${fMes}/${fAnio}`, 14, 40);
+        doc.text(`Cliente: ${String(recibo?.cliente_nombre || '')} (Doc: ${String(recibo?.cliente_doc || '')})`, 14, 50);
+        doc.text(`Lote: ${String(recibo?.lote_id_str || '')}`, 14, 60);
+        doc.text(`Valor: $${valorNum.toLocaleString('es-CO')} (${valorLetras})`, 14, 70);
+        doc.text(`Concepto: ${String(recibo?.concepto || '')}`, 14, 80);
+        doc.text(`Observaciones: ${String(recibo?.observaciones || '')}`, 14, 90);
+        doc.save(`Recibo_Caja_${numRecibo}.pdf`);
+        setDescargado(true);
+      } catch (fallbackErr) {
+        console.error('Error generando fallback jsPDF:', fallbackErr);
+      }
     } finally {
       setGenerandoPdf(false);
     }
@@ -512,7 +605,7 @@ export default function ReciboCajaView({ recibo, onClose, onPrint, autoDownload 
                 CONCEPTO:
               </div>
               <div style={{ padding: '8px 12px', fontSize: 11.5, fontWeight: 600, color: '#334155', flex: 1 }}>
-                {recibo.concepto || 'Abono a cuota pactada'}
+                {typeof recibo?.concepto === 'string' ? recibo.concepto : (recibo?.concepto ? String(recibo.concepto) : 'Abono a cuota pactada')}
               </div>
             </div>
 
@@ -537,8 +630,10 @@ export default function ReciboCajaView({ recibo, onClose, onPrint, autoDownload 
                 OBSERVACIONES:
               </div>
               <div style={{ padding: '6px 12px', fontSize: 11, color: '#475569', flex: 1 }}>
-                {recibo.observaciones || `Medio de pago: ${recibo.medio_pago || 'Transferencia'}`}
-                {recibo.saldo_restante_cuota > 0 && (
+                {typeof recibo?.observaciones === 'string' && recibo.observaciones.trim()
+                  ? recibo.observaciones
+                  : `Medio de pago: ${recibo?.medio_pago || 'Transferencia'}`}
+                {recibo?.saldo_restante_cuota > 0 && (
                   <span style={{ marginLeft: 8, color: '#d97706', fontWeight: 700 }}>
                     · Saldo restante de la cuota: {formatCOP(recibo.saldo_restante_cuota)}
                   </span>
@@ -559,7 +654,7 @@ export default function ReciboCajaView({ recibo, onClose, onPrint, autoDownload 
               <div style={{ flex: 1.2 }}>
                 <div style={{ borderBottom: '1.5px solid #475569', width: '85%', marginBottom: 4 }} />
                 <div style={{ fontSize: 9.5, fontWeight: 800, color: '#475569', letterSpacing: 0.5 }}>
-                  FIRMA DE RECIBIDO {recibo.cliente_nombre ? `· ${recibo.cliente_nombre.toUpperCase()}` : ''}
+                  FIRMA DE RECIBIDO {recibo?.cliente_nombre ? `· ${String(recibo.cliente_nombre).toUpperCase()}` : ''}
                 </div>
               </div>
 
@@ -611,7 +706,7 @@ export default function ReciboCajaView({ recibo, onClose, onPrint, autoDownload 
                   minWidth: 100,
                   textAlign: 'center'
                 }}>
-                  {recibo.cliente_doc || '—'}
+                  {recibo?.cliente_doc ? String(recibo.cliente_doc) : '—'}
                 </span>
               </div>
             </div>
@@ -628,11 +723,19 @@ export default function ReciboCajaView({ recibo, onClose, onPrint, autoDownload 
               color: '#94a3b8'
             }}>
               <span>Comprobante de Ingreso · La Ceiba Group S.A.S.</span>
-              <span>Emisión: {new Date(recibo.created_at || Date.now()).toLocaleString('es-CO')}</span>
+              <span>Emisión: {emisionStr}</span>
             </div>
           </div>
         </div>
       </div>
     </div>
+  );
+}
+
+export default function ReciboCajaView(props) {
+  return (
+    <ReciboErrorBoundary onClose={props.onClose}>
+      <ReciboCajaContent {...props} />
+    </ReciboErrorBoundary>
   );
 }
