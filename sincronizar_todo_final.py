@@ -291,15 +291,7 @@ for r in ws_v.iter_rows(min_row=3, values_only=True):
     if vend:
         vendedores_set.add(vend)
 
-# Asegurar cliente para LC1-8-3 Y 4 consolidado
-if 'ESCRITURA-JOHN-ALBERTO-BOHORQUEZ' not in clientes_dict:
-    clientes_dict['ESCRITURA-JOHN-ALBERTO-BOHORQUEZ'] = {
-        'doc_cliente': 'ESCRITURA-JOHN-ALBERTO-BOHORQUEZ',
-        'nombre': 'JOHN ALBERTO BOHORQUEZ',
-        'celular': None,
-        'direccion': None,
-        'ciudad': 'LA CEIBA'
-    }
+# Clientes extraídos directamente del Excel (incluyendo SANDRA GINETH CORONADO ALDANA de fila 68)
 
 vend_records = [{'nombre': v, 'activo': True} for v in sorted(vendedores_set)]
 upload_batch('vendedores', vend_records, 'vendedores')
@@ -311,11 +303,23 @@ status, clientes_db = api_req('GET', 'clientes', params='select=id,doc_cliente,n
 clientes_id_map = {str(c['doc_cliente']).strip(): c['id'] for c in clientes_db}
 print(f"  ✓ {len(clientes_id_map)} clientes activos e indexados en Supabase.")
 
-# ── PASO 3: LIMPIAR VENTAS Y CUOTAS ANTERIORES ─────────
-print("\n[3/6] Limpiando tablas ventas y cuotas anteriores...")
-s_c, _ = api_req('DELETE', 'cuotas', params='id=not.is.null')
-s_v, _ = api_req('DELETE', 'ventas', params='id=not.is.null')
-print(f"  ✓ Tablas limpiadas (cuotas status: {s_c}, ventas status: {s_v}).")
+# ── PASO 3: LIMPIAR VENTAS Y CUOTAS ANTERIORES PRESERVANDO TEST LOTS ──
+print("\n[3/6] Limpiando tablas ventas y cuotas anteriores (preservando lotes de prueba)...")
+status_tl, test_lotes = api_req('GET', 'lotes', params='id_lote=ilike.TEST*&select=id')
+test_lote_ids = [l['id'] for l in (test_lotes or []) if isinstance(l, dict) and 'id' in l]
+
+test_venta_ids = []
+if test_lote_ids:
+    status_tv, test_ventas = api_req('GET', 'ventas', params=f'lote_id=in.({",".join(test_lote_ids)})&select=id')
+    test_venta_ids = [v['id'] for v in (test_ventas or []) if isinstance(v, dict) and 'id' in v]
+
+if test_venta_ids:
+    s_c, _ = api_req('DELETE', 'cuotas', params=f'venta_id=not.in.({",".join(test_venta_ids)})')
+    s_v, _ = api_req('DELETE', 'ventas', params=f'lote_id=not.in.({",".join(test_lote_ids)})')
+else:
+    s_c, _ = api_req('DELETE', 'cuotas', params='id=not.is.null')
+    s_v, _ = api_req('DELETE', 'ventas', params='id=not.is.null')
+print(f"  ✓ Tablas limpiadas (cuotas status: {s_c}, ventas status: {s_v}, {len(test_lote_ids)} lotes de test preservados).")
 
 # ── PASO 4: INSERTAR VENTAS ────────────────────────────
 print("\n[4/6] Construyendo e insertando VENTAS...")
@@ -356,14 +360,14 @@ for idx, r in enumerate(ws_v.iter_rows(min_row=3, values_only=True), 3):
     f_venta, _ = inferir_fecha(r[5])
     f_ci,    _ = inferir_fecha(r[7])
     
-    # Caso especial LC1-8-3 Y 4 consolidado (John Alberto Bohorquez)
+    # Caso especial LC1-8-3 Y 4 consolidado (Sandra Gineth Coronado Aldana)
     raw_lote_norm = norm(raw)
     if '8-3' in raw_lote_norm and '4' in raw_lote_norm and 'LC1' in raw_lote_norm:
-        cli_uuid = clientes_id_map.get('ESCRITURA-JOHN-ALBERTO-BOHORQUEZ') or cli_uuid
+        cli_uuid = clientes_id_map.get('1018446159') or cli_uuid
         r_precio = to_num(r[3]) or 55482000.0
-        vendedor_final = clean(r[18]) or 'JHON ALBERTO'
-        f_venta = f_venta or '2026-09-17'
-        f_ci = f_ci or '2026-09-17'
+        vendedor_final = clean(r[18]) or 'YADIRA RIVERA'
+        f_venta = f_venta or '2026-09-15'
+        f_ci = f_ci or '2026-09-15'
         venta_rec = {
             'lote_id':                  lote_uuid,
             'cliente_id':               cli_uuid,
@@ -379,8 +383,8 @@ for idx, r in enumerate(ws_v.iter_rows(min_row=3, values_only=True), 3):
             'plazo_cuotas':             1,
             'valor_cuota':              0.0,
             'dias_pago':                '-',
-            'comision_vendedor':        0.0,
-            'abonos':                   0.0,
+            'comision_vendedor':        to_num(r[19]),
+            'abonos':                   to_num(r[20]),
             'descuentos':               0.0,
             'saldo':                    0.0,
         }
@@ -558,4 +562,9 @@ print(f"  • Cuotas VENCIDAS (mora):    {cuotas_vencidas_count}")
 print(f"  • Cuotas AL DÍA / FUTURAS:   {cuotas_aldia_count}")
 print(f"  • Recaudo Cuotas en BD:      ${total_recaudo_cuotas:,.2f}")
 print(f"  • Fechas EOM corregidas:     {fechas_eom_corregidas}")
+
+# Limpiar cliente provisional obsoleto de John Alberto Bohórquez si existía
+api_req('DELETE', 'clientes', params='doc_cliente=eq.ESCRITURA-JOHN-ALBERTO-BOHORQUEZ')
+print("  ✓ Limpieza de registros temporales completada.")
 print("=" * 64)
+
