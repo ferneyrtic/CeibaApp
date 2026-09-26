@@ -2,6 +2,7 @@ import React, { useRef, useState, useEffect } from 'react';
 import { Printer, Download, X, Check, Copy, Loader2, AlertTriangle } from 'lucide-react';
 import { formatCOP } from '../utils/helpers';
 import { numeroALetrasCOP } from '../utils/numeroALetras';
+import { LOGO_CEIBA_BASE64 } from '../assets/logoBase64';
 
 // Error Boundary para evitar cualquier pantalla en blanco si falla el renderizado del recibo
 class ReciboErrorBoundary extends React.Component {
@@ -132,17 +133,30 @@ function ReciboCajaContent({ recibo, onClose, onPrint, autoDownload = false }) {
       try {
         const { default: jsPDF } = await import('jspdf');
         const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a5' });
-        doc.setFontSize(16);
-        doc.text('PROYECTO CAMPESTRE LA CEIBA', 14, 20);
-        doc.setFontSize(12);
-        doc.text(`RECIBO DE CAJA MENOR Nº ${numRecibo}`, 14, 30);
+        try {
+          doc.addImage(LOGO_CEIBA_BASE64, 'PNG', 12, 10, 20, 20);
+        } catch (e) {}
+        doc.setFontSize(15);
+        doc.setTextColor(1, 107, 69);
+        doc.text('PROYECTO CAMPESTRE LA CEIBA', 36, 17);
+        doc.setFontSize(9.5);
+        doc.setTextColor(127, 29, 29);
+        doc.text('RECIBO DE CAJA MENOR', 36, 22);
+        doc.setTextColor(71, 85, 105);
+        doc.setFontSize(8);
+        doc.text('Acacías, Meta · Cel: 320 251 2298 · laceibagroup4@gmail.com', 36, 26);
+        doc.setDrawColor(1, 107, 69);
+        doc.setLineWidth(0.4);
+        doc.line(12, 32, 198, 32);
+        doc.setTextColor(15, 23, 42);
         doc.setFontSize(10);
-        doc.text(`Ciudad: Acacías | Fecha: ${fDia}/${fMes}/${fAnio}`, 14, 40);
-        doc.text(`Cliente: ${String(recibo?.cliente_nombre || '')} (Doc: ${String(recibo?.cliente_doc || '')})`, 14, 50);
-        doc.text(`Lote: ${String(recibo?.lote_id_str || '')}`, 14, 60);
-        doc.text(`Valor: $${valorNum.toLocaleString('es-CO')} (${valorLetras})`, 14, 70);
+        doc.text(`Recibo Nº: ${numRecibo}`, 14, 40);
+        doc.text(`Ciudad: Acacías | Fecha: ${fDia}/${fMes}/${fAnio}`, 14, 48);
+        doc.text(`Cliente: ${String(recibo?.cliente_nombre || '')} (Doc: ${String(recibo?.cliente_doc || '')})`, 14, 56);
+        doc.text(`Lote: ${String(recibo?.lote_id_str || '')}`, 14, 64);
+        doc.text(`Valor: $${valorNum.toLocaleString('es-CO')} (${valorLetras})`, 14, 72);
         doc.text(`Concepto: ${String(recibo?.concepto || '')}`, 14, 80);
-        doc.text(`Observaciones: ${String(recibo?.observaciones || '')}`, 14, 90);
+        doc.text(`Observaciones: ${String(recibo?.observaciones || '')}`, 14, 88);
         doc.save(`Recibo_Caja_${numRecibo}.pdf`);
         setDescargado(true);
       } catch (fallbackErr) {
@@ -322,87 +336,102 @@ function ReciboCajaContent({ recibo, onClose, onPrint, autoDownload = false }) {
               width: '100%',
               maxWidth: 750,
               background: '#ffffff',
-              border: '2px solid #166534',
+              border: '2px solid #016b45',
               borderRadius: 14,
-              padding: '18px 22px',
+              padding: '20px 24px',
               position: 'relative',
-              boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)',
+              boxShadow: '0 10px 25px -5px rgba(1, 107, 69, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
               fontFamily: '"Segoe UI", system-ui, -apple-system, sans-serif',
               color: '#0f172a'
             }}
           >
-            {/* MARCA DE AGUA DE FONDO (SUAVE) */}
+            {/* MARCA DE AGUA DE FONDO (SUAVE Y ELEGANTE) */}
             <div style={{
               position: 'absolute',
               top: '50%',
               left: '50%',
               transform: 'translate(-50%, -50%)',
-              opacity: 0.05,
+              opacity: 0.045,
               pointerEvents: 'none',
               textAlign: 'center',
-              userSelect: 'none'
+              userSelect: 'none',
+              zIndex: 0
             }}>
-              <svg width="260" height="260" viewBox="0 0 100 100" fill="#166534">
-                <path d="M50 10 C30 10 20 25 20 40 C20 55 35 65 45 70 L45 90 L55 90 L55 70 C65 65 80 55 80 40 C80 25 70 10 50 10 Z" />
-              </svg>
-              <div style={{ fontSize: 32, fontWeight: 900, letterSpacing: 4, color: '#166534', marginTop: -20 }}>
-                LA CEIBA
+              <img
+                src={LOGO_CEIBA_BASE64}
+                alt=""
+                style={{
+                  width: 270,
+                  height: 270,
+                  objectFit: 'contain',
+                  display: 'block',
+                  margin: '0 auto'
+                }}
+              />
+              <div style={{ fontSize: 24, fontWeight: 900, letterSpacing: 4, color: '#016b45', marginTop: -12 }}>
+                PROYECTO CAMPESTRE LA CEIBA
               </div>
             </div>
 
             {/* ENCABEZADO INSTITUCIONAL */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14, position: 'relative', zIndex: 1 }}>
               {/* Logo y Nombre */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-                {/* Emblema Árbol Verde */}
+                {/* Emblema Oficial Árbol La Ceiba */}
                 <div style={{
-                  width: 58,
-                  height: 58,
-                  borderRadius: '50%',
-                  border: '2px solid #166534',
+                  width: 70,
+                  height: 70,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  background: '#f0fdf4'
+                  background: 'transparent',
+                  flexShrink: 0
                 }}>
-                  <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="#166534" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M12 2a7 7 0 0 0-7 7c0 2.38 1.19 4.47 3 5.74V20a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2v-5.26c1.81-1.27 3-3.36 3-5.74a7 7 0 0 0-7-7z" />
-                    <path d="M12 12v10" />
-                  </svg>
+                  <img
+                    src={LOGO_CEIBA_BASE64}
+                    alt="Logo La Ceiba"
+                    style={{
+                      width: 70,
+                      height: 70,
+                      objectFit: 'contain',
+                      display: 'block'
+                    }}
+                  />
                 </div>
 
                 <div>
                   <div style={{
-                    fontSize: 28,
+                    fontSize: 27,
                     fontWeight: 900,
-                    letterSpacing: -0.5,
-                    color: '#7f1d1d', // Borgoña / Rojo Ceiba
-                    fontFamily: 'Georgia, serif',
-                    lineHeight: 1
+                    letterSpacing: 0.8,
+                    color: '#016b45', // Verde institucional La Ceiba
+                    fontFamily: '"Montserrat", "Segoe UI", -apple-system, sans-serif',
+                    lineHeight: 1.05,
+                    textTransform: 'uppercase'
                   }}>
-                    La Ceiba
+                    LA CEIBA
                   </div>
                   <div style={{
-                    fontSize: 10,
-                    fontWeight: 700,
-                    letterSpacing: 2,
-                    color: '#166534',
+                    fontSize: 10.5,
+                    fontWeight: 800,
+                    letterSpacing: 2.5,
+                    color: '#7f1d1d', // Borgoña / Rojo Ceiba
                     textTransform: 'uppercase',
-                    marginTop: 4
+                    marginTop: 3
                   }}>
                     — PROYECTO CAMPESTRE —
                   </div>
 
                   {/* Redes y Contacto */}
-                  <div style={{ display: 'flex', gap: 14, fontSize: 10, color: '#475569', marginTop: 6, flexWrap: 'wrap' }}>
+                  <div style={{ display: 'flex', gap: 14, fontSize: 9.5, color: '#475569', marginTop: 5, flexWrap: 'wrap' }}>
                     <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                      📞 <strong>3202512298</strong>
+                      📞 <strong>320 251 2298</strong>
                     </span>
                     <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                       ✉️ <strong>laceibagroup4@gmail.com</strong>
                     </span>
                     <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                      🌐 <strong>La Ceiba Group · @laceibagroup</strong>
+                      📍 <strong>Acacías, Meta</strong>
                     </span>
                   </div>
                 </div>
@@ -410,14 +439,15 @@ function ReciboCajaContent({ recibo, onClose, onPrint, autoDownload = false }) {
 
               {/* Cuadro Superior Derecho: Consecutivo Recibo */}
               <div style={{
-                border: '2px solid #166534',
-                borderRadius: 10,
+                border: '2px solid #016b45',
+                borderRadius: 8,
                 padding: '6px 16px',
                 textAlign: 'center',
                 background: '#fff',
-                minWidth: 160
+                minWidth: 160,
+                boxShadow: '0 2px 4px rgba(0,0,0,0.02)'
               }}>
-                <div style={{ fontSize: 9.5, fontWeight: 800, letterSpacing: 1, color: '#166534', textTransform: 'uppercase' }}>
+                <div style={{ fontSize: 9.5, fontWeight: 800, letterSpacing: 1, color: '#016b45', textTransform: 'uppercase' }}>
                   RECIBO DE CAJA MENOR
                 </div>
                 <div style={{
@@ -425,7 +455,7 @@ function ReciboCajaContent({ recibo, onClose, onPrint, autoDownload = false }) {
                   fontWeight: 900,
                   color: '#dc2626', // Rojo característico del talonario
                   fontFamily: 'monospace',
-                  letterSpacing: 1,
+                  letterSpacing: 1.5,
                   margin: '2px 0'
                 }}>
                   Nº {String(numRecibo).padStart(4, '0')}
