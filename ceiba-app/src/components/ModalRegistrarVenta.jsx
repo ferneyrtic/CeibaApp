@@ -41,13 +41,11 @@ export default function ModalRegistrarVenta({
     doc_cliente: '',
     celular: '',
     ciudad: 'Acacías',
-    direccion: '',
   });
 
-  // Vendedor y comisión
+  // Vendedor y comisión manual
   const [vendedorNombre, setVendedorNombre] = useState('');
-  const [comisionPct, setComisionPct] = useState(5);
-  const [comisionManual, setComisionManual] = useState('');
+  const [comisionVendedor, setComisionVendedor] = useState('');
 
   // Términos financieros
   const hoyStr = new Date().toISOString().slice(0, 10);
@@ -117,9 +115,6 @@ export default function ModalRegistrarVenta({
 
         if (vendRes.length > 0) {
           setVendedorNombre(vendRes[0].nombre);
-          if (vendRes[0].porcentaje_comision) {
-            setComisionPct(vendRes[0].porcentaje_comision);
-          }
         }
       } catch (err) {
         console.error('Error cargando datos para venta:', err);
@@ -144,13 +139,9 @@ export default function ModalRegistrarVenta({
     if (p > 0) setPrecioVenta(p);
   };
 
-  // Al cambiar vendedor, tomar su porcentaje de comisión
+  // Al cambiar vendedor
   const handleSelectVendedor = (vNombre) => {
     setVendedorNombre(vNombre);
-    const found = vendedores.find(v => v.nombre === vNombre);
-    if (found && found.porcentaje_comision) {
-      setComisionPct(found.porcentaje_comision);
-    }
   };
 
   // Cálculos financieros reactivos
@@ -167,11 +158,8 @@ export default function ModalRegistrarVenta({
 
   const valorCuotaFinal = valorCuotaCustom !== '' ? Number(valorCuotaCustom) : valorCuotaSugerido;
 
-  // Comisión calculada
-  const comisionFinal = useMemo(() => {
-    if (comisionManual !== '') return Number(comisionManual) || 0;
-    return Math.round((pVentaNum * (Number(comisionPct) || 0)) / 100);
-  }, [pVentaNum, comisionPct, comisionManual]);
+  // Comisión asesor (ingreso manual en COP)
+  const comisionFinal = Number(comisionVendedor) || 0;
 
   // Generación del plan de pagos proyectado
   const planCuotas = useMemo(() => {
@@ -255,9 +243,8 @@ export default function ModalRegistrarVenta({
         : {
             nombre: nuevoCliente.nombre.trim(),
             doc_cliente: nuevoCliente.doc_cliente.trim(),
-            celular: nuevoCliente.celular.trim(),
-            ciudad: nuevoCliente.ciudad.trim() || 'Acacías',
-            direccion: nuevoCliente.direccion.trim(),
+            celular: nuevoCliente.celular?.trim() || null,
+            ciudad: nuevoCliente.ciudad?.trim() || 'Acacías',
           };
 
       const result = await registrarVentaCompleta({
@@ -624,18 +611,6 @@ export default function ModalRegistrarVenta({
                         onChange={e => setNuevoCliente({ ...nuevoCliente, ciudad: e.target.value })}
                       />
                     </div>
-                    <div style={{ gridColumn: 'span 2' }}>
-                      <label style={{ fontSize: 11, fontWeight: 600, color: '#475569', display: 'block', marginBottom: 4 }}>
-                        Dirección de Residencia
-                      </label>
-                      <input
-                        type="text"
-                        className="form-control"
-                        placeholder="Ej. Calle 15 # 20-30 Barrio Centro"
-                        value={nuevoCliente.direccion}
-                        onChange={e => setNuevoCliente({ ...nuevoCliente, direccion: e.target.value })}
-                      />
-                    </div>
                   </div>
                 )}
               </div>
@@ -666,7 +641,7 @@ export default function ModalRegistrarVenta({
                       <option value="DIRECTO">VENTA DIRECTA (Sin Asesor)</option>
                       {vendedores.map(v => (
                         <option key={v.id} value={v.nombre}>
-                          {v.nombre} ({v.porcentaje_comision || 5}%)
+                          {v.nombre}
                         </option>
                       ))}
                     </select>
@@ -689,17 +664,20 @@ export default function ModalRegistrarVenta({
                     <label style={{ fontSize: 12, fontWeight: 600, color: '#475569', display: 'block', marginBottom: 4 }}>
                       Comisión Asesor (COP)
                     </label>
-                    <div style={{
-                      background: '#fff',
-                      border: '1px solid #cbd5e1',
-                      borderRadius: 6,
-                      padding: '8px 12px',
-                      fontSize: 13,
-                      fontWeight: 700,
-                      color: '#2563eb'
-                    }}>
-                      {formatCOP(comisionFinal)}
-                    </div>
+                    <input
+                      type="number"
+                      step="1000"
+                      className="form-control"
+                      placeholder="Ej. 1500000"
+                      value={comisionVendedor}
+                      onChange={e => setComisionVendedor(e.target.value)}
+                      style={{ fontSize: 13, fontWeight: 700, color: '#2563eb' }}
+                    />
+                    {Number(comisionVendedor) > 0 && (
+                      <div style={{ fontSize: 11, color: '#2563eb', marginTop: 2, fontWeight: 600 }}>
+                        {formatCOP(Number(comisionVendedor))}
+                      </div>
+                    )}
                   </div>
                 </div>
 
