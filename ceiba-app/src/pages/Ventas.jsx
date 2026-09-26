@@ -5,12 +5,14 @@ import { formatCOP, formatDate, getEstadoBadge } from '../utils/helpers';
 import { exportEstadoCuentaPDF } from '../utils/exportEstadoCuenta';
 import Modal from '../components/Modal';
 import Pagination from '../components/Pagination';
+import ModalRegistrarVenta from '../components/ModalRegistrarVenta';
 
 export default function Ventas() {
   const [allVentas, setAllVentas] = useState([]);
   const [loading, setLoading]     = useState(true);
   const [search, setSearch]       = useState('');
   const [selected, setSelected]   = useState(null);
+  const [showModalVenta, setShowModalVenta] = useState(false);
 
   // Paginación
   const [page, setPage]           = useState(1);
@@ -66,7 +68,9 @@ export default function Ventas() {
             {loading ? 'Cargando ventas...' : `${allVentas.length} ventas registradas · Total visible ${formatCOP(totalVentas)}`}
           </div>
         </div>
-        <button className="btn btn-primary"><Plus size={14} /> Registrar Venta</button>
+        <button className="btn btn-primary" onClick={() => setShowModalVenta(true)}>
+          <Plus size={14} /> Registrar Venta
+        </button>
       </div>
 
       <div className="stats-row">
@@ -230,6 +234,15 @@ export default function Ventas() {
             </button>
           </div>
         </Modal>
+      )}
+
+      {showModalVenta && (
+        <ModalRegistrarVenta
+          onClose={() => setShowModalVenta(false)}
+          onSuccess={() => {
+            fetchVentas();
+          }}
+        />
       )}
     </div>
   );

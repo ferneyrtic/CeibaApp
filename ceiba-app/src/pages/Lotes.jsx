@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { Plus, Search, X, MapPin, RefreshCw, Eye, Check, CheckCircle2, AlertCircle, Tag } from 'lucide-react';
+import { Plus, Search, X, MapPin, RefreshCw, Eye, Check, CheckCircle2, AlertCircle, Tag, DollarSign } from 'lucide-react';
 import { getLotes, updateLote } from '../lib/api/lotes';
 import { getCasosEspeciales, obtenerBadgeCasoEspecial } from '../lib/api/casosEspecialesApi';
 import { registrarAccion } from '../lib/api/auditApi';
 import { formatCOP, getEstadoBadge } from '../utils/helpers';
 import Modal from '../components/Modal';
 import Pagination from '../components/Pagination';
+import ModalNuevoLote from '../components/ModalNuevoLote';
+import ModalRegistrarVenta from '../components/ModalRegistrarVenta';
 
 const ESTADOS = ['Todos', 'VENDIDO', 'PAGADO EN SU TOTALIDAD', 'DISPONIBLE', 'EN NEGOCIACIÓN', 'APARTADO', 'NO APTO PARA VENTA'];
 
@@ -18,6 +20,11 @@ export default function Lotes() {
   const [selected, setSelected]     = useState(null);
   const [statusLoadingId, setStatusLoadingId] = useState(null);
   const [statusMsg, setStatusMsg]   = useState(null);
+
+  // Modales operativos
+  const [showModalNuevoLote, setShowModalNuevoLote] = useState(false);
+  const [showModalVenta, setShowModalVenta]         = useState(false);
+  const [loteParaVenta, setLoteParaVenta]           = useState(null);
 
 
   // Paginación
@@ -128,7 +135,7 @@ export default function Lotes() {
             Proyecto La Ceiba · {allLotes.length} lotes registrados
           </div>
         </div>
-        <button className="btn btn-primary">
+        <button className="btn btn-primary" onClick={() => setShowModalNuevoLote(true)}>
           <Plus size={14} /> Nuevo Lote
         </button>
       </div>
@@ -292,15 +299,29 @@ export default function Lotes() {
                             }}>▾</span>
                           </div>
                         </td>
-                        <td onClick={e => e.stopPropagation()}>
-
-                          <button
-                            className="btn btn-ghost"
-                            style={{ padding: '4px 8px', fontSize: 12, gap: 4 }}
-                            onClick={() => setSelected(l)}
-                          >
-                            <Eye size={12} /> Ver
-                          </button>
+                        <td onClick={e => e.stopPropagation()} style={{ whiteSpace: 'nowrap' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                            {l.estado !== 'VENDIDO' && l.estado !== 'PAGADO EN SU TOTALIDAD' && l.estado !== 'NO APTO PARA VENTA' && (
+                              <button
+                                className="btn btn-primary"
+                                style={{ padding: '3px 8px', fontSize: 11, gap: 4, background: '#16a34a' }}
+                                title="Registrar venta de este lote"
+                                onClick={() => {
+                                  setLoteParaVenta(l);
+                                  setShowModalVenta(true);
+                                }}
+                              >
+                                <DollarSign size={11} /> Vender
+                              </button>
+                            )}
+                            <button
+                              className="btn btn-ghost"
+                              style={{ padding: '4px 8px', fontSize: 12, gap: 4 }}
+                              onClick={() => setSelected(l)}
+                            >
+                              <Eye size={12} /> Ver
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     );
@@ -460,10 +481,53 @@ export default function Lotes() {
             </div>
           )}
 
-          <div className="modal-footer" style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 20 }}>
+          <div className="modal-footer" style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 20 }}>
+            {selected.estado !== 'VENDIDO' && selected.estado !== 'PAGADO EN SU TOTALIDAD' && selected.estado !== 'NO APTO PARA VENTA' && (
+              <button
+                className="btn btn-primary"
+                style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#16a34a' }}
+                onClick={() => {
+                  setLoteParaVenta(selected);
+                  setShowModalVenta(true);
+                  setSelected(null);
+                }}
+              >
+                <DollarSign size={14} /> Registrar Venta de este Lote
+              </button>
+            )}
             <button className="btn btn-ghost" onClick={() => setSelected(null)}>Cerrar</button>
           </div>
         </Modal>
+      )}
+
+      {showModalNuevoLote && (
+        <ModalNuevoLote
+          existingLotes={allLotes}
+          onClose={() => setShowModalNuevoLote(false)}
+          onSuccess={(nuevo) => {
+            setShowModalNuevoLote(false);
+            fetchLotes();
+            setStatusMsg({ type: 'success', text: `Lote ${nuevo.id_lote} creado exitosamente.` });
+            setTimeout(() => setStatusMsg(null), 4000);
+          }}
+        />
+      )}
+
+      {showModalVenta && (
+        <ModalRegistrarVenta
+          preselectedLote={loteParaVenta}
+          onClose={() => {
+            setShowModalVenta(false);
+            setLoteParaVenta(null);
+          }}
+          onSuccess={() => {
+            setShowModalVenta(false);
+            setLoteParaVenta(null);
+            fetchLotes();
+            setStatusMsg({ type: 'success', text: 'Venta registrada exitosamente y cuenta por cobrar generada.' });
+            setTimeout(() => setStatusMsg(null), 5000);
+          }}
+        />
       )}
 
     </div>
