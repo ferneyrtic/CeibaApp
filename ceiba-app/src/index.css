@@ -237,9 +237,10 @@ body.dark-mode .user-chip {
 
 /* ---- Sidebar ---- */
 .sidebar-logo {
-  padding: 18px 16px 16px;
+  padding: 16px 14px 14px;
   border-bottom: 1px solid var(--border);
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   position: relative;
@@ -248,21 +249,46 @@ body.dark-mode .user-chip {
 
 .sidebar-logo img,
 .sidebar-brand-img {
-  width: 100%;
-  max-width: 180px;
+  width: auto;
+  max-width: 80px;
   height: auto;
-  max-height: 130px;
+  max-height: 80px;
   display: block;
   object-fit: contain;
   transition: transform 0.25s ease, filter 0.25s ease;
 }
 
 .sidebar-logo:hover .sidebar-brand-img {
-  transform: scale(1.03);
+  transform: scale(1.05);
 }
 
 body.dark-mode .sidebar-brand-img {
   filter: brightness(1.9) contrast(1.05) drop-shadow(0 2px 12px rgba(34, 197, 94, 0.2));
+}
+
+.sidebar-brand-text {
+  margin-top: 6px;
+  text-align: center;
+}
+
+.sidebar-brand-title {
+  font-size: 13px;
+  font-weight: 900;
+  color: #016b45;
+  letter-spacing: 0.1em;
+  line-height: 1.2;
+}
+
+body.dark-mode .sidebar-brand-title {
+  color: #4ade80;
+}
+
+.sidebar-brand-sub {
+  font-size: 8.5px;
+  font-weight: 600;
+  color: var(--text-muted);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
 }
 
 .sidebar-logo .mobile-close-btn {

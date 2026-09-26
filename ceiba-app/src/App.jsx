@@ -76,6 +76,10 @@ function Sidebar({ active, onNav, user, onSignOut, isOpen, onClose }) {
             alt="La Ceiba Proyecto Campestre"
             className="sidebar-brand-img"
           />
+          <div className="sidebar-brand-text">
+            <div className="sidebar-brand-title">LA CEIBA</div>
+            <div className="sidebar-brand-sub">Proyecto Campestre</div>
+          </div>
           <button
             className="mobile-close-btn"
             onClick={onClose}
