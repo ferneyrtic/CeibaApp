@@ -1,4 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
+import ReactDOM from 'react-dom';
 import { Printer, Download, X, Check, Copy, Loader2, AlertTriangle } from 'lucide-react';
 import { formatCOP } from '../utils/helpers';
 import { numeroALetrasCOP } from '../utils/numeroALetras';
@@ -21,11 +22,11 @@ class ReciboErrorBoundary extends React.Component {
 
   render() {
     if (this.state.hasError) {
-      return (
+      return ReactDOM.createPortal(
         <div style={{
           position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-          background: 'rgba(15, 23, 42, 0.75)', display: 'flex',
-          alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: 16
+          background: 'rgba(15, 23, 42, 0.8)', display: 'flex',
+          alignItems: 'center', justifyContent: 'center', zIndex: 200000, padding: 16
         }}>
           <div style={{
             background: '#fff', borderRadius: 12, padding: 24, maxWidth: 480, width: '100%',
@@ -49,7 +50,8 @@ class ReciboErrorBoundary extends React.Component {
               Cerrar
             </button>
           </div>
-        </div>
+        </div>,
+        document.body
       );
     }
     return this.props.children;
@@ -144,7 +146,7 @@ function ReciboCajaContent({ recibo, onClose, onPrint, autoDownload = false }) {
         doc.text('RECIBO DE CAJA MENOR', 36, 22);
         doc.setTextColor(71, 85, 105);
         doc.setFontSize(8);
-        doc.text('Acacías, Meta · Cel: 320 251 2298 · laceibagroup4@gmail.com', 36, 26);
+        doc.text('Cel: 320 251 2298 · laceibagroup4@gmail.com', 36, 26);
         doc.setDrawColor(1, 107, 69);
         doc.setLineWidth(0.4);
         doc.line(12, 32, 198, 32);
@@ -176,21 +178,37 @@ function ReciboCajaContent({ recibo, onClose, onPrint, autoDownload = false }) {
     }
   }, [autoDownload, recibo?.autoDownload]);
 
-  return (
-    <div style={{
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      background: 'rgba(15, 23, 42, 0.75)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      zIndex: 9999,
-      padding: 16,
-      overflowY: 'auto'
-    }}>
+  // Cerrar con tecla Escape
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' && onClose) {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
+
+  return ReactDOM.createPortal(
+    <div
+      onClick={onClose}
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        background: 'rgba(15, 23, 42, 0.8)',
+        backdropFilter: 'blur(4px)',
+        WebkitBackdropFilter: 'blur(4px)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 200000,
+        padding: 16,
+        overflowY: 'auto'
+      }}
+    >
       {/* ESTILOS DE IMPRESIÓN EXCLUSIVOS */}
       <style>{`
         @media print {
@@ -216,16 +234,21 @@ function ReciboCajaContent({ recibo, onClose, onPrint, autoDownload = false }) {
         }
       `}</style>
 
-      <div style={{
-        background: '#fff',
-        borderRadius: 16,
-        boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)',
-        width: '100%',
-        maxWidth: 820,
-        overflow: 'hidden',
-        display: 'flex',
-        flexDirection: 'column'
-      }}>
+      <div
+        onClick={e => e.stopPropagation()}
+        style={{
+          background: '#fff',
+          borderRadius: 16,
+          boxShadow: '0 25px 50px -12px rgba(0,0,0,0.35)',
+          width: '100%',
+          maxWidth: 820,
+          overflow: 'hidden',
+          display: 'flex',
+          flexDirection: 'column',
+          zIndex: 200001,
+          margin: 'auto 0'
+        }}
+      >
         {/* BARRA SUPERIOR DE ACCIONES (NO SE IMPRIME) */}
         <div className="no-print" style={{
           display: 'flex',
@@ -429,9 +452,6 @@ function ReciboCajaContent({ recibo, onClose, onPrint, autoDownload = false }) {
                     </span>
                     <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                       ✉️ <strong>laceibagroup4@gmail.com</strong>
-                    </span>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                      📍 <strong>Acacías, Meta</strong>
                     </span>
                   </div>
                 </div>
@@ -758,7 +778,8 @@ function ReciboCajaContent({ recibo, onClose, onPrint, autoDownload = false }) {
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
