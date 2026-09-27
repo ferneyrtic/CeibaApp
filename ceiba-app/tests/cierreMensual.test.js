@@ -174,4 +174,128 @@ describe('cierreApi - getCierreMensualData', () => {
     const dia5 = data.recaudoPorDia.find(d => d.fecha === '2026-09-05');
     expect(dia5.totalDia).toBe(1500000);
   });
+
+  it('debe consolidar egresos por comisiones en el período, calcular flujo neto de caja y asignar cobros a asesores', async () => {
+    const mockCuotas = [
+      {
+        id: 'c1',
+        venta_id: 'v1',
+        numero_cuota: 1,
+        fecha_pago: '2026-10-16',
+        valor_cuota: 2000000,
+        valor_pagado: 2000000,
+        ventas: {
+          id: 'v1',
+          vendedor_nombre: 'CARLOS ASESOR',
+          lotes: { id_lote: 'LC1 - 10 - 2' },
+          clientes: { nombre: 'Cliente Test', doc_cliente: '9988' }
+        }
+      }
+    ];
+
+    const mockComisiones = [
+      // Pago dentro del período (vinculado a lote)
+      {
+        id: 'dm-1',
+        tipo: 'PAGO_COMISION',
+        orden: 1780000000000,
+        valor: JSON.stringify({
+          vendedor_nombre: 'CARLOS ASESOR',
+          valor: 800000,
+          fecha_pago: '2026-10-18',
+          medio_pago: 'TRANSFERENCIA',
+          lote: 'LC1 - 10 - 2',
+          comprobante: 'TRANSF-001',
+          observacion: 'Comisión contrato',
+        })
+      },
+      // Pago dentro del período (retiro general / sin lote)
+      {
+        id: 'dm-2',
+        tipo: 'PAGO_COMISION',
+        orden: 1780000000001,
+        valor: JSON.stringify({
+          vendedor_nombre: 'MARIA ASESORA',
+          valor: 400000,
+          fecha_pago: '2026-10-25',
+          medio_pago: 'EFECTIVO',
+          lote: null,
+          comprobante: null,
+          observacion: 'Anticipo general',
+        })
+      },
+      // Pago fuera del período (Septiembre - debe ser ignorado en el cierre de Octubre/Noviembre)
+      {
+        id: 'dm-3',
+        tipo: 'PAGO_COMISION',
+        orden: 1770000000000,
+        valor: JSON.stringify({
+          vendedor_nombre: 'CARLOS ASESOR',
+          valor: 1500000,
+          fecha_pago: '2026-09-10',
+          lote: 'LC1 - 1 - 1',
+        })
+      }
+    ];
+
+    supabase.from.mockImplementation((table) => {
+      if (table === 'cuotas') {
+        return {
+          select: () => ({
+            gte: () => ({
+              lte: () => ({
+                order: async () => ({ data: mockCuotas, error: null })
+              })
+            })
+          })
+        };
+      }
+      if (table === 'ventas') {
+        return {
+          select: () => ({
+            gte: () => ({
+              lte: () => ({
+                order: async () => ({ data: [], error: null })
+              })
+            }),
+            in: async () => ({ data: [], error: null })
+          })
+        };
+      }
+      if (table === 'datos_maestros') {
+        return {
+          select: () => ({
+            eq: () => ({
+              order: async () => ({ data: mockComisiones, error: null })
+            })
+          })
+        };
+      }
+      return { select: () => ({ eq: () => ({ order: async () => ({ data: [] }) }) }) };
+    });
+
+    // Cierre ciclo 15 Octubre a 15 Noviembre
+    const data = await getCierreMensualData('2026-10-15', '2026-11-15', true);
+
+    expect(data.kpis.totalRecaudadoMes).toBe(2000000);
+    // Egresos por comisión dentro del ciclo: 800.000 + 400.000 = 1.200.000
+    expect(data.kpis.totalComisionesPeriodo).toBe(1200000);
+    expect(data.kpis.countComisionesPeriodo).toBe(2);
+    // Flujo Neto = 2.000.000 - 1.200.000 = 800.000
+    expect(data.kpis.flujoNetoCaja).toBe(800000);
+
+    // Lista de comisiones del período
+    expect(data.comisionesPeriodo.length).toBe(2);
+    expect(data.comisionesPeriodo.find(c => c.rawId === 'dm-1').lote).toBe('LC1 - 10 - 2');
+    expect(data.comisionesPeriodo.find(c => c.rawId === 'dm-2').lote).toBe('General (Sin Lote)');
+
+    // Desglose por asesor en ranking
+    const carlos = data.rankingAsesores.find(a => a.vendedor === 'CARLOS ASESOR');
+    expect(carlos).toBeDefined();
+    expect(carlos.totalComisionesCobradas).toBe(800000);
+
+    const maria = data.rankingAsesores.find(a => a.vendedor === 'MARIA ASESORA');
+    expect(maria).toBeDefined();
+    expect(maria.totalComisionesCobradas).toBe(400000);
+  });
 });

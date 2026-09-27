@@ -38,8 +38,8 @@ export const getCierreMensualData = async (param1, param2, forceRefresh = false)
     return cierreCache[periodKey];
   }
 
-  // 1. Consultar en paralelo Cuotas, Cuotas Iniciales y Recibos Oficiales en el rango
-  const [cuotasRes, inicialesRes, recibosRango] = await Promise.all([
+  // 1. Consultar en paralelo Cuotas, Cuotas Iniciales, Recibos Oficiales y Desembolsos de Comisiones en el rango
+  const [cuotasRes, inicialesRes, recibosRango, comisionesRes] = await Promise.all([
     supabase
       .from('cuotas')
       .select(`
@@ -67,11 +67,18 @@ export const getCierreMensualData = async (param1, param2, forceRefresh = false)
       .lte('fecha_pago_cuota_inicial', fechaHasta)
       .order('fecha_pago_cuota_inicial', { ascending: true }),
 
-    obtenerRecibosEnRango(fechaDesde, fechaHasta).catch(() => [])
+    obtenerRecibosEnRango(fechaDesde, fechaHasta).catch(() => []),
+
+    supabase
+      .from('datos_maestros')
+      .select('*')
+      .eq('tipo', 'PAGO_COMISION')
+      .order('orden', { ascending: false })
+      .catch(() => ({ data: [] }))
   ]);
 
-  if (cuotasRes.error) throw cuotasRes.error;
-  if (inicialesRes.error) throw inicialesRes.error;
+  if (cuotasRes?.error) throw cuotasRes.error;
+  if (inicialesRes?.error) throw inicialesRes.error;
 
   const rawCuotas = cuotasRes.data || [];
   const rawIniciales = inicialesRes.data || [];
@@ -171,6 +178,43 @@ export const getCierreMensualData = async (param1, param2, forceRefresh = false)
     return (a.fecha_pago || '').localeCompare(b.fecha_pago || '');
   });
 
+  // 2.3 Procesar Egresos por Liquidaciones y Desembolsos de Comisiones
+  const rawComisiones = (comisionesRes?.data || []).map(item => {
+    try {
+      const parsed = typeof item.valor === 'string' ? JSON.parse(item.valor) : item.valor;
+      return {
+        id: item.id,
+        ...parsed,
+        created_at: parsed.created_at || new Date(item.orden || Date.now()).toISOString(),
+      };
+    } catch {
+      return null;
+    }
+  }).filter(Boolean);
+
+  const comisionesPeriodo = rawComisiones
+    .filter(p => {
+      const fPago = p.fecha_pago || (p.created_at ? p.created_at.slice(0, 10) : null);
+      return fPago && fPago >= fechaDesde && fPago <= fechaHasta;
+    })
+    .map(p => ({
+      id: `comision-${p.id}`,
+      rawId: p.id,
+      tipo: 'PAGO_COMISION',
+      tipoLabel: 'Comisión Asesor',
+      concepto: p.lote ? `Comisión Lote ${p.lote}` : 'Anticipo / Comisión General',
+      vendedor: p.vendedor_nombre || 'Sin Asesor',
+      valor: parseFloat(p.valor) || 0,
+      fecha_pago: p.fecha_pago || (p.created_at ? p.created_at.slice(0, 10) : fechaDesde),
+      medio_pago: p.medio_pago || 'TRANSFERENCIA',
+      lote: p.lote || 'General (Sin Lote)',
+      comprobante: p.comprobante || '—',
+      observacion: p.observacion || '',
+      registrado_por: p.registrado_por || '',
+    }))
+    .filter(p => p.valor > 0)
+    .sort((a, b) => (b.fecha_pago || '').localeCompare(a.fecha_pago || ''));
+
   // 3. Métricas Financieras (KPIs)
   const totalCuotasMes = cuotasMes.reduce((acc, c) => acc + c.valor, 0);
   const countCuotasMes = cuotasMes.length;
@@ -181,6 +225,10 @@ export const getCierreMensualData = async (param1, param2, forceRefresh = false)
   const totalRecaudadoMes = totalCuotasMes + totalInicialesMes;
   const totalTransacciones = todosIngresos.length;
   const ticketPromedio = totalTransacciones > 0 ? Math.round(totalRecaudadoMes / totalTransacciones) : 0;
+
+  const totalComisionesPeriodo = comisionesPeriodo.reduce((acc, c) => acc + c.valor, 0);
+  const countComisionesPeriodo = comisionesPeriodo.length;
+  const flujoNetoCaja = totalRecaudadoMes - totalComisionesPeriodo;
 
   // 4. Ranking y Desglose por Asesor Comercial
   const asesorMap = {};
@@ -210,13 +258,35 @@ export const getCierreMensualData = async (param1, param2, forceRefresh = false)
     }
   });
 
+  const comisionesPorAsesor = {};
+  comisionesPeriodo.forEach(c => {
+    const v = c.vendedor || 'Sin Asesor';
+    comisionesPorAsesor[v] = (comisionesPorAsesor[v] || 0) + c.valor;
+  });
+
+  Object.keys(comisionesPorAsesor).forEach(vend => {
+    if (!asesorMap[vend]) {
+      asesorMap[vend] = {
+        vendedor: vend,
+        totalRecaudado: 0,
+        totalCuotas: 0,
+        countCuotas: 0,
+        totalIniciales: 0,
+        countIniciales: 0,
+        totalTransacciones: 0,
+        lotes: new Set(),
+      };
+    }
+  });
+
   const rankingAsesores = Object.values(asesorMap)
     .map(a => ({
       ...a,
       lotesCount: a.lotes.size,
       pctDelTotal: totalRecaudadoMes > 0 ? (a.totalRecaudado / totalRecaudadoMes) * 100 : 0,
+      totalComisionesCobradas: comisionesPorAsesor[a.vendedor] || 0,
     }))
-    .sort((a, b) => b.totalRecaudado - a.totalRecaudado);
+    .sort((a, b) => (b.totalRecaudado - a.totalRecaudado) || ((b.totalComisionesCobradas || 0) - (a.totalComisionesCobradas || 0)));
 
   // 5. Desglose por Medios de Pago
   const medioMap = {};
@@ -318,10 +388,14 @@ export const getCierreMensualData = async (param1, param2, forceRefresh = false)
       countInicialesMes,
       totalTransacciones,
       ticketPromedio,
+      totalComisionesPeriodo,
+      countComisionesPeriodo,
+      flujoNetoCaja,
     },
     todosIngresos,
     cuotasMes,
     inicialesMes,
+    comisionesPeriodo,
     rankingAsesores,
     desgloseMedios,
     recaudoPorDia,

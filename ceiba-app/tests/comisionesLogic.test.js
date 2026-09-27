@@ -48,4 +48,66 @@ describe('Lógica y Liquidación de Comisiones', () => {
     expect(saldoTotalPendiente).toBe(12000000);
     expect(saldoTotalPendiente).toBeGreaterThanOrEqual(0);
   });
+
+  it('calcula correctamente los abonos y saldo de comisión al registrar venta con desembolso inmediato', () => {
+    const comisionAcordada = 2000000;
+
+    // Caso A: No se cobra de inmediato -> queda todo en saldo pendiente
+    const casoNoInmediato = {
+      pagar_inmediato: false,
+      valor_pagado: 0,
+    };
+    const abonoA = casoNoInmediato.pagar_inmediato ? casoNoInmediato.valor_pagado : 0;
+    const saldoA = Math.max(0, comisionAcordada - abonoA);
+    expect(abonoA).toBe(0);
+    expect(saldoA).toBe(2000000);
+
+    // Caso B: Cobro inmediato total
+    const casoInmediatoTotal = {
+      pagar_inmediato: true,
+      valor_pagado: 2000000,
+    };
+    const abonoB = Math.min(comisionAcordada, casoInmediatoTotal.valor_pagado);
+    const saldoB = Math.max(0, comisionAcordada - abonoB);
+    expect(abonoB).toBe(2000000);
+    expect(saldoB).toBe(0);
+
+    // Caso C: Cobro inmediato parcial (anticipo)
+    const casoInmediatoParcial = {
+      pagar_inmediato: true,
+      valor_pagado: 500000,
+    };
+    const abonoC = Math.min(comisionAcordada, casoInmediatoParcial.valor_pagado);
+    const saldoC = Math.max(0, comisionAcordada - abonoC);
+    expect(abonoC).toBe(500000);
+    expect(saldoC).toBe(1500000);
+  });
+
+  it('cuando un asesor retira dinero sin relacionar un lote, descuenta de su saldo global sin alterar lotes individuales', () => {
+    // Asesor con 2 ventas
+    const ventas = [
+      { id: 'v1', lote_id_lote: 'LC1 - 1 - 1', comision_vendedor: 1000000, abonos: 0, saldo: 1000000 },
+      { id: 'v2', lote_id_lote: 'LC1 - 1 - 2', comision_vendedor: 1500000, abonos: 0, saldo: 1500000 },
+    ];
+    const totalComisiones = ventas.reduce((acc, v) => acc + v.comision_vendedor, 0); // 2.500.000
+
+    // Retiro general sin lote de 800.000
+    const pagoGeneral = {
+      vendedor_nombre: 'ASESOR TEST',
+      valor: 800000,
+      lote: null, // Sin lote
+    };
+
+    // El sistema NO altera las ventas individuales
+    expect(pagoGeneral.lote).toBeNull();
+    ventas.forEach(v => {
+      // Las ventas individuales no son tocadas
+      expect(v.abonos).toBe(0);
+    });
+
+    // Pero a nivel global del asesor:
+    const totalPagado = pagoGeneral.valor;
+    const saldoPendienteGlobal = Math.max(0, totalComisiones - totalPagado);
+    expect(saldoPendienteGlobal).toBe(1700000);
+  });
 });

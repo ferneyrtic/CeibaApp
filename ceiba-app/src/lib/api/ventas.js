@@ -2,6 +2,7 @@ import { supabase } from '../supabase';
 import { clearCarteraCache } from './cartera';
 import { clearCierreCache } from './cierreApi';
 import { registrarAccion } from './auditApi';
+import { registrarPagoComision, clearComisionesCache } from './comisionesApi';
 
 export const getVentas = async ({ search, estado } = {}) => {
   let query = supabase
@@ -162,6 +163,11 @@ export const registrarVentaCompleta = async ({
   cliente,
   vendedor_nombre,
   comision_vendedor = 0,
+  pagar_comision_inmediata = false,
+  valor_comision_pagada = 0,
+  medio_pago_comision = 'TRANSFERENCIA BANCOLOMBIA',
+  comprobante_comision = null,
+  observacion_comision = null,
   precio_venta,
   valor_cuota_inicial = 0,
   fecha_pago_cuota_inicial,
@@ -206,6 +212,14 @@ export const registrarVentaCompleta = async ({
   const fVenta = fecha_venta || new Date().toISOString().slice(0, 10);
   const estadoVenta = sFinanciado === 0 ? 'PAGADO EN SU TOTALIDAD' : 'VENDIDO';
 
+  // Cálculos de comisión asesor
+  const comisionFinal = Number(comision_vendedor) || 0;
+  const debePagarInmediato = Boolean(pagar_comision_inmediata) && comisionFinal > 0;
+  const valorPagoComision = debePagarInmediato
+    ? Math.min(comisionFinal, Math.max(0, Number(valor_comision_pagada) || comisionFinal))
+    : 0;
+  const saldoComision = Math.max(0, comisionFinal - valorPagoComision);
+
   // 2. Insertar Venta
   const { data: ventaData, error: ventaErr } = await supabase
     .from('ventas')
@@ -224,10 +238,10 @@ export const registrarVentaCompleta = async ({
       plazo_cuotas: Number(plazo_cuotas) || 0,
       valor_cuota: Number(valor_cuota) || 0,
       dias_pago: String(dias_pago || '-'),
-      comision_vendedor: Number(comision_vendedor) || 0,
-      abonos: 0,
+      comision_vendedor: comisionFinal,
+      abonos: valorPagoComision,
       descuentos: 0,
-      saldo: sFinanciado,
+      saldo: saldoComision,
     })
     .select()
     .single();
@@ -280,7 +294,26 @@ export const registrarVentaCompleta = async ({
     console.warn('Aviso actualizando lote:', loteErr);
   }
 
-  // 5. Registrar Acción en Auditoría
+  // 5. Si se indicó desembolso inmediato de comisión, registrar en datos_maestros
+  if (debePagarInmediato && valorPagoComision > 0) {
+    try {
+      await registrarPagoComision({
+        vendedor_nombre: vendedor_nombre || 'DIRECTO',
+        valor: valorPagoComision,
+        fecha_pago: fVenta,
+        medio_pago: medio_pago_comision || 'TRANSFERENCIA BANCOLOMBIA',
+        lote: lote.id_lote || (lote.manzana && lote.lote ? `MZ ${lote.manzana} LT ${lote.lote}` : null),
+        comprobante: comprobante_comision || null,
+        observacion: observacion_comision || `Comisión desembolsada al registrar venta del lote ${lote.id_lote || ''}`,
+        registrado_por: 'REGISTRO_VENTA',
+        skipVentasUpdate: true, // Ya se asignaron abonos y saldo directamente en el insert de ventas
+      });
+    } catch (pagoErr) {
+      console.warn('Advertencia registrando pago de comisión inmediata:', pagoErr);
+    }
+  }
+
+  // 6. Registrar Acción en Auditoría
   try {
     await registrarAccion({
       modulo: 'VENTAS',
@@ -288,7 +321,7 @@ export const registrarVentaCompleta = async ({
       lote_id: lote.id,
       lote_id_str: lote.id_lote || `Lote ${lote.id}`,
       cliente_nombre: clienteNombre,
-      descripcion: `Venta registrada para lote ${lote.id_lote || lote.id}: Cliente ${clienteNombre}, Precio $${pVenta.toLocaleString('es-CO')}, Inicial $${cInicial.toLocaleString('es-CO')}, Financiado $${sFinanciado.toLocaleString('es-CO')} (${plazo_cuotas} cuotas)`,
+      descripcion: `Venta registrada para lote ${lote.id_lote || lote.id}: Cliente ${clienteNombre}, Precio $${pVenta.toLocaleString('es-CO')}, Inicial $${cInicial.toLocaleString('es-CO')}, Financiado $${sFinanciado.toLocaleString('es-CO')} (${plazo_cuotas} cuotas)${debePagarInmediato ? ` | Comisión pagada de inmediato: $${valorPagoComision.toLocaleString('es-CO')}` : ''}`,
       detalles: {
         venta_id: ventaData.id,
         lote_id: lote.id,
@@ -301,15 +334,19 @@ export const registrarVentaCompleta = async ({
         plazo_cuotas,
         valor_cuota,
         cuotas_generadas: cuotas.length,
+        comision_vendedor: comisionFinal,
+        comision_pagada_inmediata: valorPagoComision,
+        saldo_comision: saldoComision,
       }
     });
   } catch (logErr) {
     console.warn('Aviso guardando log de auditoría:', logErr);
   }
 
-  // 6. Limpiar cachés para reflejar la cuenta por cobrar en tiempo real
+  // 7. Limpiar cachés para reflejar la cuenta por cobrar y el cierre en tiempo real
   clearCarteraCache();
   clearCierreCache();
+  clearComisionesCache();
 
   return ventaData;
 };

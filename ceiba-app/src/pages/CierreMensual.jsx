@@ -40,7 +40,7 @@ const getLogoBase64 = async () => {
   }
 };
 
-const exportPDFCierre = async (periodo, kpis, items, rankingAsesores, filename) => {
+const exportPDFCierre = async (periodo, kpis, items, rankingAsesores, comisiones = [], filename) => {
   const { default: jsPDF } = await import('jspdf');
   const { default: autoTable } = await import('jspdf-autotable');
 
@@ -71,7 +71,7 @@ const exportPDFCierre = async (periodo, kpis, items, rankingAsesores, filename) 
   doc.setTextColor(100, 100, 100);
   doc.setFontSize(8.5);
   doc.text(
-    `Total Recaudado: ${formatCOP(kpis.totalRecaudadoMes)} · ${kpis.totalTransacciones} Transacciones de pago · Cuotas: ${formatCOP(kpis.totalCuotasMes)} (${kpis.countCuotasMes}) · Iniciales: ${formatCOP(kpis.totalInicialesMes)} (${kpis.countInicialesMes})`,
+    `Total Recaudado: ${formatCOP(kpis.totalRecaudadoMes)} · Comisiones Pagadas: ${formatCOP(kpis.totalComisionesPeriodo || 0)} · Flujo Neto: ${formatCOP(kpis.flujoNetoCaja ?? kpis.totalRecaudadoMes)} · ${kpis.totalTransacciones} Transacciones`,
     14, 29
   );
   doc.text(
@@ -126,12 +126,77 @@ const exportPDFCierre = async (periodo, kpis, items, rankingAsesores, filename) 
     margin: { left: 14, right: 14 },
   });
 
+  // Sección de Comisiones Desembolsadas si existen
+  if (comisiones && comisiones.length > 0) {
+    doc.addPage();
+    doc.setFillColor(180, 83, 9);
+    doc.rect(0, 0, 297, 24, 'F');
+
+    if (logoBase64) {
+      try {
+        doc.addImage(logoBase64, 'JPEG', 10, 3, 13, 18);
+      } catch (e) {
+        console.warn('Error embedding logo:', e);
+      }
+    }
+
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(13);
+    doc.setFont('helvetica', 'bold');
+    doc.text('LA CEIBA GROUP — EGRESOS: DESEMBOLSOS DE COMISIONES A ASESORES', 28, 10);
+    doc.setFontSize(9.5);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Período: ${periodo.desde} al ${periodo.hasta} · Total Pagado: ${formatCOP(kpis.totalComisionesPeriodo || 0)} (${kpis.countComisionesPeriodo || 0} pagos)`, 28, 16);
+
+    const comisionesRows = comisiones.map(c => [
+      formatDate(c.fecha_pago),
+      c.vendedor,
+      c.lote,
+      formatCOP(c.valor),
+      c.medio_pago || '—',
+      c.comprobante || '—',
+      c.observacion || '—',
+    ]);
+
+    autoTable(doc, {
+      startY: 33,
+      head: [[
+        'Fecha Pago', 'Asesor Comercial', 'Lote Imputado', 'Valor Desembolsado',
+        'Medio Pago', 'Comprobante', 'Observaciones'
+      ]],
+      body: comisionesRows,
+      styles: {
+        fontSize: 7.5,
+        cellPadding: 2.5,
+        overflow: 'linebreak',
+      },
+      headStyles: {
+        fillColor: [180, 83, 9],
+        textColor: 255,
+        fontStyle: 'bold',
+        fontSize: 8,
+        halign: 'center',
+      },
+      alternateRowStyles: { fillColor: [254, 243, 199] },
+      columnStyles: {
+        0: { cellWidth: 24, halign: 'center', fontStyle: 'bold' },
+        1: { cellWidth: 46 },
+        2: { cellWidth: 28, halign: 'center' },
+        3: { cellWidth: 32, halign: 'right', fontStyle: 'bold' },
+        4: { cellWidth: 32 },
+        5: { cellWidth: 32 },
+        6: { cellWidth: 68 },
+      },
+      margin: { left: 14, right: 14 },
+    });
+  }
+
   const pageCount = doc.internal.getNumberOfPages();
   for (let i = 1; i <= pageCount; i++) {
     doc.setPage(i);
     doc.setFontSize(7);
     doc.setTextColor(150, 150, 150);
-    doc.text(`Página ${i} de ${pageCount} — Flujo de Caja por Fecha de Pago · La Ceiba Group`, 14, doc.internal.pageSize.height - 6);
+    doc.text(`Página ${i} de ${pageCount} — Flujo de Caja y Cierre Contable · La Ceiba Group`, 14, doc.internal.pageSize.height - 6);
     doc.text(`Período: ${periodo.desde} al ${periodo.hasta}`, 230, doc.internal.pageSize.height - 6);
   }
 
@@ -218,15 +283,56 @@ export default function CierreMensual() {
     return filteredItems.reduce((acc, it) => acc + (it.valor || 0), 0);
   }, [filteredItems]);
 
+  // Filtrado de Comisiones Desembolsadas
+  const filteredComisiones = useMemo(() => {
+    if (!data?.comisionesPeriodo) return [];
+    return data.comisionesPeriodo.filter(item => {
+      if (medioFilter !== 'TODOS' && item.medio_pago?.toUpperCase() !== medioFilter.toUpperCase()) {
+        return false;
+      }
+      if (asesorFilter !== 'TODOS' && item.vendedor !== asesorFilter) {
+        return false;
+      }
+      if (searchTerm) {
+        const s = searchTerm.toLowerCase();
+        const m1 = item.lote?.toLowerCase().includes(s);
+        const m2 = item.vendedor?.toLowerCase().includes(s);
+        const m3 = item.comprobante?.toLowerCase().includes(s);
+        const m4 = item.observacion?.toLowerCase().includes(s);
+        return m1 || m2 || m3 || m4;
+      }
+      return true;
+    });
+  }, [data?.comisionesPeriodo, searchTerm, medioFilter, asesorFilter]);
+
+  const totalComisionesItems = filteredComisiones.length;
+  const totalPagesComisiones = Math.max(1, Math.ceil(totalComisionesItems / pageSize));
+  const paginatedComisiones = useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return filteredComisiones.slice(start, start + pageSize);
+  }, [filteredComisiones, page, pageSize]);
+
+  const totalFiltradoComisiones = useMemo(() => {
+    return filteredComisiones.reduce((acc, it) => acc + (it.valor || 0), 0);
+  }, [filteredComisiones]);
+
   // Lista de asesores y medios para filtros rápidos
   const asesoresDisponibles = useMemo(() => {
-    if (!data?.todosIngresos) return [];
-    return [...new Set(data.todosIngresos.map(i => i.vendedor).filter(Boolean))].sort();
+    if (!data) return [];
+    const list = [
+      ...(data.todosIngresos || []).map(i => i.vendedor),
+      ...(data.comisionesPeriodo || []).map(c => c.vendedor)
+    ].filter(Boolean);
+    return [...new Set(list)].sort();
   }, [data]);
 
   const mediosDisponibles = useMemo(() => {
-    if (!data?.todosIngresos) return [];
-    return [...new Set(data.todosIngresos.map(i => (i.medio_pago || 'Transferencia').toUpperCase()))].sort();
+    if (!data) return [];
+    const list = [
+      ...(data.todosIngresos || []).map(i => (i.medio_pago || 'Transferencia').toUpperCase()),
+      ...(data.comisionesPeriodo || []).map(c => (c.medio_pago || 'Transferencia').toUpperCase())
+    ].filter(Boolean);
+    return [...new Set(list)].sort();
   }, [data]);
 
   // Acciones de exportación
@@ -260,6 +366,7 @@ export default function CierreMensual() {
         '# Cuotas': a.countCuotas,
         'Recaudo Iniciales': a.totalIniciales,
         '# Iniciales': a.countIniciales,
+        'Comisiones Pagadas en Ciclo': a.totalComisionesCobradas || 0,
         'Lotes Atendidos': a.lotesCount,
       }));
 
@@ -270,11 +377,27 @@ export default function CierreMensual() {
         '# Transacciones': m.count,
       }));
 
-      await exportExcel([
+      const sheets = [
         { name: 'Todos los Ingresos', data: rowsTodos },
         { name: 'Recaudo por Asesor', data: rowsAsesores },
         { name: 'Medios de Pago', data: rowsMedios },
-      ], `Recaudos_Cierre_${periodoLabel}.xlsx`);
+      ];
+
+      if (data.comisionesPeriodo && data.comisionesPeriodo.length > 0) {
+        const rowsComisiones = data.comisionesPeriodo.map(c => ({
+          'Fecha de Pago': formatDate(c.fecha_pago),
+          'Asesor Comercial': c.vendedor,
+          'Lote Imputado': c.lote,
+          'Valor Desembolsado': c.valor,
+          'Medio de Pago': c.medio_pago,
+          'N° Comprobante': c.comprobante,
+          'Observación': c.observacion,
+          'Registrado Por': c.registrado_por,
+        }));
+        sheets.push({ name: 'Comisiones Desembolsadas', data: rowsComisiones });
+      }
+
+      await exportExcel(sheets, `Cierre_Recaudos_Comisiones_${periodoLabel}.xlsx`);
     } catch (e) {
       alert('Error exportando a Excel: ' + e.message);
     } finally {
@@ -294,7 +417,8 @@ export default function CierreMensual() {
         data.kpis,
         data.todosIngresos || [],
         data.rankingAsesores || [],
-        `Informe_Cierre_Recaudos_${fechaDesde}_${fechaHasta}.pdf`
+        data.comisionesPeriodo || [],
+        `Informe_Cierre_Recaudos_Comisiones_${fechaDesde}_${fechaHasta}.pdf`
       );
     } catch (e) {
       alert('Error exportando a PDF: ' + e.message);
@@ -372,68 +496,109 @@ export default function CierreMensual() {
 
       {/* KPIS FINANCIEROS PRINCIPALES */}
       {data && (
-        <div className="kpi-grid" style={{ marginBottom: 0 }}>
-          {/* KPI 1: TOTAL RECAUDO ENTRADO */}
-          <div className="kpi-card green" style={{ borderLeft: '4px solid #16a34a' }}>
-            <div className="kpi-icon green">
-              <DollarSign size={20} />
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 0 }}>
+          {/* Fila 1: Macro Flujo de Caja y Desembolsos */}
+          <div className="kpi-grid" style={{ marginBottom: 0 }}>
+            {/* KPI 1: TOTAL RECAUDO ENTRADO */}
+            <div className="kpi-card green" style={{ borderLeft: '4px solid #16a34a' }}>
+              <div className="kpi-icon green">
+                <DollarSign size={20} />
+              </div>
+              <div className="kpi-value" style={{ fontSize: 24, color: '#15803d' }}>
+                {formatCOP(data.kpis.totalRecaudadoMes)}
+              </div>
+              <div className="kpi-label" style={{ fontWeight: 700, color: '#166534' }}>
+                Total Dinero Recaudado en el Período
+              </div>
+              <div style={{ fontSize: 11, color: '#64748b', marginTop: 4 }}>
+                Ingresos brutos reales ({periodoLabel})
+              </div>
             </div>
-            <div className="kpi-value" style={{ fontSize: 24, color: '#15803d' }}>
-              {formatCOP(data.kpis.totalRecaudadoMes)}
+
+            {/* KPI 2: COMISIONES DESEMBOLSADAS */}
+            <div className="kpi-card" style={{ borderLeft: '4px solid #dc2626', background: '#fff' }}>
+              <div className="kpi-icon" style={{ background: '#fee2e2', color: '#dc2626' }}>
+                <Wallet size={20} />
+              </div>
+              <div className="kpi-value" style={{ fontSize: 24, color: '#b91c1c' }}>
+                {formatCOP(data.kpis.totalComisionesPeriodo || 0)}
+              </div>
+              <div className="kpi-label" style={{ fontWeight: 700, color: '#991b1b' }}>
+                Desembolsos a Asesores (Comisiones)
+              </div>
+              <div style={{ fontSize: 11, color: '#64748b', marginTop: 4 }}>
+                <strong>{data.kpis.countComisionesPeriodo || 0}</strong> pagos registrados en este ciclo
+              </div>
             </div>
-            <div className="kpi-label" style={{ fontWeight: 700, color: '#166534' }}>
-              Total Dinero Recaudado en el Período
-            </div>
-            <div style={{ fontSize: 11, color: '#64748b', marginTop: 4 }}>
-              Ingresos reales ({periodoLabel})
+
+            {/* KPI 3: FLUJO NETO DE CAJA */}
+            <div className="kpi-card" style={{
+              borderLeft: '4px solid #2563eb',
+              background: 'linear-gradient(135deg, #f0fdf4 0%, #eff6ff 100%)'
+            }}>
+              <div className="kpi-icon blue">
+                <TrendingUp size={20} />
+              </div>
+              <div className="kpi-value" style={{ fontSize: 24, color: '#1d4ed8' }}>
+                {formatCOP(data.kpis.flujoNetoCaja ?? data.kpis.totalRecaudadoMes)}
+              </div>
+              <div className="kpi-label" style={{ fontWeight: 700, color: '#1e40af' }}>
+                Flujo Neto Disponible en Caja
+              </div>
+              <div style={{ fontSize: 11, color: '#64748b', marginTop: 4 }}>
+                Recaudos Brutos − Comisiones Pagadas
+              </div>
             </div>
           </div>
 
-          {/* KPI 2: CUOTAS MENSUALES */}
-          <div className="kpi-card blue">
-            <div className="kpi-icon blue">
-              <Receipt size={18} />
+          {/* Fila 2: Desglose Operativo de Ingresos */}
+          <div className="kpi-grid" style={{ marginBottom: 0 }}>
+            {/* KPI 4: CUOTAS MENSUALES */}
+            <div className="kpi-card blue">
+              <div className="kpi-icon blue">
+                <Receipt size={18} />
+              </div>
+              <div className="kpi-value" style={{ fontSize: 21 }}>
+                {formatCOP(data.kpis.totalCuotasMes)}
+              </div>
+              <div className="kpi-label">
+                Recaudo Cuotas Mensuales
+              </div>
+              <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>
+                <strong>{data.kpis.countCuotasMes}</strong> cuotas pagadas en el ciclo
+              </div>
             </div>
-            <div className="kpi-value" style={{ fontSize: 22 }}>
-              {formatCOP(data.kpis.totalCuotasMes)}
-            </div>
-            <div className="kpi-label">
-              Recaudo Cuotas Mensuales
-            </div>
-            <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>
-              <strong>{data.kpis.countCuotasMes}</strong> cuotas pagadas en el mes
-            </div>
-          </div>
 
-          {/* KPI 3: CUOTAS INICIALES */}
-          <div className="kpi-card purple">
-            <div className="kpi-icon purple">
-              <TrendingUp size={18} />
+            {/* KPI 5: CUOTAS INICIALES */}
+            <div className="kpi-card purple">
+              <div className="kpi-icon purple">
+                <Layers size={18} />
+              </div>
+              <div className="kpi-value" style={{ fontSize: 21, color: '#7c3aed' }}>
+                {formatCOP(data.kpis.totalInicialesMes)}
+              </div>
+              <div className="kpi-label">
+                Recaudo Cuotas Iniciales
+              </div>
+              <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>
+                <strong>{data.kpis.countInicialesMes}</strong> iniciales de nuevos contratos
+              </div>
             </div>
-            <div className="kpi-value" style={{ fontSize: 22, color: '#7c3aed' }}>
-              {formatCOP(data.kpis.totalInicialesMes)}
-            </div>
-            <div className="kpi-label">
-              Recaudo Cuotas Iniciales
-            </div>
-            <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>
-              <strong>{data.kpis.countInicialesMes}</strong> iniciales de nuevos contratos
-            </div>
-          </div>
 
-          {/* KPI 4: TRANSACCIONES Y TICKET PROMEDIO */}
-          <div className="kpi-card yellow">
-            <div className="kpi-icon yellow">
-              <CheckCircle2 size={18} />
-            </div>
-            <div className="kpi-value" style={{ fontSize: 22 }}>
-              {data.kpis.totalTransacciones} <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-muted)' }}>pagos</span>
-            </div>
-            <div className="kpi-label">
-              Transacciones Recibidas
-            </div>
-            <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>
-              Ticket promedio: <strong>{formatCOP(data.kpis.ticketPromedio)}</strong>
+            {/* KPI 6: TRANSACCIONES Y TICKET PROMEDIO */}
+            <div className="kpi-card yellow">
+              <div className="kpi-icon yellow">
+                <CheckCircle2 size={18} />
+              </div>
+              <div className="kpi-value" style={{ fontSize: 21 }}>
+                {data.kpis.totalTransacciones} <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-muted)' }}>pagos</span>
+              </div>
+              <div className="kpi-label">
+                Transacciones Recibidas
+              </div>
+              <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>
+                Ticket promedio: <strong>{formatCOP(data.kpis.ticketPromedio)}</strong>
+              </div>
             </div>
           </div>
         </div>
@@ -451,13 +616,14 @@ export default function CierreMensual() {
           overflowX: 'auto'
         }}>
           {[
-            { id: 'todos',     label: '📋 Todos los Ingresos',  badge: data?.kpis.totalTransacciones },
-            { id: 'cuotas',    label: '📑 Cuotas Mensuales',    badge: data?.kpis.countCuotasMes },
-            { id: 'iniciales', label: '🚀 Cuotas Iniciales',    badge: data?.kpis.countInicialesMes },
-            { id: 'asesores',  label: '🏆 Recaudo por Asesor',  badge: data?.rankingAsesores?.length },
-            { id: 'medios',    label: '💳 Medios de Pago',      badge: data?.desgloseMedios?.length },
-            { id: 'diario',    label: '📅 Evolución Diaria',    badge: null },
-            { id: 'saldados',  label: '✅ Lotes Saldados',      badge: data?.lotesCompletamentePagados?.length },
+            { id: 'todos',      label: '📋 Todos los Ingresos',      badge: data?.kpis.totalTransacciones },
+            { id: 'cuotas',     label: '📑 Cuotas Mensuales',        badge: data?.kpis.countCuotasMes },
+            { id: 'iniciales',  label: '🚀 Cuotas Iniciales',        badge: data?.kpis.countInicialesMes },
+            { id: 'comisiones', label: '💸 Comisiones Desembolsadas', badge: data?.kpis.countComisionesPeriodo },
+            { id: 'asesores',   label: '🏆 Balance Asesores',        badge: data?.rankingAsesores?.length },
+            { id: 'medios',     label: '💳 Medios de Pago',          badge: data?.desgloseMedios?.length },
+            { id: 'diario',     label: '📅 Evolución Diaria',        badge: null },
+            { id: 'saldados',   label: '✅ Lotes Saldados',          badge: data?.lotesCompletamentePagados?.length },
           ].map(tab => (
             <button
               key={tab.id}
@@ -665,6 +831,167 @@ export default function CierreMensual() {
             </div>
           )}
 
+          {/* TAB: COMISIONES DESEMBOLSADAS A ASESORES */}
+          {activeTab === 'comisiones' && (
+            <div>
+              {/* FILTROS Y BÚSQUEDA */}
+              <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center', marginBottom: 16 }}>
+                <div style={{ position: 'relative', flex: 1, minWidth: 260 }}>
+                  <Search size={14} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+                  <input
+                    className="search-input"
+                    style={{ paddingLeft: 36, width: '100%' }}
+                    placeholder="Buscar por asesor, lote, comprobante u observación..."
+                    value={searchTerm}
+                    onChange={(e) => { setSearchTerm(e.target.value); setPage(1); }}
+                  />
+                </div>
+
+                {/* Filtro Asesor */}
+                <select
+                  className="filter-select"
+                  style={{ minWidth: 160 }}
+                  value={asesorFilter}
+                  onChange={(e) => { setAsesorFilter(e.target.value); setPage(1); }}
+                >
+                  <option value="TODOS">Todos los Asesores</option>
+                  {asesoresDisponibles.map(a => (
+                    <option key={a} value={a}>{a}</option>
+                  ))}
+                </select>
+
+                {/* Filtro Medio */}
+                <select
+                  className="filter-select"
+                  style={{ minWidth: 150 }}
+                  value={medioFilter}
+                  onChange={(e) => { setMedioFilter(e.target.value); setPage(1); }}
+                >
+                  <option value="TODOS">Todos los Medios</option>
+                  {mediosDisponibles.map(m => (
+                    <option key={m} value={m}>{m}</option>
+                  ))}
+                </select>
+
+                <div style={{ fontSize: 12, color: 'var(--text-muted)', marginLeft: 'auto' }}>
+                  Mostrando <strong>{filteredComisiones.length}</strong> pagos · Total egresos: <strong style={{ color: '#b91c1c' }}>{formatCOP(totalFiltradoComisiones)}</strong>
+                </div>
+              </div>
+
+              {/* TABLA DE COMISIONES */}
+              <div style={{ overflowX: 'auto' }}>
+                <table className="data-table" style={{ width: '100%', fontSize: 12 }}>
+                  <thead>
+                    <tr style={{ background: '#f8fafc', color: '#475569', fontSize: 11, textAlign: 'left' }}>
+                      <th style={{ padding: '8px 10px', textAlign: 'center' }}>FECHA DE PAGO</th>
+                      <th style={{ padding: '8px 10px' }}>ASESOR COMERCIAL</th>
+                      <th style={{ padding: '8px 10px' }}>LOTE IMPUTADO</th>
+                      <th style={{ padding: '8px 10px', textAlign: 'right' }}>VALOR DESEMBOLSADO</th>
+                      <th style={{ padding: '8px 10px' }}>MEDIO DE PAGO</th>
+                      <th style={{ padding: '8px 10px' }}>COMPROBANTE / REF</th>
+                      <th style={{ padding: '8px 10px' }}>OBSERVACIONES</th>
+                      <th style={{ padding: '8px 10px', textAlign: 'center' }}>REGISTRADO POR</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {paginatedComisiones.length === 0 ? (
+                      <tr>
+                        <td colSpan={8} style={{ textAlign: 'center', padding: '36px 20px', color: 'var(--text-muted)' }}>
+                          No se registraron desembolsos de comisiones a asesores en este período con los filtros aplicados.
+                        </td>
+                      </tr>
+                    ) : (
+                      paginatedComisiones.map((c) => (
+                        <tr key={c.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                          {/* FECHA PAGO */}
+                          <td style={{ padding: '9px 10px', textAlign: 'center', whiteSpace: 'nowrap' }}>
+                            <span style={{
+                              background: '#fee2e2',
+                              color: '#b91c1c',
+                              fontWeight: 700,
+                              padding: '3px 8px',
+                              borderRadius: 6,
+                              fontSize: 11,
+                              display: 'inline-block'
+                            }}>
+                              {formatDate(c.fecha_pago)}
+                            </span>
+                          </td>
+
+                          {/* ASESOR */}
+                          <td style={{ padding: '9px 10px', fontWeight: 700, color: '#1e293b', whiteSpace: 'nowrap' }}>
+                            {c.vendedor}
+                          </td>
+
+                          {/* LOTE */}
+                          <td style={{ padding: '9px 10px' }}>
+                            {c.lote && c.lote !== 'General (Sin Lote)' ? (
+                              <span style={{
+                                background: '#dbeafe',
+                                color: '#1d4ed8',
+                                fontWeight: 700,
+                                padding: '2px 7px',
+                                borderRadius: 4,
+                                fontSize: 11
+                              }}>
+                                {c.lote}
+                              </span>
+                            ) : (
+                              <span style={{ color: 'var(--text-muted)', fontSize: 11, fontStyle: 'italic' }}>
+                                General (Sin Lote)
+                              </span>
+                            )}
+                          </td>
+
+                          {/* VALOR */}
+                          <td style={{ padding: '9px 10px', textAlign: 'right', fontWeight: 800, color: '#b91c1c', fontSize: 12 }}>
+                            {formatCOP(c.valor)}
+                          </td>
+
+                          {/* MEDIO DE PAGO */}
+                          <td style={{ padding: '9px 10px', fontSize: 11, color: '#475569' }}>
+                            {c.medio_pago}
+                          </td>
+
+                          {/* COMPROBANTE */}
+                          <td style={{ padding: '9px 10px', fontFamily: 'monospace', fontSize: 11, color: '#334155' }}>
+                            {c.comprobante || '—'}
+                          </td>
+
+                          {/* OBSERVACIÓN */}
+                          <td style={{ padding: '9px 10px', fontSize: 11, color: '#64748b', maxWidth: 220 }}>
+                            {c.observacion || 'Liquidación de comisión'}
+                          </td>
+
+                          {/* REGISTRADO POR */}
+                          <td style={{ padding: '9px 10px', textAlign: 'center', fontSize: 10, color: '#94a3b8' }}>
+                            <span style={{ background: '#f1f5f9', padding: '2px 6px', borderRadius: 4 }}>
+                              {c.registrado_por || 'ADMIN'}
+                            </span>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* PAGINACIÓN COMISIONES */}
+              {totalPagesComisiones > 1 && (
+                <div style={{ marginTop: 14 }}>
+                  <Pagination
+                    currentPage={page}
+                    totalPages={totalPagesComisiones}
+                    totalItems={totalComisionesItems}
+                    pageSize={pageSize}
+                    onPageChange={setPage}
+                    onPageSizeChange={setPageSize}
+                  />
+                </div>
+              )}
+            </div>
+          )}
+
           {/* TAB 4: RANKING POR ASESOR */}
           {activeTab === 'asesores' && (
             <div>
@@ -683,6 +1010,7 @@ export default function CierreMensual() {
                       <th style={{ padding: '8px 10px', textAlign: 'center' }}># TRANSACCIONES</th>
                       <th style={{ padding: '8px 10px', textAlign: 'right' }}>CUOTAS ($)</th>
                       <th style={{ padding: '8px 10px', textAlign: 'right' }}>INICIALES ($)</th>
+                      <th style={{ padding: '8px 10px', textAlign: 'right' }}>COMISIÓN PAGADA ($)</th>
                       <th style={{ padding: '8px 10px', textAlign: 'center' }}>LOTES</th>
                     </tr>
                   </thead>
@@ -714,6 +1042,9 @@ export default function CierreMensual() {
                         </td>
                         <td style={{ padding: '8px 10px', textAlign: 'right', color: '#7c3aed', fontWeight: 500 }}>
                           {formatCOP(a.totalIniciales)} ({a.countIniciales})
+                        </td>
+                        <td style={{ padding: '8px 10px', textAlign: 'right', color: '#b91c1c', fontWeight: 600 }}>
+                          {formatCOP(a.totalComisionesCobradas || 0)}
                         </td>
                         <td style={{ padding: '8px 10px', textAlign: 'center', color: '#64748b' }}>
                           {a.lotesCount}

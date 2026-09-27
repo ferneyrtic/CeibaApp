@@ -164,6 +164,11 @@ export const getComisionesData = async (forceRefresh = false) => {
   return comisionesCache;
 };
 
+export const clearComisionesCache = () => {
+  comisionesCache = null;
+  comisionesCacheTime = 0;
+};
+
 export const registrarPagoComision = async (pagoData) => {
   const payload = {
     vendedor_nombre: pagoData.vendedor_nombre?.trim().toUpperCase(),
@@ -188,8 +193,8 @@ export const registrarPagoComision = async (pagoData) => {
 
   if (error) throw error;
 
-  // Si se vinculó a un lote específico, sincronizar abonos y saldo en la tabla ventas
-  if (payload.lote) {
+  // Si se vinculó a un lote específico y no se pide saltar la actualización de ventas
+  if (payload.lote && !pagoData.skipVentasUpdate) {
     try {
       const { data: lotesData } = await supabase
         .from('lotes')
@@ -223,7 +228,7 @@ export const registrarPagoComision = async (pagoData) => {
     }
   }
 
-  // Invalidar caché
+  // Invalidar cachés
   comisionesCache = null;
   comisionesCacheTime = 0;
 

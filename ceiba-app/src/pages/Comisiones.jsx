@@ -6,6 +6,7 @@ import {
   Building2, Filter, X
 } from 'lucide-react';
 import { getComisionesData, registrarPagoComision } from '../lib/api/comisionesApi';
+import { clearCierreCache } from '../lib/api/cierreApi';
 import { formatCOP, formatDate } from '../utils/helpers';
 import Modal from '../components/Modal';
 
@@ -72,6 +73,7 @@ export default function Comisiones() {
 
   const handlePagoGuardado = (nuevoPago) => {
     setModalOpen(false);
+    clearCierreCache();
     loadData(true);
   };
 
@@ -856,6 +858,11 @@ function RegistrarPagoModal({ asesores, ventas, initialAsesor, onClose, onSucces
                 onChange={(e) => setLote(e.target.value)}
               />
             )}
+            <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>
+              {!lote
+                ? 'ℹ️ Sin lote: El anticipo o retiro se descuenta del saldo global del asesor sin alterar contratos individuales.'
+                : `✓ Imputado directamente a la comisión del Lote ${lote}.`}
+            </div>
           </div>
         </div>
 

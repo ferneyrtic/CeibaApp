@@ -74,6 +74,13 @@ export default function ModalRegistrarVenta({
   const [mostrarCronograma, setMostrarCronograma] = useState(false);
   const [observacion, setObservacion] = useState('');
 
+  // Desembolso de comisión inmediata por contrato
+  const [pagarComisionInmediata, setPagarComisionInmediata] = useState(false);
+  const [valorComisionPagada, setValorComisionPagada] = useState('');
+  const [medioPagoComision, setMedioPagoComision] = useState('TRANSFERENCIA BANCOLOMBIA');
+  const [comprobanteComision, setComprobanteComision] = useState('');
+  const [observacionComision, setObservacionComision] = useState('');
+
   // Estados de proceso
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState(null);
@@ -236,6 +243,19 @@ export default function ModalRegistrarVenta({
       return;
     }
 
+    // Validación de desembolso de comisión
+    if (pagarComisionInmediata && comisionFinal > 0) {
+      const valPag = Number(valorComisionPagada) || comisionFinal;
+      if (valPag <= 0) {
+        setErrorMsg('El valor a desembolsar de comisión debe ser mayor a $0.');
+        return;
+      }
+      if (valPag > comisionFinal) {
+        setErrorMsg(`El valor a desembolsar (${formatCOP(valPag)}) no puede ser mayor a la comisión total acordada (${formatCOP(comisionFinal)}).`);
+        return;
+      }
+    }
+
     setSubmitting(true);
     try {
       const clientePayload = modoCliente === 'existente'
@@ -247,11 +267,20 @@ export default function ModalRegistrarVenta({
             ciudad: nuevoCliente.ciudad?.trim() || 'Acacías',
           };
 
+      const valComisionPagadaNum = (pagarComisionInmediata && comisionFinal > 0)
+        ? (Number(valorComisionPagada) || comisionFinal)
+        : 0;
+
       const result = await registrarVentaCompleta({
         lote: currentLote,
         cliente: clientePayload,
         vendedor_nombre: vendedorNombre || 'DIRECTO',
         comision_vendedor: comisionFinal,
+        pagar_comision_inmediata: pagarComisionInmediata && comisionFinal > 0,
+        valor_comision_pagada: valComisionPagadaNum,
+        medio_pago_comision: medioPagoComision,
+        comprobante_comision: comprobanteComision?.trim() || null,
+        observacion_comision: observacionComision?.trim() || null,
         precio_venta: pVentaNum,
         valor_cuota_inicial: cInicialNum,
         fecha_pago_cuota_inicial: cInicialNum > 0 ? fechaPagoInicial : null,
@@ -270,6 +299,10 @@ export default function ModalRegistrarVenta({
         cliente: clientePayload,
         saldoFinanciado,
         cuotasGeneradas: planCuotas.length,
+        vendedorNombre: vendedorNombre || 'DIRECTO',
+        comisionTotal: comisionFinal,
+        comisionPagada: valComisionPagadaNum,
+        comisionPendiente: Math.max(0, comisionFinal - valComisionPagadaNum),
       });
 
       if (onSuccess) {
@@ -354,6 +387,39 @@ export default function ModalRegistrarVenta({
               <> La venta fue liquidada de <strong>contado</strong> por <strong>{formatCOP(precioVenta)}</strong>.</>
             )}
           </p>
+
+          {successData.comisionTotal > 0 && (
+            <div style={{
+              background: successData.comisionPagada > 0 ? '#f0fdf4' : '#fffbeb',
+              border: `1px solid ${successData.comisionPagada > 0 ? '#bbf7d0' : '#fde68a'}`,
+              borderRadius: 8,
+              padding: '12px 16px',
+              maxWidth: 540,
+              margin: '0 auto 20px',
+              fontSize: 13,
+              color: successData.comisionPagada > 0 ? '#15803d' : '#b45309',
+              textAlign: 'left'
+            }}>
+              <div style={{ fontWeight: 700, marginBottom: 3, display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span>💼</span>
+                <span>Comisión del Asesor ({successData.vendedorNombre}):</span>
+              </div>
+              {successData.comisionPagada > 0 ? (
+                <div>
+                  Se registró desembolso de <strong>{formatCOP(successData.comisionPagada)}</strong> vinculado a este lote.
+                  {successData.comisionPendiente > 0 ? (
+                    <span> Saldo restante por pagar: <strong>{formatCOP(successData.comisionPendiente)}</strong>.</span>
+                  ) : (
+                    <span> Comisión liquidada al 100%.</span>
+                  )}
+                </div>
+              ) : (
+                <div>
+                  Comisión acumulada en saldo pendiente por pagar: <strong>{formatCOP(successData.comisionTotal)}</strong>.
+                </div>
+              )}
+            </div>
+          )}
 
           <div style={{ display: 'flex', justifyContent: 'center', gap: 12 }}>
             <button
@@ -680,6 +746,125 @@ export default function ModalRegistrarVenta({
                     )}
                   </div>
                 </div>
+
+                {/* Toggle y Datos de Desembolso Inmediato de Comisión */}
+                {comisionFinal > 0 && (
+                  <div style={{
+                    background: pagarComisionInmediata ? '#f0fdf4' : '#f8fafc',
+                    border: `1.5px solid ${pagarComisionInmediata ? '#86efac' : '#e2e8f0'}`,
+                    borderRadius: 8,
+                    padding: '12px 14px',
+                    marginBottom: 14,
+                    transition: 'all 0.2s ease',
+                  }}>
+                    <label style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 10,
+                      cursor: 'pointer',
+                      fontWeight: 700,
+                      fontSize: 13,
+                      color: pagarComisionInmediata ? '#166534' : '#334155',
+                      margin: 0
+                    }}>
+                      <input
+                        type="checkbox"
+                        checked={pagarComisionInmediata}
+                        onChange={e => {
+                          const checked = e.target.checked;
+                          setPagarComisionInmediata(checked);
+                          if (checked && (!valorComisionPagada || Number(valorComisionPagada) <= 0)) {
+                            setValorComisionPagada(comisionFinal);
+                          }
+                        }}
+                        style={{ width: 17, height: 17, accentColor: '#16a34a', cursor: 'pointer' }}
+                      />
+                      <span>¿Se paga / desembolsa comisión por contrato de una vez?</span>
+                    </label>
+                    <div style={{ fontSize: 11, color: 'var(--text-muted)', marginLeft: 27, marginTop: 3 }}>
+                      {pagarComisionInmediata
+                        ? 'Se registrará el egreso inmediatamente vinculado a este lote y se abonará a la comisión del asesor.'
+                        : 'Si no se cobra de una vez, el valor se acumulará al saldo pendiente por pagar del asesor en Comisiones.'}
+                    </div>
+
+                    {pagarComisionInmediata && (
+                      <div style={{
+                        marginTop: 12,
+                        paddingTop: 12,
+                        borderTop: '1px dashed #bbf7d0',
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+                        gap: 12
+                      }}>
+                        <div>
+                          <label style={{ fontSize: 11, fontWeight: 700, color: '#166534', display: 'block', marginBottom: 4 }}>
+                            Valor Desembolsado Ahora (COP) *
+                          </label>
+                          <input
+                            type="number"
+                            step="1000"
+                            className="form-control"
+                            value={valorComisionPagada}
+                            onChange={e => setValorComisionPagada(e.target.value)}
+                            style={{ fontSize: 13, fontWeight: 700, color: '#16a34a' }}
+                            max={comisionFinal}
+                          />
+                          <div style={{ fontSize: 10, color: '#15803d', marginTop: 2 }}>
+                            {formatCOP(Number(valorComisionPagada) || 0)} {Number(valorComisionPagada) < comisionFinal ? `(Queda pendiente: ${formatCOP(comisionFinal - (Number(valorComisionPagada) || 0))})` : '(Liquidación completa)'}
+                          </div>
+                        </div>
+
+                        <div>
+                          <label style={{ fontSize: 11, fontWeight: 600, color: '#334155', display: 'block', marginBottom: 4 }}>
+                            Medio de Desembolso *
+                          </label>
+                          <select
+                            className="form-control"
+                            value={medioPagoComision}
+                            onChange={e => setMedioPagoComision(e.target.value)}
+                            style={{ fontSize: 12 }}
+                          >
+                            <option value="TRANSFERENCIA BANCOLOMBIA">Transferencia Bancolombia</option>
+                            <option value="TRANSFERENCIA DAVIVIENDA">Transferencia Davivienda</option>
+                            <option value="NEQUI">Nequi</option>
+                            <option value="DAVIPLATA">Daviplata</option>
+                            <option value="EFECTIVO">Efectivo</option>
+                            <option value="CHEQUE">Cheque</option>
+                            <option value="OTRO">Otro</option>
+                          </select>
+                        </div>
+
+                        <div>
+                          <label style={{ fontSize: 11, fontWeight: 600, color: '#334155', display: 'block', marginBottom: 4 }}>
+                            Comprobante / Referencia (Opcional)
+                          </label>
+                          <input
+                            type="text"
+                            className="form-control"
+                            placeholder="Ej. Transf. #123456"
+                            value={comprobanteComision}
+                            onChange={e => setComprobanteComision(e.target.value)}
+                            style={{ fontSize: 12 }}
+                          />
+                        </div>
+
+                        <div>
+                          <label style={{ fontSize: 11, fontWeight: 600, color: '#334155', display: 'block', marginBottom: 4 }}>
+                            Observación Desembolso (Opcional)
+                          </label>
+                          <input
+                            type="text"
+                            className="form-control"
+                            placeholder="Ej. Pago contra cuota inicial"
+                            value={observacionComision}
+                            onChange={e => setObservacionComision(e.target.value)}
+                            style={{ fontSize: 12 }}
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 {/* Precio, Cuota Inicial, Saldo */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12, marginBottom: 14 }}>
