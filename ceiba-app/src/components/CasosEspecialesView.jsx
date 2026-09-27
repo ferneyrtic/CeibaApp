@@ -11,8 +11,11 @@ import {
 } from '../lib/api/casosEspecialesApi';
 import { formatCOP, formatDate } from '../utils/helpers';
 import Modal from './Modal';
+import { useAuth } from '../context/AuthContext';
 
 export default function CasosEspecialesView({ onOpenEstadoCuenta, usuarioActual }) {
+  const { permissions } = useAuth();
+  const canDeleteCasos = permissions?.canDeleteCasosEspeciales ?? true;
   const [casos, setCasos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -114,6 +117,10 @@ export default function CasosEspecialesView({ onOpenEstadoCuenta, usuarioActual 
   };
 
   const handleEliminar = async (id, idLote) => {
+    if (!canDeleteCasos) {
+      alert('Permiso denegado: El rol de Secretaría no puede eliminar casos especiales.');
+      return;
+    }
     if (!window.confirm(`¿Seguro que deseas eliminar el caso especial del lote ${idLote}?`)) return;
     try {
       await eliminarCasoEspecial(id, usuarioActual);
@@ -460,14 +467,16 @@ export default function CasosEspecialesView({ onOpenEstadoCuenta, usuarioActual 
                       </button>
                     )}
 
-                    <button
-                      className="btn btn-ghost"
-                      onClick={() => handleEliminar(caso.id, caso.id_lote)}
-                      style={{ padding: '4px 6px', fontSize: 11, color: '#dc2626' }}
-                      title="Eliminar caso"
-                    >
-                      <Trash2 size={13} />
-                    </button>
+                    {canDeleteCasos && (
+                      <button
+                        className="btn btn-ghost"
+                        onClick={() => handleEliminar(caso.id, caso.id_lote)}
+                        style={{ padding: '4px 6px', fontSize: 11, color: '#dc2626' }}
+                        title="Eliminar caso (Administrador o Contadora)"
+                      >
+                        <Trash2 size={13} />
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>

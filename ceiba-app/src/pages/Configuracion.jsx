@@ -3,7 +3,7 @@ import { Sun, Moon, Shield, Database, User, Laptop, CheckCircle2 } from 'lucide-
 import { useAuth } from '../context/AuthContext';
 
 export default function Configuracion({ theme, onToggleTheme }) {
-  const { user, role, signOut } = useAuth();
+  const { user, role, roleInfo, permissions, signOut } = useAuth();
 
   return (
     <div style={{ maxWidth: 800 }}>
@@ -132,14 +132,24 @@ export default function Configuracion({ theme, onToggleTheme }) {
           </div>
           <div className="detail-item">
             <div className="detail-label">Rol Asignado</div>
-            <div className="detail-value" style={{ textTransform: 'capitalize', color: 'var(--accent)', fontWeight: 700 }}>
-              {role}
+            <div className="detail-value" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span style={{
+                background: roleInfo?.badgeBg || '#eff6ff',
+                color: roleInfo?.badgeColor || '#1d4ed8',
+                border: `1px solid ${roleInfo?.badgeBorder || '#bfdbfe'}`,
+                padding: '2px 8px',
+                borderRadius: 4,
+                fontSize: 11,
+                fontWeight: 800
+              }}>
+                {roleInfo?.label || role}
+              </span>
             </div>
           </div>
           <div className="detail-item">
-            <div className="detail-label">ID de Sesión</div>
-            <div className="detail-value" style={{ fontFamily: 'monospace', fontSize: 11 }}>
-              {user?.id?.slice(0, 16)}...
+            <div className="detail-label">Nivel de Acceso</div>
+            <div className="detail-value" style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
+              {roleInfo?.description || 'Acceso estándar al sistema'}
             </div>
           </div>
         </div>

@@ -10,10 +10,12 @@ import Pagination from '../components/Pagination';
 import ModalNuevoLote from '../components/ModalNuevoLote';
 import ModalRegistrarVenta from '../components/ModalRegistrarVenta';
 import ModalEditarContrato from '../components/ModalEditarContrato';
+import { useAuth } from '../context/AuthContext';
 
 const ESTADOS = ['Todos', 'VENDIDO', 'PAGADO EN SU TOTALIDAD', 'DISPONIBLE', 'EN NEGOCIACIÓN', 'APARTADO', 'NO APTO PARA VENTA'];
 
 export default function Lotes() {
+  const { permissions } = useAuth();
   const [allLotes, setAllLotes]     = useState([]);
   const [casosEspeciales, setCasosEspeciales] = useState([]);
   const [loading, setLoading]       = useState(true);
@@ -513,7 +515,7 @@ export default function Lotes() {
           )}
 
           <div className="modal-footer" style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 20 }}>
-            {(selected.estado === 'VENDIDO' || selected.estado === 'PAGADO EN SU TOTALIDAD' || selected.propietario) && (
+            {permissions?.canEditContrato && (selected.estado === 'VENDIDO' || selected.estado === 'PAGADO EN SU TOTALIDAD' || selected.propietario) && (
               <button
                 className="btn btn-secondary"
                 style={{ display: 'flex', alignItems: 'center', gap: 6 }}

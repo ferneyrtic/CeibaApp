@@ -301,6 +301,50 @@ export default function Login() {
           </button>
         </form>
 
+        {!isRegister && (
+          <div style={{ marginTop: 24, paddingTop: 18, borderTop: '1px solid #e2e8f0' }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 10, textAlign: 'center' }}>
+              Acceso Rápido por Rol
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+              {[
+                { label: '👑 Admin', email: 'admin@ceiba.com', pw: 'admin123', color: '#7c3aed', bg: '#f5f3ff', border: '#ddd6fe' },
+                { label: '🏛️ Propietario', email: 'propietario@ceiba.com', pw: 'propietario123', color: '#b45309', bg: '#fffbeb', border: '#fde68a' },
+                { label: '📊 Contadora', email: 'contadora@ceiba.com', pw: 'contadora123', color: '#1d4ed8', bg: '#eff6ff', border: '#bfdbfe' },
+                { label: '💼 Secretaría', email: 'secretaria@ceiba.com', pw: 'secretaria123', color: '#059669', bg: '#ecfdf5', border: '#a7f3d0' }
+              ].map(r => (
+                <button
+                  key={r.email}
+                  type="button"
+                  onClick={() => {
+                    setEmail(r.email);
+                    setPassword(r.pw);
+                    setError('');
+                  }}
+                  style={{
+                    padding: '8px 10px',
+                    borderRadius: 8,
+                    border: `1px solid ${r.border}`,
+                    background: r.bg,
+                    color: r.color,
+                    fontSize: 11.5,
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 4,
+                    transition: 'all 0.15s ease'
+                  }}
+                  title={`Cargar credenciales de ${r.label}`}
+                >
+                  {r.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
         <div style={{ textAlign: 'center', marginTop: 18, fontSize: 12, color: '#64748b' }}>
           {isRegister ? (
             <span>

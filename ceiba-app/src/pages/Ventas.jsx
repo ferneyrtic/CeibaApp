@@ -7,8 +7,10 @@ import Modal from '../components/Modal';
 import Pagination from '../components/Pagination';
 import ModalRegistrarVenta from '../components/ModalRegistrarVenta';
 import ModalEditarContrato from '../components/ModalEditarContrato';
+import { useAuth } from '../context/AuthContext';
 
 export default function Ventas() {
+  const { permissions } = useAuth();
   const [allVentas, setAllVentas] = useState([]);
   const [loading, setLoading]     = useState(true);
   const [search, setSearch]       = useState('');
@@ -238,18 +240,20 @@ export default function Ventas() {
 
           <div className="modal-footer" style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 20 }}>
             <button className="btn btn-ghost" onClick={() => setSelected(null)}>Cerrar</button>
-            <button
-              className="btn btn-secondary"
-              style={{ display: 'flex', alignItems: 'center', gap: 6 }}
-              onClick={() => {
-                const v = selected;
-                setSelected(null);
-                setEditingVenta(v);
-              }}
-              title="Editar titular y condiciones del contrato"
-            >
-              <Edit3 size={13} /> Editar Contrato
-            </button>
+            {permissions?.canEditContrato && (
+              <button
+                className="btn btn-secondary"
+                style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+                onClick={() => {
+                  const v = selected;
+                  setSelected(null);
+                  setEditingVenta(v);
+                }}
+                title="Editar titular y condiciones del contrato"
+              >
+                <Edit3 size={13} /> Editar Contrato
+              </button>
+            )}
             <button
               className="btn btn-primary"
               style={{ display:'flex', alignItems:'center', gap:6 }}

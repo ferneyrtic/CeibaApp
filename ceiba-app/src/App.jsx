@@ -53,10 +53,15 @@ const PAGE_META = {
   config:     { title: 'Configuración',             sub: 'Personalización visual y parámetros del sistema' },
 };
 
-function Sidebar({ active, onNav, user, onSignOut, isOpen, onClose }) {
+function Sidebar({ active, onNav, user, onSignOut, isOpen, onClose, permissions, roleInfo, role }) {
   let lastSection = null;
   const initials = user?.email?.slice(0, 2).toUpperCase() || 'US';
-  const role = user?.user_metadata?.role || 'contadora';
+
+  const visibleNavItems = NAV_ITEMS.filter(item => {
+    if (item.id === 'cierre' && !permissions?.canViewCierre) return false;
+    if (item.id === 'config' && !permissions?.canViewConfig) return false;
+    return true;
+  });
 
   return (
     <>
@@ -90,7 +95,7 @@ function Sidebar({ active, onNav, user, onSignOut, isOpen, onClose }) {
         </div>
 
         <nav className="sidebar-nav">
-          {NAV_ITEMS.map(item => {
+          {visibleNavItems.map(item => {
             const showSection = item.section !== lastSection;
             lastSection = item.section;
             const Icon = item.icon;
@@ -114,21 +119,46 @@ function Sidebar({ active, onNav, user, onSignOut, isOpen, onClose }) {
         </nav>
 
         <div className="sidebar-footer">
-          <div className="user-chip">
-            <div className="user-avatar">{initials}</div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div className="user-name" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {user?.user_metadata?.nombre || user?.email}
+          <div className="user-chip" style={{ flexDirection: 'column', alignItems: 'stretch', gap: 10, padding: '12px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <div className="user-avatar" style={{ background: roleInfo?.badgeColor || 'var(--accent)', color: '#ffffff', fontWeight: 700 }}>
+                {initials}
               </div>
-              <div className="user-role" style={{ textTransform: 'capitalize' }}>{role}</div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div className="user-name" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: 700, fontSize: 13 }}>
+                  {user?.user_metadata?.nombre || user?.email?.split('@')[0]}
+                </div>
+                <div style={{ fontSize: 11, color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {user?.email}
+                </div>
+              </div>
+              <button
+                onClick={onSignOut}
+                title="Cerrar sesión"
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6b7280', padding: '4px', display: 'flex', flexShrink: 0 }}
+              >
+                <LogOut size={16} />
+              </button>
             </div>
-            <button
-              onClick={onSignOut}
-              title="Cerrar sesión"
-              style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6b7280', padding: '4px', display: 'flex', flexShrink: 0 }}
-            >
-              <LogOut size={16} />
-            </button>
+
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 6,
+              padding: '4px 8px',
+              borderRadius: 6,
+              background: roleInfo?.badgeBg || '#ecfdf5',
+              border: `1px solid ${roleInfo?.badgeBorder || '#a7f3d0'}`,
+              color: roleInfo?.badgeColor || '#059669',
+              fontSize: 10.5,
+              fontWeight: 800,
+              letterSpacing: '0.5px',
+              textTransform: 'uppercase'
+            }}>
+              <span style={{ width: 6, height: 6, borderRadius: '50%', background: roleInfo?.badgeColor || '#059669' }} />
+              ROL: {roleInfo?.label || role}
+            </div>
           </div>
         </div>
       </aside>
@@ -136,7 +166,7 @@ function Sidebar({ active, onNav, user, onSignOut, isOpen, onClose }) {
   );
 }
 
-function Topbar({ page, onToggleSidebar, theme, onToggleTheme }) {
+function Topbar({ page, onToggleSidebar, theme, onToggleTheme, roleInfo }) {
   const meta = PAGE_META[page] || {};
   return (
     <header className="topbar">
@@ -155,6 +185,25 @@ function Topbar({ page, onToggleSidebar, theme, onToggleTheme }) {
       </div>
 
       <div className="topbar-actions">
+        {/* Badge de Rol actual */}
+        {roleInfo && (
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+            padding: '4px 10px',
+            background: roleInfo.badgeBg,
+            border: `1px solid ${roleInfo.badgeBorder}`,
+            borderRadius: 20,
+            color: roleInfo.badgeColor,
+            fontSize: 11.5,
+            fontWeight: 700
+          }}>
+            <span style={{ width: 6, height: 6, borderRadius: '50%', background: roleInfo.badgeColor }} />
+            {roleInfo.label}
+          </div>
+        )}
+
         {/* Toggle Modo Oscuro / Claro en la barra superior */}
         <button
           className="btn btn-ghost"
@@ -227,10 +276,20 @@ function MobileBottomNav({ active, onNav, onOpenMenu }) {
 }
 
 export default function App() {
-  const { user, loading, signOut } = useAuth();
+  const { user, loading, signOut, role, roleInfo, permissions } = useAuth();
   const [page, setPage] = useState('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [theme, setTheme] = useState(() => localStorage.getItem('ceiba_theme') || 'light');
+
+  // Redirección si se intenta acceder a una sección restringida para el rol
+  useEffect(() => {
+    if (page === 'cierre' && !permissions?.canViewCierre) {
+      setPage('dashboard');
+    }
+    if (page === 'config' && !permissions?.canViewConfig) {
+      setPage('dashboard');
+    }
+  }, [page, permissions]);
 
   useEffect(() => {
     document.body.classList.toggle('dark-mode', theme === 'dark');
@@ -265,6 +324,9 @@ export default function App() {
         onSignOut={signOut}
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
+        permissions={permissions}
+        roleInfo={roleInfo}
+        role={role}
       />
       <div className="main-content">
         <Topbar
@@ -272,6 +334,7 @@ export default function App() {
           onToggleSidebar={() => setSidebarOpen(prev => !prev)}
           theme={theme}
           onToggleTheme={handleToggleTheme}
+          roleInfo={roleInfo}
         />
         {/* Marca de agua del logo */}
         <div className="watermark" aria-hidden="true">

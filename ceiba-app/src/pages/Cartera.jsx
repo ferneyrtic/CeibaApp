@@ -20,7 +20,7 @@ import ModalEditarCuota from '../components/ModalEditarCuota';
 import ModalEditarContrato from '../components/ModalEditarContrato';
 import ModalRegistrarPagoRecibo from '../components/ModalRegistrarPagoRecibo';
 import ReciboCajaView from '../components/ReciboCajaView';
-import { obtenerRecibosPorVenta } from '../lib/api/recibosApi';
+import { obtenerRecibosPorVenta, anularRecibo } from '../lib/api/recibosApi';
 import Pagination from '../components/Pagination';
 
 
@@ -91,7 +91,7 @@ function KpiCard({ color, icon, value, label, sub, subColor }) {
 }
 
 export default function Cartera() {
-  const { user } = useAuth();
+  const { user, permissions, role, isSecretaria } = useAuth();
   const [allCartera, setAllCartera]   = useState([]);
   const [stats, setStats]             = useState(null);
   const [loading, setLoading]         = useState(true);
@@ -128,6 +128,40 @@ export default function Cartera() {
   const [pagoReciboVenta, setPagoReciboVenta] = useState(null);
   const [pagoReciboCuota, setPagoReciboCuota] = useState(null);
   const [reciboParaVer, setReciboParaVer] = useState(null);
+
+  const handleAnularRecibo = async (recibo) => {
+    if (!permissions?.canDeleteRecibos) {
+      alert('Permiso denegado: El rol de Secretaría no puede anular ni eliminar recibos de pago. Debe solicitar la anulación a la Contadora o al Administrador.');
+      return;
+    }
+
+    const motivo = window.prompt(
+      `¿Seguro que deseas anular el Recibo #${recibo.numero_recibo} por valor de ${formatCOP(recibo.valor)}?\n\n` +
+      `Esta acción revertirá los abonos en la cuota y contrato correspondiente.\n` +
+      `Por favor ingresa la justificación o motivo contable:`
+    );
+
+    if (!motivo || !motivo.trim()) return;
+
+    try {
+      await anularRecibo({
+        numeroRecibo: recibo.numero_recibo,
+        motivo,
+        usuarioActual: user?.user_metadata?.nombre || user?.email || 'Contadora',
+        rolUsuario: role
+      });
+      alert(`✓ Recibo #${recibo.numero_recibo} anulado correctamente y registrado en auditoría.`);
+      if (selected?.id) {
+        const recs = await obtenerRecibosPorVenta(selected.id);
+        setRecibosVenta(recs || []);
+        const cuotas = await getCuotasByVenta(selected.id);
+        setCuotasVenta(cuotas || []);
+      }
+      load(true);
+    } catch (e) {
+      alert('Error anulando recibo: ' + (e.message || e));
+    }
+  };
 
   const load = useCallback(async (force = false) => {
     setLoading(true);
@@ -935,13 +969,15 @@ export default function Cartera() {
               >
                 💳 Abonar
               </button>
-              <button
-                className="btn btn-ghost"
-                style={{ fontSize: 12, padding: '6px 10px', gap: 6 }}
-                onClick={() => setEditingContrato(selected)}
-              >
-                <Edit2 size={13} /> Editar Contrato
-              </button>
+              {permissions?.canEditContrato && (
+                <button
+                  className="btn btn-ghost"
+                  style={{ fontSize: 12, padding: '6px 10px', gap: 6 }}
+                  onClick={() => setEditingContrato(selected)}
+                >
+                  <Edit2 size={13} /> Editar Contrato
+                </button>
+              )}
               <button className="btn btn-ghost" style={{ padding: '6px 10px' }}
                 onClick={() => { setSelected(null); setCuotasVenta([]); setRecibosVenta([]); }}>✕</button>
             </div>
@@ -1224,32 +1260,67 @@ export default function Cartera() {
                                 </span>
                               </td>
                               <td style={{ padding: '8px 10px', textAlign: 'center' }}>
-                                <div style={{ display: 'flex', gap: 6, justifyContent: 'center' }}>
-                                  <button
-                                    className="btn btn-ghost"
-                                    style={{
-                                      padding: '3px 8px', fontSize: 11,
-                                      color: '#15803d', borderColor: '#86efac', background: '#f0fdf4',
-                                      fontWeight: 700, gap: 4
-                                    }}
-                                    onClick={() => setReciboParaVer(r)}
-                                    title="Ver / Imprimir este recibo oficial"
-                                  >
-                                    <Eye size={12} /> Ver
-                                  </button>
+                                <div style={{ display: 'flex', gap: 6, justifyContent: 'center', alignItems: 'center' }}>
+                                  {r.anulado ? (
+                                    <span
+                                      style={{
+                                        fontSize: 10.5,
+                                        fontWeight: 800,
+                                        color: '#b91c1c',
+                                        background: '#fee2e2',
+                                        border: '1px solid #fca5a5',
+                                        padding: '2px 8px',
+                                        borderRadius: 6
+                                      }}
+                                      title={`Anulado por: ${r.anulado_por || 'Contadora'}. Motivo: ${r.motivo_anulacion || 'Sin motivo'}`}
+                                    >
+                                      ANULADO
+                                    </span>
+                                  ) : (
+                                    <>
+                                      <button
+                                        className="btn btn-ghost"
+                                        style={{
+                                          padding: '3px 8px', fontSize: 11,
+                                          color: '#15803d', borderColor: '#86efac', background: '#f0fdf4',
+                                          fontWeight: 700, gap: 4
+                                        }}
+                                        onClick={() => setReciboParaVer(r)}
+                                        title="Ver / Imprimir este recibo oficial"
+                                      >
+                                        <Eye size={12} /> Ver
+                                      </button>
 
-                                  <button
-                                    className="btn btn-primary"
-                                    style={{
-                                      padding: '3px 8px', fontSize: 11,
-                                      background: '#16a34a', borderColor: '#16a34a',
-                                      fontWeight: 700, gap: 4
-                                    }}
-                                    onClick={() => setReciboParaVer({ ...r, autoDownload: true })}
-                                    title="Descargar este recibo oficial en PDF"
-                                  >
-                                    <Download size={12} /> Descargar PDF
-                                  </button>
+                                      <button
+                                        className="btn btn-primary"
+                                        style={{
+                                          padding: '3px 8px', fontSize: 11,
+                                          background: '#16a34a', borderColor: '#16a34a',
+                                          fontWeight: 700, gap: 4
+                                        }}
+                                        onClick={() => setReciboParaVer({ ...r, autoDownload: true })}
+                                        title="Descargar este recibo oficial en PDF"
+                                      >
+                                        <Download size={12} /> Descargar PDF
+                                      </button>
+
+                                      {/* Solo Contadora y Administrador pueden anular recibos (restringido para Secretaría) */}
+                                      {permissions?.canDeleteRecibos && (
+                                        <button
+                                          className="btn btn-ghost"
+                                          style={{
+                                            padding: '3px 8px', fontSize: 11,
+                                            color: '#dc2626', borderColor: '#fca5a5', background: '#fff1f2',
+                                            fontWeight: 700, gap: 4
+                                          }}
+                                          onClick={() => handleAnularRecibo(r)}
+                                          title="Anular este recibo (solo Contadora o Administrador)"
+                                        >
+                                          Anular
+                                        </button>
+                                      )}
+                                    </>
+                                  )}
                                 </div>
                               </td>
                             </tr>

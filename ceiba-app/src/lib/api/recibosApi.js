@@ -592,3 +592,148 @@ export const registrarPagoConRecibo = async ({
   };
 };
 
+/**
+ * Anula un recibo de caja existente con justificación requerida y auditoría.
+ * Restringido a Contadora y Administrador (Secretaría no tiene permiso de anulación ni borrado).
+ */
+export const anularRecibo = async ({
+  numeroRecibo,
+  motivo,
+  usuarioActual = 'Contadora',
+  rolUsuario = 'contadora'
+}) => {
+  if (rolUsuario === 'secretaria') {
+    throw new Error('Permiso denegado: El rol de Secretaría no puede anular ni eliminar recibos de pago. Debe solicitar la anulación a la Contadora o al Administrador.');
+  }
+
+  if (!motivo || !motivo.trim()) {
+    throw new Error('Debe especificar un motivo justificado para anular el recibo.');
+  }
+
+  const numRec = Number(numeroRecibo);
+  const todos = await obtenerTodosLosRecibos(true);
+  const recibo = todos.find(r => Number(r.numero_recibo) === numRec);
+
+  if (!recibo) {
+    throw new Error(`No se encontró el recibo de caja #${numeroRecibo}.`);
+  }
+
+  if (recibo.anulado) {
+    throw new Error(`El recibo de caja #${numeroRecibo} ya se encuentra anulado.`);
+  }
+
+  const reciboAnulado = {
+    ...recibo,
+    anulado: true,
+    motivo_anulacion: motivo.trim(),
+    anulado_por: usuarioActual,
+    anulado_at: new Date().toISOString()
+  };
+
+  // 1. Actualizar en localStorage
+  guardarReciboLocal(reciboAnulado);
+
+  // 2. Si existe en datos_maestros, actualizar
+  try {
+    if (recibo.db_id) {
+      await supabase
+        .from('datos_maestros')
+        .update({
+          valor: JSON.stringify(reciboAnulado)
+        })
+        .eq('id', recibo.db_id);
+    } else {
+      await supabase
+        .from('datos_maestros')
+        .update({
+          valor: JSON.stringify(reciboAnulado)
+        })
+        .eq('tipo', 'RECIBO_CAJA')
+        .eq('orden', numRec);
+    }
+  } catch (errDb) {
+    console.warn('Aviso actualizando recibo anulado en BD:', errDb);
+  }
+
+  // 3. Revertir saldo en venta si aplica
+  if (recibo.venta_id && recibo.valor) {
+    try {
+      const { data: v } = await supabase
+        .from('ventas')
+        .select('saldo, abonos')
+        .eq('id', recibo.venta_id)
+        .single();
+
+      if (v) {
+        const saldoRevertido = (Number(v.saldo) || 0) + Number(recibo.valor);
+        const abonosRevertidos = Math.max(0, (Number(v.abonos) || 0) - Number(recibo.valor));
+        await supabase
+          .from('ventas')
+          .update({ saldo: saldoRevertido, abonos: abonosRevertidos, estado: 'ACTIVA' })
+          .eq('id', recibo.venta_id);
+      }
+    } catch (e) {
+      console.warn('Aviso revirtiendo saldo de venta:', e);
+    }
+  }
+
+  // 4. Revertir en cuota si aplica
+  if (recibo.cuota_id && recibo.valor) {
+    try {
+      const { data: c } = await supabase
+        .from('cuotas')
+        .select('*')
+        .eq('id', recibo.cuota_id)
+        .single();
+
+      if (c) {
+        const nuevoPagado = Math.max(0, (Number(c.valor_pagado) || 0) - Number(recibo.valor));
+        const valCuota = Number(c.valor_cuota) || 0;
+        const estadoRestaurado = nuevoPagado >= valCuota ? 'PAGA' : 'VENCIDA';
+
+        let hist = [];
+        if (c.comprobante_url) {
+          try {
+            const p = JSON.parse(c.comprobante_url);
+            hist = (Array.isArray(p) ? p : [p]).map(item => {
+              if (Number(item.numero_recibo) === numRec) {
+                return { ...item, anulado: true, motivo_anulacion: motivo };
+              }
+              return item;
+            });
+          } catch (e) {}
+        }
+
+        await supabase
+          .from('cuotas')
+          .update({
+            valor_pagado: nuevoPagado,
+            estado_cuota: estadoRestaurado,
+            comprobante_url: JSON.stringify(hist),
+            observacion: `${c.observacion || ''} | [ANULADO Recibo #${numRec}]`.trim()
+          })
+          .eq('id', recibo.cuota_id);
+      }
+    } catch (e) {
+      console.warn('Aviso revirtiendo cuota:', e);
+    }
+  }
+
+  clearRecibosCache();
+
+  // 5. Auditoría
+  try {
+    await registrarAccion({
+      modulo: 'RECIBOS_CAJA',
+      accion: 'ANULACION_RECIBO',
+      lote_id_str: recibo.lote_id_str || `Recibo #${numRec}`,
+      descripcion: `Anulación de Recibo #${numRec} por ${usuarioActual} (${rolUsuario}). Motivo: ${motivo.trim()}`
+    });
+  } catch (eAudit) {
+    console.warn('Aviso auditoría anulación:', eAudit);
+  }
+
+  return reciboAnulado;
+};
+
+
