@@ -2,13 +2,14 @@ import React, { useState, useEffect } from 'react';
 import {
   LayoutDashboard, Building2, HandCoins, Wallet, Users, BarChart3,
   Settings, TrendingUp, Bell, LogOut, Menu, X, Sun, Moon, Calculator,
-  BadgeDollarSign
+  BadgeDollarSign, HardHat
 } from 'lucide-react';
 import { useAuth } from './context/AuthContext';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import CierreMensual from './pages/CierreMensual';
 import Comisiones from './pages/Comisiones';
+import Gastos from './pages/Gastos';
 import Lotes from './pages/Lotes';
 import Ventas from './pages/Ventas';
 import Cartera from './pages/Cartera';
@@ -21,6 +22,7 @@ const NAV_ITEMS = [
   { id: 'dashboard',  label: 'Dashboard',         icon: LayoutDashboard, section: 'PRINCIPAL' },
   { id: 'cierre',     label: 'Cierre Mensual',     icon: Calculator,      section: 'FINANZAS' },
   { id: 'comisiones', label: 'Nómina Comisiones',  icon: BadgeDollarSign, section: 'FINANZAS' },
+  { id: 'gastos',     label: 'Gastos de Obra',     icon: HardHat,         section: 'FINANZAS' },
   { id: 'lotes',      label: 'Lotes',              icon: Building2,       section: 'GESTIÓN' },
   { id: 'ventas',     label: 'Ventas',             icon: HandCoins,        section: 'GESTIÓN' },
   { id: 'cartera',    label: 'Cartera',            icon: Wallet,           section: 'GESTIÓN', badge: true },
@@ -33,6 +35,7 @@ const PAGE_MAP = {
   dashboard:  Dashboard,
   cierre:     CierreMensual,
   comisiones: Comisiones,
+  gastos:     Gastos,
   lotes:      Lotes,
   ventas:     Ventas,
   cartera:    Cartera,
@@ -45,6 +48,7 @@ const PAGE_META = {
   dashboard:  { title: 'Dashboard',                 sub: 'Resumen general del proyecto La Ceiba' },
   cierre:     { title: 'Cierre de Cuentas Mensual', sub: 'Control de recaudo esperado, cumplimiento contable y proyección financiera' },
   comisiones: { title: 'Nómina & Pagos de Comisionistas', sub: 'Control auditable de pagos de comisiones y registro de desembolsos a asesores' },
+  gastos:     { title: 'Gastos de Obra & Operación', sub: 'Control de materiales de construcción, maquinaria, mano de obra y costos de desarrollo' },
   lotes:      { title: 'Gestión de Lotes',          sub: 'Inventario y estado de todos los lotes' },
   ventas:     { title: 'Ventas',                    sub: 'Registro y seguimiento de ventas' },
   cartera:    { title: 'Cartera & Pagos',           sub: 'Control de cuotas, pagos y mora' },
@@ -60,6 +64,7 @@ function Sidebar({ active, onNav, user, onSignOut, isOpen, onClose, permissions,
   const visibleNavItems = NAV_ITEMS.filter(item => {
     if (item.id === 'cierre' && !permissions?.canViewCierre) return false;
     if (item.id === 'config' && !permissions?.canViewConfig) return false;
+    if (item.id === 'gastos' && !permissions?.canViewGastos) return false;
     return true;
   });
 
@@ -287,6 +292,9 @@ export default function App() {
       setPage('dashboard');
     }
     if (page === 'config' && !permissions?.canViewConfig) {
+      setPage('dashboard');
+    }
+    if (page === 'gastos' && !permissions?.canViewGastos) {
       setPage('dashboard');
     }
   }, [page, permissions]);

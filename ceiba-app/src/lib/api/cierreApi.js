@@ -1,5 +1,6 @@
 import { supabase } from '../supabase';
 import { obtenerRecibosEnRango } from './recibosApi';
+import { getGastosEnRango } from './gastosApi';
 
 // Cache en memoria por periodo para navegación instantánea
 let cierreCache = {};
@@ -38,8 +39,8 @@ export const getCierreMensualData = async (param1, param2, forceRefresh = false)
     return cierreCache[periodKey];
   }
 
-  // 1. Consultar en paralelo Cuotas, Cuotas Iniciales, Recibos Oficiales y Desembolsos de Comisiones en el rango
-  const [cuotasRes, inicialesRes, recibosRango, comisionesRes] = await Promise.all([
+  // 1. Consultar en paralelo Cuotas, Cuotas Iniciales, Recibos Oficiales, Desembolsos de Comisiones y Gastos de Obra en el rango
+  const [cuotasRes, inicialesRes, recibosRango, comisionesRes, gastosPeriodo] = await Promise.all([
     supabase
       .from('cuotas')
       .select(`
@@ -74,7 +75,9 @@ export const getCierreMensualData = async (param1, param2, forceRefresh = false)
       .select('*')
       .eq('tipo', 'PAGO_COMISION')
       .order('orden', { ascending: false })
-      .catch(() => ({ data: [] }))
+      .catch(() => ({ data: [] })),
+
+    getGastosEnRango(fechaDesde, fechaHasta).catch(() => [])
   ]);
 
   if (cuotasRes?.error) throw cuotasRes.error;
@@ -228,7 +231,11 @@ export const getCierreMensualData = async (param1, param2, forceRefresh = false)
 
   const totalComisionesPeriodo = comisionesPeriodo.reduce((acc, c) => acc + c.valor, 0);
   const countComisionesPeriodo = comisionesPeriodo.length;
-  const flujoNetoCaja = totalRecaudadoMes - totalComisionesPeriodo;
+
+  const totalGastosPeriodo = (gastosPeriodo || []).reduce((acc, g) => acc + (Number(g.valor) || 0), 0);
+  const countGastosPeriodo = (gastosPeriodo || []).length;
+  const totalEgresosPeriodo = totalComisionesPeriodo + totalGastosPeriodo;
+  const flujoNetoCaja = totalRecaudadoMes - totalEgresosPeriodo;
 
   // 4. Ranking y Desglose por Asesor Comercial
   const asesorMap = {};
@@ -390,12 +397,16 @@ export const getCierreMensualData = async (param1, param2, forceRefresh = false)
       ticketPromedio,
       totalComisionesPeriodo,
       countComisionesPeriodo,
+      totalGastosPeriodo,
+      countGastosPeriodo,
+      totalEgresosPeriodo,
       flujoNetoCaja,
     },
     todosIngresos,
     cuotasMes,
     inicialesMes,
     comisionesPeriodo,
+    gastosPeriodo: gastosPeriodo || [],
     rankingAsesores,
     desgloseMedios,
     recaudoPorDia,

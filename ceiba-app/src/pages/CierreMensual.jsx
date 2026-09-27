@@ -620,6 +620,7 @@ export default function CierreMensual() {
             { id: 'cuotas',     label: '📑 Cuotas Mensuales',        badge: data?.kpis.countCuotasMes },
             { id: 'iniciales',  label: '🚀 Cuotas Iniciales',        badge: data?.kpis.countInicialesMes },
             { id: 'comisiones', label: '💸 Comisiones Desembolsadas', badge: data?.kpis.countComisionesPeriodo },
+            { id: 'gastos',     label: '🧱 Gastos de Obra',          badge: data?.kpis?.countGastosPeriodo },
             { id: 'asesores',   label: '🏆 Balance Asesores',        badge: data?.rankingAsesores?.length },
             { id: 'medios',     label: '💳 Medios de Pago',          badge: data?.desgloseMedios?.length },
             { id: 'diario',     label: '📅 Evolución Diaria',        badge: null },
@@ -987,6 +988,55 @@ export default function CierreMensual() {
                     onPageChange={setPage}
                     onPageSizeChange={setPageSize}
                   />
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* TAB: GASTOS DE OBRA & OPERACIÓN */}
+          {activeTab === 'gastos' && (
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>
+                  Egresos registrados por el Propietario para compra de materiales, maquinaria y costos operativos en este ciclo.
+                </div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: '#b45309' }}>
+                  Total Gastos: {formatCOP(data?.kpis?.totalGastosPeriodo || 0)}
+                </div>
+              </div>
+
+              {(!data?.gastosPeriodo || data.gastosPeriodo.length === 0) ? (
+                <div style={{ padding: 36, textAlign: 'center', color: 'var(--text-muted)' }}>
+                  No se registraron gastos de obra en este ciclo de cierre.
+                </div>
+              ) : (
+                <div style={{ overflowX: 'auto' }}>
+                  <table className="data-table" style={{ width: '100%', fontSize: 12 }}>
+                    <thead>
+                      <tr style={{ background: '#f8fafc', color: '#475569', fontSize: 11 }}>
+                        <th style={{ textAlign: 'left', padding: '10px 12px' }}>Fecha</th>
+                        <th style={{ textAlign: 'left', padding: '10px 12px' }}>Categoría</th>
+                        <th style={{ textAlign: 'left', padding: '10px 12px' }}>Concepto</th>
+                        <th style={{ textAlign: 'left', padding: '10px 12px' }}>Proveedor</th>
+                        <th style={{ textAlign: 'left', padding: '10px 12px' }}>Soporte</th>
+                        <th style={{ textAlign: 'right', padding: '10px 12px' }}>Valor ($ COP)</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {data.gastosPeriodo.map((g, idx) => (
+                        <tr key={g.id || idx} style={{ borderBottom: '1px solid var(--border)' }}>
+                          <td style={{ padding: '8px 12px', whiteSpace: 'nowrap' }}>{formatDate(g.fecha)}</td>
+                          <td style={{ padding: '8px 12px', whiteSpace: 'nowrap', fontWeight: 600 }}>{g.categoria}</td>
+                          <td style={{ padding: '8px 12px' }}>{g.concepto}</td>
+                          <td style={{ padding: '8px 12px', color: 'var(--text-secondary)' }}>{g.proveedor || '—'}</td>
+                          <td style={{ padding: '8px 12px', fontFamily: 'monospace' }}>{g.numero_factura || '—'}</td>
+                          <td style={{ padding: '8px 12px', textAlign: 'right', fontWeight: 700, color: '#b45309' }}>
+                            {formatCOP(g.valor)}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               )}
             </div>
