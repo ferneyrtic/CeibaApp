@@ -607,7 +607,12 @@ export default function Comisiones() {
                         {formatCOP(a.totalPagado)}
                       </td>
                       <td style={{ textAlign: 'right', fontWeight: 800, color: a.saldoPendiente > 0 ? '#d97706' : '#16a34a' }}>
-                        {formatCOP(a.saldoPendiente)}
+                        <div>{formatCOP(a.saldoPendiente)}</div>
+                        {a.anticipoAFavor > 0 && (
+                          <div style={{ fontSize: 10, color: '#2563eb', fontWeight: 600 }}>
+                            Anticipo: {formatCOP(a.anticipoAFavor)}
+                          </div>
+                        )}
                       </td>
                       <td style={{ textAlign: 'center' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>

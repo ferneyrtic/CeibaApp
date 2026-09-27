@@ -120,9 +120,11 @@ export const getComisionesData = async (forceRefresh = false) => {
     asesorMap[key].pagos.push(p);
   });
 
-  // Calcular saldos pendientes por asesor
+  // Calcular saldos pendientes por asesor (blindado contra saldos negativos)
   Object.values(asesorMap).forEach(a => {
-    a.saldoPendiente = a.totalComisiones - a.totalPagado;
+    const rawSaldo = a.totalComisiones - a.totalPagado;
+    a.saldoPendiente = Math.max(0, rawSaldo);
+    a.anticipoAFavor = rawSaldo < 0 ? Math.abs(rawSaldo) : 0;
     a.porcentajeLiquidado = a.totalComisiones > 0
       ? Math.min(100, Math.round((a.totalPagado / a.totalComisiones) * 100))
       : (a.totalPagado > 0 ? 100 : 0);
@@ -135,7 +137,7 @@ export const getComisionesData = async (forceRefresh = false) => {
   // Totales Generales del Proyecto
   const totalComisionesProyecto = asesoresArray.reduce((acc, a) => acc + a.totalComisiones, 0);
   const totalLiquidadoPagado = pagos.reduce((acc, p) => acc + (parseFloat(p.valor) || 0), 0);
-  const saldoTotalPendiente = totalComisionesProyecto - totalLiquidadoPagado;
+  const saldoTotalPendiente = Math.max(0, totalComisionesProyecto - totalLiquidadoPagado);
 
   // Pagos del mes actual
   const currentMonthStr = new Date().toISOString().slice(0, 7);
@@ -185,6 +187,41 @@ export const registrarPagoComision = async (pagoData) => {
     .select();
 
   if (error) throw error;
+
+  // Si se vinculó a un lote específico, sincronizar abonos y saldo en la tabla ventas
+  if (payload.lote) {
+    try {
+      const { data: lotesData } = await supabase
+        .from('lotes')
+        .select('id')
+        .ilike('id_lote', payload.lote.replace(/\s+/g, '%'))
+        .limit(1);
+
+      if (lotesData && lotesData.length > 0) {
+        const loteId = lotesData[0].id;
+        const { data: ventaData } = await supabase
+          .from('ventas')
+          .select('id, comision_vendedor, abonos')
+          .eq('lote_id', loteId)
+          .limit(1);
+
+        if (ventaData && ventaData.length > 0) {
+          const v = ventaData[0];
+          const nuevoAbono = (parseFloat(v.abonos) || 0) + payload.valor;
+          const nuevoSaldo = Math.max(0, (parseFloat(v.comision_vendedor) || 0) - nuevoAbono);
+          await supabase
+            .from('ventas')
+            .update({
+              abonos: nuevoAbono,
+              saldo: nuevoSaldo,
+            })
+            .eq('id', v.id);
+        }
+      }
+    } catch (syncErr) {
+      console.warn('Advertencia al sincronizar abonos en ventas para lote:', payload.lote, syncErr);
+    }
+  }
 
   // Invalidar caché
   comisionesCache = null;

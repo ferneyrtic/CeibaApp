@@ -23,6 +23,12 @@ logs/
 # Excel temporary lock files
 ~$*.xlsx
 *.tmp
+*.ogg
+*.mp3
+*.wav
+*.m4a
+lotes_de_prueba.json
+scratch_check_fechas.py
 
 # Operating System files
 .DS_Store
