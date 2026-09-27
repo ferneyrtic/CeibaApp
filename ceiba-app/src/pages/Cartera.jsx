@@ -130,6 +130,9 @@ export default function Cartera() {
     loadData: load
   } = useCarteraLogic();
 
+  // Auditoría y Registros
+  const [showModalLogs, setShowModalLogs]     = useState(false);
+
   // Modales
   const [selected, setSelected]       = useState(null);
   const [cuotasVenta, setCuotasVenta] = useState([]);

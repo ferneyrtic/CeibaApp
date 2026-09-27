@@ -38,14 +38,29 @@ export function useCarteraLogic() {
     setLoading(true);
     try {
       if (force) clearCarteraCache();
-      const [carteraData, statsData, casosData] = await Promise.all([
+      const [carteraRes, statsRes, casosRes] = await Promise.allSettled([
         getCartera({ forceRefresh: force }),
         getCarteraStats(force),
-        getCasosEspeciales().catch(() => [])
+        getCasosEspeciales()
       ]);
-      setAllCartera(carteraData || []);
-      setStats(statsData);
-      setCasosEspeciales(casosData || []);
+
+      if (carteraRes.status === 'fulfilled') {
+        setAllCartera(carteraRes.value || []);
+      } else {
+        console.error('Error cargando cartera:', carteraRes.reason);
+      }
+
+      if (statsRes.status === 'fulfilled') {
+        setStats(statsRes.value || null);
+      } else {
+        console.error('Error cargando stats de cartera:', statsRes.reason);
+      }
+
+      if (casosRes.status === 'fulfilled') {
+        setCasosEspeciales(casosRes.value || []);
+      } else {
+        console.error('Error cargando casos especiales:', casosRes.reason);
+      }
     } catch (err) {
       console.error('Error cargando cartera en useCarteraLogic:', err);
     } finally {
