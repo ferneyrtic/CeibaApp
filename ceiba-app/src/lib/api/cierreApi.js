@@ -70,12 +70,18 @@ export const getCierreMensualData = async (param1, param2, forceRefresh = false)
 
     obtenerRecibosEnRango(fechaDesde, fechaHasta).catch(() => []),
 
-    supabase
-      .from('datos_maestros')
-      .select('*')
-      .eq('tipo', 'PAGO_COMISION')
-      .order('orden', { ascending: false })
-      .catch(() => ({ data: [] })),
+    (async () => {
+      try {
+        const res = await supabase
+          .from('datos_maestros')
+          .select('*')
+          .eq('tipo', 'PAGO_COMISION')
+          .order('orden', { ascending: false });
+        return res || { data: [] };
+      } catch (e) {
+        return { data: [] };
+      }
+    })(),
 
     getGastosEnRango(fechaDesde, fechaHasta).catch(() => [])
   ]);
