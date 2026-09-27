@@ -337,10 +337,10 @@ export default function CierreMensual() {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 20, width: '100%', maxWidth: '100%', minWidth: 0, boxSizing: 'border-box' }}>
       {/* HEADER DE LA PÁGINA */}
-      <div className="page-header" style={{ marginBottom: 0 }}>
-        <div>
+      <div className="page-header" style={{ marginBottom: 0, flexWrap: 'wrap', gap: 16 }}>
+        <div style={{ minWidth: 260, flex: '1 1 280px' }}>
           <div className="page-title" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <DollarSign size={24} color="#16a34a" />
             Cierre Mensual de Caja y Recaudos
@@ -405,11 +405,11 @@ export default function CierreMensual() {
 
       {/* KPIS FINANCIEROS PRINCIPALES */}
       {data && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 0 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14, width: '100%', maxWidth: '100%', minWidth: 0, overflow: 'hidden' }}>
           {/* Fila 1: Macro Flujo de Caja y Desembolsos */}
-          <div className="kpi-grid" style={{ marginBottom: 0 }}>
+          <div className="kpi-grid-scrollable" style={{ marginBottom: 0 }}>
             {/* KPI 1: TOTAL RECAUDO ENTRADO */}
-            <div className="kpi-card green" style={{ borderLeft: '4px solid #16a34a' }}>
+            <div className="kpi-card green" style={{ borderLeft: '4px solid #16a34a', minWidth: 250 }}>
               <div className="kpi-icon green">
                 <DollarSign size={20} />
               </div>
@@ -425,7 +425,7 @@ export default function CierreMensual() {
             </div>
 
             {/* KPI 2: COMISIONES DESEMBOLSADAS */}
-            <div className="kpi-card" style={{ borderLeft: '4px solid #dc2626', background: '#fff' }}>
+            <div className="kpi-card" style={{ borderLeft: '4px solid #dc2626', background: '#fff', minWidth: 250 }}>
               <div className="kpi-icon" style={{ background: '#fee2e2', color: '#dc2626' }}>
                 <Wallet size={20} />
               </div>
@@ -443,7 +443,8 @@ export default function CierreMensual() {
             {/* KPI 3: FLUJO NETO DE CAJA */}
             <div className="kpi-card" style={{
               borderLeft: '4px solid #2563eb',
-              background: 'linear-gradient(135deg, #f0fdf4 0%, #eff6ff 100%)'
+              background: 'linear-gradient(135deg, #f0fdf4 0%, #eff6ff 100%)',
+              minWidth: 250
             }}>
               <div className="kpi-icon blue">
                 <TrendingUp size={20} />
@@ -461,9 +462,9 @@ export default function CierreMensual() {
           </div>
 
           {/* Fila 2: Desglose Operativo de Ingresos */}
-          <div className="kpi-grid" style={{ marginBottom: 0 }}>
+          <div className="kpi-grid-scrollable" style={{ marginBottom: 0 }}>
             {/* KPI 4: CUOTAS MENSUALES */}
-            <div className="kpi-card blue">
+            <div className="kpi-card blue" style={{ minWidth: 250 }}>
               <div className="kpi-icon blue">
                 <Receipt size={18} />
               </div>
@@ -479,7 +480,7 @@ export default function CierreMensual() {
             </div>
 
             {/* KPI 5: CUOTAS INICIALES */}
-            <div className="kpi-card purple">
+            <div className="kpi-card purple" style={{ minWidth: 250 }}>
               <div className="kpi-icon purple">
                 <Layers size={18} />
               </div>
@@ -495,7 +496,7 @@ export default function CierreMensual() {
             </div>
 
             {/* KPI 6: TRANSACCIONES Y TICKET PROMEDIO */}
-            <div className="kpi-card yellow">
+            <div className="kpi-card yellow" style={{ minWidth: 250 }}>
               <div className="kpi-icon yellow">
                 <CheckCircle2 size={18} />
               </div>
@@ -514,7 +515,7 @@ export default function CierreMensual() {
       )}
 
       {/* PESTAÑAS Y CONTENIDO PRINCIPAL */}
-      <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+      <div className="card" style={{ padding: 0, overflow: 'hidden', width: '100%', maxWidth: '100%', minWidth: 0 }}>
         {/* BARRA DE PESTAÑAS */}
         <div style={{
           display: 'flex',

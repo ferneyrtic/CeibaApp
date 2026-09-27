@@ -250,7 +250,7 @@ export default function Cartera() {
       )}
 
       {/* KPIs — Visión global de la cartera */}
-      <div className="kpi-grid" style={{ gridTemplateColumns: 'repeat(4,1fr)', marginBottom: 20 }}>
+      <div className="kpi-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', marginBottom: 20 }}>
         <KpiCard color="blue"   icon={<DollarSign size={18}/>}
           value={formatCOP(stats?.totalValorVentas)}
           label="Valor Total Ventas"
