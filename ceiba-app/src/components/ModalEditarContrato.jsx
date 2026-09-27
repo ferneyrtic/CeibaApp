@@ -103,16 +103,21 @@ export default function ModalEditarContrato({ venta, onClose, onSuccess }) {
         estado: estadoVenta,
       });
 
-      // Sincronizar también con la tabla de lotes
+      // Sincronizar también con la tabla de lotes (estado, precio y propietario titular)
       const loteId = venta.lote_id || venta.lotes?.id;
-      if (loteId && estadoVenta) {
+      if (loteId) {
         try {
+          const lotesUpdates = {};
+          if (estadoVenta) lotesUpdates.estado = estadoVenta;
+          if (nombreCliente) lotesUpdates.propietario = nombreCliente.trim();
+          if (precioVenta) lotesUpdates.precio_venta = Number(precioVenta);
+
           await supabase
             .from('lotes')
-            .update({ estado: estadoVenta })
+            .update(lotesUpdates)
             .eq('id', loteId);
         } catch (syncErr) {
-          console.warn('Advertencia al sincronizar estado en lotes:', syncErr);
+          console.warn('Advertencia al sincronizar estado y propietario en lotes:', syncErr);
         }
       }
 

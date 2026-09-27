@@ -1,13 +1,15 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { Plus, Search, X, MapPin, RefreshCw, Eye, Check, CheckCircle2, AlertCircle, Tag, DollarSign } from 'lucide-react';
+import { Plus, Search, X, MapPin, RefreshCw, Eye, Check, CheckCircle2, AlertCircle, Tag, DollarSign, Edit3 } from 'lucide-react';
 import { getLotes, updateLote } from '../lib/api/lotes';
 import { getCasosEspeciales, obtenerBadgeCasoEspecial } from '../lib/api/casosEspecialesApi';
 import { registrarAccion } from '../lib/api/auditApi';
 import { formatCOP, getEstadoBadge } from '../utils/helpers';
+import { supabase } from '../lib/supabase';
 import Modal from '../components/Modal';
 import Pagination from '../components/Pagination';
 import ModalNuevoLote from '../components/ModalNuevoLote';
 import ModalRegistrarVenta from '../components/ModalRegistrarVenta';
+import ModalEditarContrato from '../components/ModalEditarContrato';
 
 const ESTADOS = ['Todos', 'VENDIDO', 'PAGADO EN SU TOTALIDAD', 'DISPONIBLE', 'EN NEGOCIACIÓN', 'APARTADO', 'NO APTO PARA VENTA'];
 
@@ -25,11 +27,40 @@ export default function Lotes() {
   const [showModalNuevoLote, setShowModalNuevoLote] = useState(false);
   const [showModalVenta, setShowModalVenta]         = useState(false);
   const [loteParaVenta, setLoteParaVenta]           = useState(null);
-
+  const [ventaParaEditar, setVentaParaEditar]       = useState(null);
+  const [loadingContrato, setLoadingContrato]       = useState(false);
 
   // Paginación
   const [page, setPage]             = useState(1);
   const [pageSize, setPageSize]     = useState(50);
+
+  const handleEditarContratoLote = async (lote) => {
+    if (!lote?.id) return;
+    setLoadingContrato(true);
+    try {
+      const { data: vData, error: vErr } = await supabase
+        .from('ventas')
+        .select(`
+          *,
+          lotes (id, id_lote, manzana, lote, area_m2),
+          clientes (id, nombre, celular, ciudad, doc_cliente, direccion)
+        `)
+        .eq('lote_id', lote.id)
+        .limit(1);
+
+      if (vErr) throw vErr;
+      if (vData && vData.length > 0) {
+        setVentaParaEditar(vData[0]);
+        setSelected(null);
+      } else {
+        alert(`No se encontró un contrato registrado para el lote ${lote.id_lote || ''}.`);
+      }
+    } catch (err) {
+      alert('Error buscando contrato del lote: ' + err.message);
+    } finally {
+      setLoadingContrato(false);
+    }
+  };
 
   const fetchLotes = useCallback(async () => {
     setLoading(true);
@@ -482,6 +513,18 @@ export default function Lotes() {
           )}
 
           <div className="modal-footer" style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 20 }}>
+            {(selected.estado === 'VENDIDO' || selected.estado === 'PAGADO EN SU TOTALIDAD' || selected.propietario) && (
+              <button
+                className="btn btn-secondary"
+                style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+                onClick={() => handleEditarContratoLote(selected)}
+                disabled={loadingContrato}
+                title="Editar titular y condiciones del contrato de este lote"
+              >
+                {loadingContrato ? <RefreshCw size={13} style={{ animation: 'spin 1s linear infinite' }} /> : <Edit3 size={13} />}
+                Editar Contrato / Titular
+              </button>
+            )}
             {selected.estado !== 'VENDIDO' && selected.estado !== 'PAGADO EN SU TOTALIDAD' && selected.estado !== 'NO APTO PARA VENTA' && (
               <button
                 className="btn btn-primary"
@@ -498,6 +541,19 @@ export default function Lotes() {
             <button className="btn btn-ghost" onClick={() => setSelected(null)}>Cerrar</button>
           </div>
         </Modal>
+      )}
+
+      {ventaParaEditar && (
+        <ModalEditarContrato
+          venta={ventaParaEditar}
+          onClose={() => setVentaParaEditar(null)}
+          onSuccess={() => {
+            fetchLotes();
+            setVentaParaEditar(null);
+            setStatusMsg({ type: 'success', text: 'Contrato y titular actualizados con éxito.' });
+            setTimeout(() => setStatusMsg(null), 4000);
+          }}
+        />
       )}
 
       {showModalNuevoLote && (

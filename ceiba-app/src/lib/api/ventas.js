@@ -8,8 +8,8 @@ export const getVentas = async ({ search, estado } = {}) => {
     .from('ventas')
     .select(`
       *,
-      lotes (id_lote, manzana, lote, area_m2),
-      clientes (nombre, celular, ciudad, doc_cliente)
+      lotes (id, id_lote, manzana, lote, area_m2),
+      clientes (id, nombre, celular, ciudad, doc_cliente, direccion)
     `)
     .order('created_at', { ascending: false });
 

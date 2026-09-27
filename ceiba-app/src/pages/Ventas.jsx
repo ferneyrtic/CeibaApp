@@ -1,17 +1,19 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { Plus, Search, X, RefreshCw, DollarSign, User, Download, FileText } from 'lucide-react';
+import { Plus, Search, X, RefreshCw, DollarSign, User, Download, FileText, Edit3 } from 'lucide-react';
 import { getVentas } from '../lib/api/ventas';
 import { formatCOP, formatDate, getEstadoBadge } from '../utils/helpers';
 import { exportEstadoCuentaPDF } from '../utils/exportEstadoCuenta';
 import Modal from '../components/Modal';
 import Pagination from '../components/Pagination';
 import ModalRegistrarVenta from '../components/ModalRegistrarVenta';
+import ModalEditarContrato from '../components/ModalEditarContrato';
 
 export default function Ventas() {
   const [allVentas, setAllVentas] = useState([]);
   const [loading, setLoading]     = useState(true);
   const [search, setSearch]       = useState('');
   const [selected, setSelected]   = useState(null);
+  const [editingVenta, setEditingVenta] = useState(null);
   const [showModalVenta, setShowModalVenta] = useState(false);
 
   // Paginación
@@ -156,14 +158,25 @@ export default function Ventas() {
                           {formatCOP(v.saldo)}
                         </td>
                         <td>{v.vendedor_nombre ?? '—'}</td>
-                        <td onClick={e => e.stopPropagation()}>
-                          <button
-                            className="btn btn-ghost"
-                            style={{ padding: '4px 8px', fontSize: 12, gap: 4 }}
-                            onClick={() => setSelected(v)}
-                          >
-                            <FileText size={12} /> Ver
-                          </button>
+                        <td onClick={e => e.stopPropagation()} style={{ whiteSpace: 'nowrap' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <button
+                              className="btn btn-ghost"
+                              style={{ padding: '4px 8px', fontSize: 12, gap: 4 }}
+                              onClick={() => setSelected(v)}
+                              title="Ver detalles de la venta"
+                            >
+                              <FileText size={12} /> Ver
+                            </button>
+                            <button
+                              className="btn btn-ghost"
+                              style={{ padding: '4px 8px', fontSize: 12, gap: 4, color: '#2563eb' }}
+                              onClick={() => setEditingVenta(v)}
+                              title="Editar contrato y titular del lote"
+                            >
+                              <Edit3 size={12} /> Editar Contrato
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     );
@@ -226,6 +239,18 @@ export default function Ventas() {
           <div className="modal-footer" style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 20 }}>
             <button className="btn btn-ghost" onClick={() => setSelected(null)}>Cerrar</button>
             <button
+              className="btn btn-secondary"
+              style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+              onClick={() => {
+                const v = selected;
+                setSelected(null);
+                setEditingVenta(v);
+              }}
+              title="Editar titular y condiciones del contrato"
+            >
+              <Edit3 size={13} /> Editar Contrato
+            </button>
+            <button
               className="btn btn-primary"
               style={{ display:'flex', alignItems:'center', gap:6 }}
               onClick={() => exportEstadoCuentaPDF(selected)}
@@ -234,6 +259,17 @@ export default function Ventas() {
             </button>
           </div>
         </Modal>
+      )}
+
+      {editingVenta && (
+        <ModalEditarContrato
+          venta={editingVenta}
+          onClose={() => setEditingVenta(null)}
+          onSuccess={() => {
+            fetchVentas();
+            setEditingVenta(null);
+          }}
+        />
       )}
 
       {showModalVenta && (
