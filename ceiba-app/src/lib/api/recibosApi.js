@@ -332,6 +332,43 @@ export const registrarPagoConRecibo = async ({
     throw new Error('El monto a pagar debe ser mayor a cero.');
   }
 
+  // 0. Intentar ejecución atómica en PostgreSQL (Función RPC con Transacción ACID nativa)
+  try {
+    const valorLetras = numeroALetrasCOP(montoNum);
+    const { data: rpcRes, error: rpcErr } = await supabase.rpc('procesar_pago_con_recibo', {
+      p_venta_id: ventaId || null,
+      p_cuota_id: cuotaId || null,
+      p_afectaciones: afectaciones ? JSON.parse(JSON.stringify(afectaciones)) : null,
+      p_monto: montoNum,
+      p_fecha_pago: fechaPago,
+      p_medio_pago: medioPago,
+      p_banco: banco || '',
+      p_referencia: referenciaPago || '',
+      p_concepto: concepto || (cuotaId ? `Abono a cuota` : 'Abono a contrato'),
+      p_observaciones: observaciones || '',
+      p_registrado_por: registradoPor || 'Secretaría',
+      p_ciudad: ciudad || 'Acacías',
+      p_lote_id_str: loteIdStr || '',
+      p_cliente_nombre: clienteNombre || '',
+      p_cliente_doc: clienteDoc || '',
+      p_valor_letras: valorLetras
+    });
+
+    if (!rpcErr && rpcRes) {
+      const reciboEmitido = typeof rpcRes === 'string' ? JSON.parse(rpcRes) : rpcRes;
+      guardarReciboLocal(reciboEmitido);
+      clearRecibosCache();
+      return {
+        recibo: reciboEmitido,
+        cuotaActualizada: null,
+        cuotasActualizadas: [],
+        transaccionalBackend: true
+      };
+    }
+  } catch (rpcEx) {
+    // Si la función RPC aún no está creada en Supabase, continúa con el rollback compensatorio
+  }
+
   // 1. Obtener siguiente número de recibo consecutivo
   const numero_recibo = await obtenerSiguienteNumeroRecibo();
 
@@ -611,6 +648,26 @@ export const anularRecibo = async ({
   }
 
   const numRec = Number(numeroRecibo);
+
+  // 0. Intentar ejecución atómica en PostgreSQL (RPC ACID)
+  try {
+    const { data: rpcRes, error: rpcErr } = await supabase.rpc('anular_recibo_oficial', {
+      p_numero_recibo: numRec,
+      p_motivo: motivo.trim(),
+      p_usuario_actual: usuarioActual,
+      p_rol_usuario: rolUsuario
+    });
+
+    if (!rpcErr && rpcRes) {
+      const reciboAnuladoRpc = typeof rpcRes === 'string' ? JSON.parse(rpcRes) : rpcRes;
+      guardarReciboLocal(reciboAnuladoRpc);
+      clearRecibosCache();
+      return reciboAnuladoRpc;
+    }
+  } catch (rpcEx) {
+    // Continúa con la lógica cliente si no existe la función
+  }
+
   const todos = await obtenerTodosLosRecibos(true);
   const recibo = todos.find(r => Number(r.numero_recibo) === numRec);
 
