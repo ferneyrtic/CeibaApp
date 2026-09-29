@@ -230,4 +230,101 @@ describe('abonosApi - detectarAbonosExtraordinarios y aplicarAmortizacion', () =
     await guardarObservacionCuota('cuota-10', '');
     expect(capturedPayload.observacion).toBeNull();
   });
+
+  it('NO debe detectar como pendiente un abono cuyas cuotas siguientes ya fueron amortizadas o marcadas como pagas', async () => {
+    const mockCuotasYaAmortizadas = [
+      {
+        id: 'c1',
+        venta_id: 'v3',
+        numero_cuota: 1,
+        fecha_pago: '2026-05-10',
+        valor_cuota: 1000000,
+        valor_pagado: 1000000,
+        estado_cuota: 'PAGA',
+        ventas: {
+          id: 'v3',
+          valor_cuota: 1000000,
+          plazo_cuotas: 5,
+          lotes: { id_lote: 'LC1 - 2 - 1' },
+          clientes: { nombre: 'Diviangi', doc_cliente: '101' }
+        }
+      },
+      {
+        id: 'c2',
+        venta_id: 'v3',
+        numero_cuota: 2,
+        fecha_pago: '2026-06-10',
+        valor_cuota: 1000000,
+        valor_pagado: 3000000, // Abono grande que cubrió cuotas 2, 3 y 4
+        estado_cuota: 'PAGA',
+        ventas: {
+          id: 'v3',
+          valor_cuota: 1000000,
+          plazo_cuotas: 5,
+          lotes: { id_lote: 'LC1 - 2 - 1' },
+          clientes: { nombre: 'Diviangi', doc_cliente: '101' }
+        }
+      },
+      {
+        id: 'c3',
+        venta_id: 'v3',
+        numero_cuota: 3,
+        fecha_pago: '2026-06-10',
+        valor_cuota: 1000000,
+        valor_pagado: 0,
+        estado_cuota: 'PAGA', // Ya amortizada en Excel!
+        ventas: {
+          id: 'v3',
+          valor_cuota: 1000000,
+          plazo_cuotas: 5,
+          lotes: { id_lote: 'LC1 - 2 - 1' },
+          clientes: { nombre: 'Diviangi', doc_cliente: '101' }
+        }
+      },
+      {
+        id: 'c4',
+        venta_id: 'v3',
+        numero_cuota: 4,
+        fecha_pago: '2026-06-10',
+        valor_cuota: 1000000,
+        valor_pagado: 0,
+        estado_cuota: 'PAGA', // Ya amortizada en Excel!
+        ventas: {
+          id: 'v3',
+          valor_cuota: 1000000,
+          plazo_cuotas: 5,
+          lotes: { id_lote: 'LC1 - 2 - 1' },
+          clientes: { nombre: 'Diviangi', doc_cliente: '101' }
+        }
+      },
+      {
+        id: 'c5',
+        venta_id: 'v3',
+        numero_cuota: 5,
+        fecha_pago: null,
+        valor_cuota: 1000000,
+        valor_pagado: 0,
+        estado_cuota: 'AL DÍA', // Cuota futura no cubierta por el abono
+        ventas: {
+          id: 'v3',
+          valor_cuota: 1000000,
+          plazo_cuotas: 5,
+          lotes: { id_lote: 'LC1 - 2 - 1' },
+          clientes: { nombre: 'Diviangi', doc_cliente: '101' }
+        }
+      }
+    ];
+
+    supabase.from.mockImplementation(() => ({
+      select: () => ({
+        order: () => ({
+          range: async () => ({ data: mockCuotasYaAmortizadas, error: null })
+        })
+      })
+    }));
+
+    const casos = await detectarAbonosExtraordinarios();
+    // No debe aparecer porque sus cuotas cubiertas (3 y 4) ya fueron amortizadas!
+    expect(casos.length).toBe(0);
+  });
 });

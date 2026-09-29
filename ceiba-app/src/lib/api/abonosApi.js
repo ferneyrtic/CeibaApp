@@ -86,12 +86,16 @@ export async function detectarAbonosExtraordinarios() {
     // Cuotas siguientes no pagadas que serían amortizadas
     const siguienteNum = ultimaPagada.numero_cuota + 1;
     const plazo = Number(venta.plazo_cuotas) || cuotasVenta.length;
+    const maxNumCubierto = Math.min(ultimaPagada.numero_cuota + cuotasEnterass - 1, plazo);
 
-    // Cuotas pendientes (sin fecha_pago) después de la última pagada
+    // Cuotas pendientes (sin fecha_pago y no marcadas como PAGA) dentro del rango cubierto por el abono
     const pendientes = cuotasVenta
-      .filter(c => c.numero_cuota >= siguienteNum && !c.fecha_pago)
-      .sort((a, b) => a.numero_cuota - b.numero_cuota)
-      .slice(0, cuotasEnterass - 1); // -1 porque la última pagada YA cuenta como la primera
+      .filter(c => c.numero_cuota >= siguienteNum && c.numero_cuota <= maxNumCubierto && (!c.fecha_pago || c.estado_cuota !== 'PAGA'))
+      .sort((a, b) => a.numero_cuota - b.numero_cuota);
+
+    // Si ya no quedan cuotas pendientes en el rango cubierto (es decir, ya fueron amortizadas
+    // o marcadas como pagas por la administración), este abono ya fue gestionado y no requiere acción.
+    if (!pendientes.length) continue;
 
     // Preview de amortización
     const amortizaciones = pendientes.map((c, i) => {
