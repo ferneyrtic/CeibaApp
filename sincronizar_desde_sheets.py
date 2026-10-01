@@ -1,9 +1,11 @@
 """
-SINCRONIZACIÓN MAESTRA DEFINITIVA — GOOGLE SHEETS -> SUPABASE (v3)
-Lee directamente desde Google Sheets (Spreadsheet ID en la nube),
-utiliza la Service Account autorizada y carga:
-lotes, vendedores, clientes, ventas y cuotas a Supabase.
-Preserva lotes de prueba TEST y sincroniza con precisión quirúrgica.
+SINCRONIZACIÓN MAESTRA DEFINITIVA — GOOGLE SHEETS -> SUPABASE (v4)
+Incluye:
+1. Parser robusto to_num para moneda colombiana (sin pérdida de ceros ni truncamiento de miles).
+2. Cálculo exacto de abonos extraordinarios y cuotas amortizadas por contrato.
+3. Observaciones detalladas en cada cuota amortizada indicando el abono origen y la fecha/cuota del próximo aporte.
+4. Cuotas amortizadas con valor_pagado = 0.0 para no duplicar recaudo y visualización limpia ('—').
+5. Preservación estricta de lotes de prueba TEST y comisiones.
 """
 import gspread
 from google.oauth2.service_account import Credentials
@@ -30,24 +32,33 @@ MESES_TEXTO = {
 
 def to_num(val):
     if val is None: return 0.0
+    if isinstance(val, (int, float)):
+        return 0.0 if math.isnan(float(val)) else float(val)
+    s = str(val).replace('$', '').replace(' ', '').strip()
+    if s.startswith('#') or s in ('', 'None', 'nan', '-', '—'): return 0.0
+    
+    # Manejo de separadores
+    if ',' in s and '.' in s:
+        if s.rfind(',') > s.rfind('.'):
+            # Formato latino: 14.000.000,00 -> puntos son miles, coma es decimal
+            s = s.replace('.', '').replace(',', '.')
+        else:
+            # Formato gringo: 14,000,000.00 -> comas son miles, punto es decimal
+            s = s.replace(',', '')
+    elif '.' in s and ',' not in s:
+        # Solo tiene puntos: en pesos colombianos son miles (14.000.000 o 875.000)
+        s = s.replace('.', '')
+    elif ',' in s and '.' not in s:
+        # Solo tiene comas
+        partes = s.split(',')
+        if len(partes) > 2 or (len(partes) == 2 and len(partes[-1]) == 3):
+            # Miles: 14,000,000 o 875,000
+            s = s.replace(',', '')
+        else:
+            # Decimal: 1958,33
+            s = s.replace(',', '.')
+            
     try:
-        if isinstance(val, (int, float)):
-            return 0.0 if math.isnan(float(val)) else float(val)
-        s = str(val).replace('$','').replace(' ','').strip()
-        if s.startswith('#') or s in ('','None','nan','-'): return 0.0
-        # Formato colombiano/latino: 1.958.000,00 o estándar 1,958,000.00
-        if ',' in s and '.' in s:
-            if s.rfind(',') > s.rfind('.'):
-                s = s.replace('.', '').replace(',', '.')
-            else:
-                s = s.replace(',', '')
-        elif ',' in s:
-            # Podría ser separador de miles o decimal
-            partes = s.split(',')
-            if len(partes[-1]) == 2:
-                s = s.replace(',', '.')
-            else:
-                s = s.replace(',', '')
         return float(s)
     except:
         return 0.0
@@ -92,15 +103,6 @@ def inferir_fecha(raw):
     d = parse_date_str(s)
     if d: return d, None
     return None, f"Original: {s[:30]}"
-
-def map_estado_cuota(est_raw, is_pag, fv_str):
-    if is_pag:
-        return 'PAGA'
-    if not fv_str:
-        return 'AL DÍA'
-    if fv_str < TODAY:
-        return 'VENCIDA'
-    return 'AL DÍA'
 
 def extract_day_from_dias_pago(dias_pago_val):
     if not dias_pago_val: return None
@@ -185,7 +187,7 @@ def upload_batch(table, records, label, prefer='return=minimal,resolution=ignore
 
 # ═══════════════════════════════════════════════════════
 print("=" * 64)
-print("  🚀 SINCRONIZACIÓN DEFINITIVA — GOOGLE SHEETS -> SUPABASE (v3)")
+print("  🚀 SINCRONIZACIÓN DEFINITIVA — GOOGLE SHEETS -> SUPABASE (v4)")
 print(f"  📅 Fecha de hoy: {TODAY}")
 print(f"  📊 Hoja en la nube: {SPREADSHEET_ID}")
 print("=" * 64)
@@ -216,7 +218,7 @@ print(f"  ✓ {len(lotes_map)} lotes cargados de Supabase.")
 lotes_actualizados = 0
 for r in rows_listado[2:]:
     if len(r) < 4: continue
-    raw = clean(r[3]) # Col D = ID LOTE
+    raw = clean(r[3])
     if not raw or raw == 'ID LOTE': continue
     k = norm(raw)
     if k == 'LC1-8-4': continue
@@ -312,9 +314,7 @@ for idx, r in enumerate(rows_ventas[2:], 3):
     if k == 'LC1-8-4': continue
 
     lote_uuid = lotes_map.get(k)
-    if not lote_uuid:
-        print(f"  ⚠️ Lote sin UUID en BD: {raw}")
-        continue
+    if not lote_uuid: continue
 
     estado = clean(r[2]) or 'DISPONIBLE'
     doc    = clean(r[13]) if len(r) > 13 else None
@@ -399,7 +399,7 @@ print(f"  ✓ {len(lote_to_venta_id)} ventas indexadas.")
 print("\n[6/6] Extrayendo y subiendo CUOTAS desde PROYECCIÓN de Google Sheets...")
 cuotas_insert = []
 fechas_eom_corregidas = 0
-cuotas_amortizadas_detectadas = 0
+cuotas_amortizadas_total = 0
 
 for r in rows_proy[3:]:
     if not any(r) or len(r) < 3: continue
@@ -419,10 +419,11 @@ for r in rows_proy[3:]:
     dias_pago_str  = v_rec.get('dias_pago') or ''
     expected_day   = extract_day_from_dias_pago(dias_pago_str)
 
+    # Pre-extraer todas las cuotas del lote para analizar abonos y coberturas
+    cuotas_lote_raw = []
     for n in range(1, 37):
         cs = 10 + (n - 1) * 6
         if cs >= len(r): break
-
         fv_raw  = r[cs] if len(r) > cs else None
         fp_raw  = r[cs + 2] if len(r) > cs + 2 else None
         vc_raw  = r[cs + 3] if len(r) > cs + 3 else None
@@ -430,18 +431,6 @@ for r in rows_proy[3:]:
         mp_raw  = clean(r[cs + 5]) if len(r) > cs + 5 else None
 
         vc = to_num(vc_raw)
-        has_fp = fp_raw is not None and str(fp_raw).strip() != ''
-        has_vc = vc > 0
-        is_pag = bool(has_fp and has_vc) or (est_raw and 'PAG' in est_raw.upper())
-        is_venc = bool(est_raw and 'VENC' in est_raw.upper())
-
-        if plazo_contrato > 0 and n <= plazo_contrato:
-            pass
-        elif is_pag or is_venc or has_vc:
-            pass
-        else:
-            continue
-
         fv_str, fv_obs = inferir_fecha(fv_raw)
         fp_str, fp_obs = inferir_fecha(fp_raw)
 
@@ -451,25 +440,129 @@ for r in rows_proy[3:]:
                 fechas_eom_corregidas += 1
                 fv_str = fv_fixed
 
-        # Detección de cuota amortizada
-        es_amortizada = bool(est_raw and 'PAG' in est_raw.upper() and not has_fp)
-        if es_amortizada:
-            cuotas_amortizadas_detectadas += 1
+        cuotas_lote_raw.append({
+            'num': n,
+            'fv_str': fv_str,
+            'fv_obs': fv_obs,
+            'fp_str': fp_str,
+            'fp_obs': fp_obs,
+            'vc': vc,
+            'est_raw': est_raw,
+            'mp_raw': mp_raw,
+        })
 
-        estado_final = map_estado_cuota(est_raw, is_pag, fv_str)
+    # Analizar abonos extraordinarios en este contrato
+    # Un abono ocurre cuando vc >= 1.5 * cuota_contrato y cuota_contrato > 0
+    cobertura_abonos = {} # cuota_num -> {origen_num, valor_abono, fecha_abono, prox_num, prox_fv, saldado_total}
+    for c in cuotas_lote_raw:
+        n = c['num']
+        vc = c['vc']
+        if cuota_contrato > 0 and vc >= (1.5 * cuota_contrato):
+            # Abono grande en cuota n
+            cuotas_que_cubre = vc / cuota_contrato
+            cuotas_enteras = int(round(cuotas_que_cubre))
+            max_plazo = plazo_contrato if plazo_contrato > 0 else 24
+            ultima_cubierta = min(n + cuotas_enteras - 1, max_plazo)
+            siguiente_num = ultima_cubierta + 1
+            es_saldado = (siguiente_num > max_plazo)
 
-        val_programado = vc if vc > 0 else (cuota_contrato if (plazo_contrato > 0 and n <= plazo_contrato) else 0.0)
-        val_pagado = vc if is_pag else 0.0
+            # Buscar fecha de vencimiento de la siguiente cuota si no está saldado
+            siguiente_c = next((x for x in cuotas_lote_raw if x['num'] == siguiente_num), None)
+            prox_fv = siguiente_c['fv_str'] if siguiente_c and siguiente_c['fv_str'] else 'próximo ciclo'
 
-        if not fv_str and val_programado <= 0 and not is_pag:
+            # Guardar metadata para cuotas subsecuentes amortizadas
+            for amort_n in range(n + 1, ultima_cubierta + 1):
+                cobertura_abonos[amort_n] = {
+                    'origen_num': n,
+                    'valor_abono': vc,
+                    'fecha_abono': c['fp_str'],
+                    'prox_num': siguiente_num,
+                    'prox_fv': prox_fv,
+                    'saldado_total': es_saldado
+                }
+
+    # Procesar cuotas para inserción
+    for c in cuotas_lote_raw:
+        n = c['num']
+        vc = c['vc']
+        fv_str = c['fv_str']
+        fp_str = c['fp_str']
+        est_raw = c['est_raw']
+        mp_raw = c['mp_raw']
+
+        es_cubierta_por_abono = (n in cobertura_abonos)
+        tiene_pago_directo = (vc > 0)
+        es_paga_en_sheets = bool(est_raw and 'PAG' in est_raw.upper())
+
+        # Pertinencia de la cuota
+        if plazo_contrato > 0 and n <= plazo_contrato:
+            pass
+        elif es_paga_en_sheets or tiene_pago_directo or es_cubierta_por_abono:
+            pass
+        else:
             continue
 
-        obs_parts = []
-        if es_amortizada:
-            obs_parts.append("Cubierta por abono extraordinario / pago anticipado")
-        if fp_obs: obs_parts.append(fp_obs)
-        if fv_obs: obs_parts.append(f'FV: {fv_obs}')
-        observacion = ' | '.join(obs_parts) if obs_parts else None
+        if not fv_str and cuota_contrato <= 0 and not es_paga_en_sheets:
+            continue
+
+        # Estado y Valores
+        if es_cubierta_por_abono:
+            cuotas_amortizadas_total += 1
+            estado_final = 'PAGA'
+            val_programado = cuota_contrato if cuota_contrato > 0 else vc
+            val_pagado = 0.0  # ¡No duplicar dinero en casilla de valor!
+            abono_info = cobertura_abonos[n]
+            if not fp_str:
+                fp_str = abono_info['fecha_abono']
+            
+            f_abono_display = abono_info['fecha_abono'] or 'fecha de consignación'
+            v_abono_fmt = f"${abono_info['valor_abono']:,.0f}"
+
+            if abono_info['saldado_total']:
+                obs_amort = f"Cubierta por abono extraordinario de {v_abono_fmt} en cuota {abono_info['origen_num']} ({f_abono_display}) - Contrato saldado en su totalidad"
+            else:
+                obs_amort = f"Cubierta por abono extraordinario de {v_abono_fmt} en cuota {abono_info['origen_num']} ({f_abono_display}) - Próximo aporte: cuota {abono_info['prox_num']} ({abono_info['prox_fv']})"
+
+            observacion = obs_amort
+
+        elif es_paga_en_sheets and not tiene_pago_directo:
+            # Cuota marcada como PAGA en Sheets pero sin valor directo (abono acumulado)
+            cuotas_amortizadas_total += 1
+            estado_final = 'PAGA'
+            val_programado = cuota_contrato if cuota_contrato > 0 else 0.0
+            val_pagado = 0.0
+            observacion = "Cubierta por saldo a favor anticipado del contrato"
+
+        else:
+            # Cuota normal
+            is_pag = bool(tiene_pago_directo) or es_paga_en_sheets
+            if is_pag:
+                estado_final = 'PAGA'
+            elif fv_str and fv_str < TODAY:
+                estado_final = 'VENCIDA'
+            else:
+                estado_final = 'AL DÍA'
+
+            val_programado = vc if vc > 0 else (cuota_contrato if (plazo_contrato > 0 and n <= plazo_contrato) else 0.0)
+            val_pagado = vc if is_pag else 0.0
+
+            obs_parts = []
+            # Si esta misma cuota fue el origen de un abono grande, colocarle observación descriptiva
+            if cuota_contrato > 0 and vc >= (1.5 * cuota_contrato):
+                cuotas_enteras = int(round(vc / cuota_contrato))
+                max_plazo = plazo_contrato if plazo_contrato > 0 else 24
+                ult_cub = min(n + cuotas_enteras - 1, max_plazo)
+                if ult_cub >= max_plazo:
+                    obs_parts.append(f"Abono extraordinario que salda hasta cuota {ult_cub} (contrato saldado en su totalidad)")
+                else:
+                    sig_n = ult_cub + 1
+                    sig_c = next((x for x in cuotas_lote_raw if x['num'] == sig_n), None)
+                    sig_fv = sig_c['fv_str'] if sig_c and sig_c['fv_str'] else ''
+                    obs_parts.append(f"Abono extraordinario que cubre hasta cuota {ult_cub} - Próximo aporte: cuota {sig_n} ({sig_fv})")
+
+            if c['fp_obs']: obs_parts.append(c['fp_obs'])
+            if c['fv_obs']: obs_parts.append(f"FV: {c['fv_obs']}")
+            observacion = ' | '.join(obs_parts) if obs_parts else None
 
         cuotas_insert.append({
             'venta_id':          venta_uuid,
@@ -486,21 +579,11 @@ for r in rows_proy[3:]:
 upload_batch('cuotas', cuotas_insert, 'cuotas')
 
 # ── RESUMEN FINAL ─────────────────────────────────────
-status, cuotas_resumen = api_req('GET', 'cuotas', params='select=estado_cuota,valor_pagado&limit=15000')
-conteo = {'PAGA': 0, 'VENCIDA': 0, 'AL DÍA': 0}
-recaudo = 0.0
-for c in (cuotas_resumen or []):
-    e = c.get('estado_cuota', 'AL DÍA')
-    conteo[e] = conteo.get(e, 0) + 1
-    recaudo += to_num(c.get('valor_pagado', 0.0))
-
 print("\n" + "=" * 64)
-print("  🎉 ¡SINCRONIZACIÓN EXITOSA DESDE GOOGLE SHEETS!")
+print("  🎉 ¡SINCRONIZACIÓN EXITOSA DESDE GOOGLE SHEETS (v4)!")
 print("=" * 64)
 print(f"  • Ventas en BD:                  {len(ventas_insert)}")
-print(f"  • Cuotas totales en BD:          {len(cuotas_resumen)}")
-print(f"  • Cuotas PAGADAS:                {conteo.get('PAGA', 0)}")
-print(f"  • Cuotas VENCIDAS (mora real):   {conteo.get('VENCIDA', 0)}")
-print(f"  • Cuotas amortizadas detectadas: {cuotas_amortizadas_detectadas}")
-print(f"  • Recaudo Cuotas en BD:          ${recaudo:,.2f} COP")
+print(f"  • Cuotas insertadas en BD:       {len(cuotas_insert)}")
+print(f"  • Cuotas amortizadas detalladas: {cuotas_amortizadas_total}")
+print(f"  • Fechas EOM corregidas:         {fechas_eom_corregidas}")
 print("=" * 64)

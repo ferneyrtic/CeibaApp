@@ -42,13 +42,16 @@ export const resolveCuotaDisplay = (cuota, numCuota, plazoTotal) => {
 
   // 1. Si está pagada
   if (cuota?.estado_cuota === 'PAGA' || (cuota?.valor_pagado && cuota.valor_pagado > 0)) {
+    const tienePagoDirecto = cuota?.valor_pagado && Number(cuota.valor_pagado) > 0;
+    const valorDisplay = tienePagoDirecto ? formatCOP(cuota.valor_pagado) : '—';
+
     return {
       num: `CUOTA ${numCuota}`,
       fecha: fechaPago || fechaVenc,
       fechaPago,
       fechaVenc,
       estado: 'PAGA',
-      valor: cuota?.valor_pagado ? formatCOP(cuota.valor_pagado) : valor,
+      valor: valorDisplay,
       color: [22, 163, 74],
       cssColor: '#16a34a',
       fontStyle: 'bold',
