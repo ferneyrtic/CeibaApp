@@ -497,8 +497,8 @@ export default function Cartera() {
                               <PctBar valor={v.saldo || 0} total={v.saldo_financiado || v.precio_venta || 1} />
                             </td>
                             <td>
-                              {v.saldo <= 0 ? (
-                                <span className="badge" style={{ background: '#f0fdf4', color: '#16a34a' }}>PAZ Y SALVO</span>
+                              {(v.saldo <= 0 || v.estado === 'PAGADO EN SU TOTALIDAD') ? (
+                                <span className="badge" style={{ background: '#f0fdf4', color: '#16a34a', fontWeight: 700 }}>PAZ Y SALVO</span>
                               ) : v.cuotas_vencidas > 0 ? (
                                 <span className="badge" style={{ background: '#fef2f2', color: '#dc2626' }}>
                                   {v.cuotas_vencidas} EN MORA

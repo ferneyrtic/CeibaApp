@@ -395,8 +395,10 @@ export const registrarPagoConRecibo = async ({
     const numerosCuotas = afectaciones.map(a => a.numero_cuota);
     numeroCuota = numerosCuotas[0];
     cuotasInfoStr = `Cuotas ${numerosCuotas.join(', ')}`;
+    const esAbonoMultiples = afectaciones.length > 1;
 
-    for (const a of afectaciones) {
+    for (let i = 0; i < afectaciones.length; i++) {
+      const a = afectaciones[i];
       const { data: cuota, error: cErr } = await supabase
         .from('cuotas')
         .select('*')
@@ -404,56 +406,71 @@ export const registrarPagoConRecibo = async ({
         .single();
 
       if (cuota) {
-        const yaPag = Number(cuota.valor_pagado) || 0;
-        const abonoItem = Number(a.valor_abono) || 0;
-        const nuevoPag = yaPag + abonoItem;
-        const valCuota = Number(cuota.valor_cuota) || 0;
-        const comp = a.completo || nuevoPag >= valCuota;
-        const nuevoEst = comp ? 'PAGA' : (cuota.estado_cuota === 'VENCIDA' ? 'VENCIDA' : 'AL DÍA');
+        let valPagadoActualizar;
+        let fechaPagoActualizar;
+        let obsCuotaActualizar;
+        let estadoCuotaActualizar;
 
-        const notaRecibo = `Recibo #${numero_recibo} ($${abonoItem.toLocaleString('es-CO')}) el ${fechaPago}`;
-        const obsCuota = cuota.observacion
-          ? `${cuota.observacion} | ${notaRecibo}`.trim()
-          : notaRecibo;
+        if (i === 0) {
+          // Primera cuota: recibe el monto total del abono con su fecha real
+          valPagadoActualizar = esAbonoMultiples ? montoNum : ((Number(cuota.valor_pagado) || 0) + (Number(a.valor_abono) || 0));
+          fechaPagoActualizar = fechaPago;
+          estadoCuotaActualizar = (a.completo || valPagadoActualizar >= (Number(cuota.valor_cuota) || 0)) ? 'PAGA' : (cuota.estado_cuota === 'VENCIDA' ? 'VENCIDA' : 'AL DÍA');
+
+          const notaRecibo = `Recibo #${numero_recibo} ($${(esAbonoMultiples ? montoNum : a.valor_abono).toLocaleString('es-CO')}) el ${fechaPago}`;
+          const notaCubiertas = esAbonoMultiples
+            ? `Abono de $${montoNum.toLocaleString('es-CO')} cubre ${afectaciones.length} cuotas (cuotas ${numerosCuotas[0]} a ${numerosCuotas[numerosCuotas.length - 1]})`
+            : '';
+          const partes = [notaCubiertas, notaRecibo, cuota.observacion].filter(Boolean);
+          obsCuotaActualizar = partes.join(' | ');
+        } else {
+          // Cuotas subsecuentes: quedan limpias como PAGA ($0 y sin fecha de pago falsa)
+          valPagadoActualizar = 0.0;
+          fechaPagoActualizar = null;
+          estadoCuotaActualizar = 'PAGA';
+          obsCuotaActualizar = null;
+        }
 
         let hist = [];
-        if (cuota.comprobante_url) {
+        if (i === 0 && cuota.comprobante_url) {
           try {
             const p = JSON.parse(cuota.comprobante_url);
             hist = Array.isArray(p) ? p : [p];
           } catch (e) {}
         }
-        hist.push({
-          numero_recibo,
-          fecha_pago: fechaPago,
-          valor: abonoItem,
-          medio_pago: medioPago,
-          banco,
-          referencia: referenciaPago,
-          es_pago_completo: comp,
-          concepto: conceptoFinal,
-          observaciones: obsFinal,
-          valor_letras: numeroALetrasCOP(abonoItem),
-          ciudad: 'Acacías',
-          pagado_a: 'PROYECTO CAMPESTRE LA CEIBA',
-          lote_id_str: loteIdStr,
-          cliente_nombre: clienteNombre,
-          cliente_doc: clienteDoc,
-          venta_id: ventaId,
-          cuota_id: a.id,
-          numero_cuota: a.numero_cuota,
-          created_at: new Date().toISOString()
-        });
+        if (i === 0) {
+          hist.push({
+            numero_recibo,
+            fecha_pago: fechaPago,
+            valor: montoNum,
+            medio_pago: medioPago,
+            banco,
+            referencia: referenciaPago,
+            es_pago_completo: true,
+            concepto: conceptoFinal,
+            observaciones: obsFinal,
+            valor_letras: numeroALetrasCOP(montoNum),
+            ciudad: 'Acacías',
+            pagado_a: 'PROYECTO CAMPESTRE LA CEIBA',
+            lote_id_str: loteIdStr,
+            cliente_nombre: clienteNombre,
+            cliente_doc: clienteDoc,
+            venta_id: ventaId,
+            cuota_id: a.id,
+            numero_cuota: a.numero_cuota,
+            created_at: new Date().toISOString()
+          });
+        }
 
         const { data: updated } = await supabase
           .from('cuotas')
           .update({
-            valor_pagado: nuevoPag,
-            estado_cuota: nuevoEst,
-            fecha_pago: fechaPago,
+            valor_pagado: valPagadoActualizar,
+            estado_cuota: estadoCuotaActualizar,
+            fecha_pago: fechaPagoActualizar,
             medio_pago: medioPago,
-            observacion: obsCuota,
-            comprobante_url: JSON.stringify(hist)
+            observacion: obsCuotaActualizar,
+            comprobante_url: (i === 0) ? JSON.stringify(hist) : null
           })
           .eq('id', a.id)
           .select()

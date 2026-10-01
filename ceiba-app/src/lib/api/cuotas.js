@@ -141,30 +141,63 @@ export const registrarAbonoCascada = async ({
   // 3. Determinar fecha y nota final
   const fechaFinal = esPagoMultiple ? null : (fechaPago || new Date().toISOString().slice(0, 10));
   let obsBase = observacion ? observacion.trim() : '';
-  if (esPagoMultiple && mesMultiple) {
-    obsBase = `PAGO MÚLTIPLE - ${mesMultiple.toUpperCase()}${obsBase ? ' | ' + obsBase : ''}`;
+
+  // 4. Actualizar cuotas afectadas en Supabase según la nueva regla:
+  // Si el abono cubre múltiples cuotas (afectaciones.length > 1), el monto completo y la fecha
+  // se registran exclusivamente en la primera cuota, y las siguientes cuotas quedan marcadas
+  // como PAGA con valor $0 y sin fecha de pago falsa.
+  const esAbonoMultiplesCuotas = afectaciones.length > 1;
+  const primeraAfectada = afectaciones[0];
+  const ultimaAfectada = afectaciones[afectaciones.length - 1];
+  const proximaCuotaNum = ultimaAfectada.numero_cuota + 1;
+  const proximaCuotaObj = cuotas.find(c => c.numero_cuota === proximaCuotaNum);
+  const proximaFechaStr = proximaCuotaObj?.fecha_vencimiento || '';
+
+  // Nota explicativa automática
+  let notaAutoAbono = '';
+  if (esAbonoMultiplesCuotas) {
+    if (proximaCuotaObj) {
+      notaAutoAbono = `Abono extraordinario de $${montoNum.toLocaleString('es-CO')} cubre ${afectaciones.length} cuotas (cuotas ${primeraAfectada.numero_cuota} a ${ultimaAfectada.numero_cuota}) - Próximo aporte: cuota ${proximaCuotaNum}${proximaFechaStr ? ` (${proximaFechaStr})` : ''}`;
+    } else {
+      notaAutoAbono = `Abono extraordinario de $${montoNum.toLocaleString('es-CO')} salda hasta cuota ${ultimaAfectada.numero_cuota} (contrato saldado en su totalidad)`;
+    }
   }
 
-  // 4. Actualizar cuotas afectadas en Supabase
-  for (const a of afectaciones) {
+  for (let i = 0; i < afectaciones.length; i++) {
+    const a = afectaciones[i];
     const cuotaOrig = cuotas.find(c => c.id === a.id);
-    let obsCuota = obsBase;
-    if (cuotaOrig?.observacion) {
-      obsCuota = `${cuotaOrig.observacion} | ${obsBase}`.trim();
-    }
-    if (!a.completo) {
-      obsCuota += ` (Abono parcial: $${a.valor_abono.toLocaleString('es-CO')})`;
+
+    let valPagadoFinal;
+    let fechaPagoFinal;
+    let obsFinal;
+
+    if (i === 0) {
+      // Primera cuota: recibe el monto total del abono
+      valPagadoFinal = esAbonoMultiplesCuotas ? montoNum : a.nuevo_pagado;
+      fechaPagoFinal = fechaFinal;
+      const partesObs = [];
+      if (notaAutoAbono) partesObs.push(notaAutoAbono);
+      if (obsBase) partesObs.push(obsBase);
+      if (!a.completo && !esAbonoMultiplesCuotas) {
+        partesObs.push(`Abono parcial: $${a.valor_abono.toLocaleString('es-CO')}`);
+      }
+      obsFinal = partesObs.join(' | ') || cuotaOrig?.observacion || null;
+    } else {
+      // Cuotas subsecuentes: quedan limpias como PAGA ($0 y sin fecha falsa)
+      valPagadoFinal = 0.0;
+      fechaPagoFinal = null;
+      obsFinal = null;
     }
 
     const { error: updateError } = await supabase
       .from('cuotas')
       .update({
-        valor_pagado: a.nuevo_pagado,
-        estado_cuota: a.nuevo_estado,
-        fecha_pago: fechaFinal,
+        valor_pagado: valPagadoFinal,
+        estado_cuota: 'PAGA',
+        fecha_pago: fechaPagoFinal,
         medio_pago: medioPago || cuotaOrig?.medio_pago || 'TRANSFERENCIA',
-        comprobante_url: comprobanteUrl || cuotaOrig?.comprobante_url,
-        observacion: obsCuota.trim() || null,
+        comprobante_url: (i === 0) ? (comprobanteUrl || cuotaOrig?.comprobante_url) : null,
+        observacion: obsFinal,
       })
       .eq('id', a.id);
 

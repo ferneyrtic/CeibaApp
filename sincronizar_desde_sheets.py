@@ -577,12 +577,12 @@ for r in rows_proy[3:]:
                 max_plazo = plazo_contrato if plazo_contrato > 0 else 24
                 ult_cub = min(n + cuotas_enteras - 1, max_plazo)
                 if ult_cub >= max_plazo:
-                    obs_parts.append(f"Abono extraordinario que salda hasta cuota {ult_cub} (contrato saldado en su totalidad)")
+                    obs_parts.append(f"Abono de ${vc:,.0f} salda hasta cuota {ult_cub} (contrato saldado en su totalidad)")
                 else:
                     sig_n = ult_cub + 1
                     sig_c = next((x for x in cuotas_lote_raw if x['num'] == sig_n), None)
-                    sig_fv = sig_c['fv_str'] if sig_c and sig_c['fv_str'] else ''
-                    obs_parts.append(f"Abono extraordinario que cubre hasta cuota {ult_cub} - Próximo aporte: cuota {sig_n} ({sig_fv})")
+                    sig_fv = sig_c['fv_str'] if sig_c and sig_c['fv_str'] else 'próximo ciclo'
+                    obs_parts.append(f"Abono de ${vc:,.0f} cubre {cuotas_enteras} cuotas (hasta cuota {ult_cub}) - Próximo aporte: cuota {sig_n} ({sig_fv})")
 
             if c['fp_obs']: obs_parts.append(c['fp_obs'])
             if c['fv_obs']: obs_parts.append(f"FV: {c['fv_obs']}")

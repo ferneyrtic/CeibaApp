@@ -82,9 +82,9 @@ export function useCarteraLogic() {
 
     if (filtro && filtro !== 'Todos') {
       if (filtro === 'Con Saldo') {
-        result = result.filter(v => (v.saldo || 0) > 0 && v.estado === 'VENDIDO');
+        result = result.filter(v => (v.saldo || 0) > 0 && v.estado !== 'PAGADO EN SU TOTALIDAD' && v.estado !== 'PAGADO');
       } else if (filtro === 'Pagado') {
-        result = result.filter(v => (v.saldo || 0) <= 0 && v.estado === 'VENDIDO');
+        result = result.filter(v => (v.saldo || 0) <= 0 || v.estado === 'PAGADO EN SU TOTALIDAD' || v.estado === 'PAGADO');
       } else if (filtro === 'En Mora') {
         result = result.filter(v => (v.cuotas_vencidas || 0) > 0);
       } else if (filtro === 'Sin Gestión') {

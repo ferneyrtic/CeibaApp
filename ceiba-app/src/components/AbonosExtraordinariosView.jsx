@@ -166,13 +166,21 @@ function PreviewAmortizacion({ caso, onConfirmar, onCerrar, aplicando }) {
                   <span style={{ color: '#64748b' }}>Venc: {formatDate(am.fecha_vencimiento)}</span>
                 </div>
                 <div style={{ marginTop: 4, fontSize: 10, color: '#047857', fontStyle: 'italic' }}>
-                  💬 {am.observacion_nueva}
+                  {am.observacion_nueva ? `💬 ${am.observacion_nueva}` : '✨ Cuota cubierta por abono (sin duplicar valor ni fechas falsas)'}
                 </div>
               </div>
             ))}
           </div>
+
+          {caso.proxima_cuota_num && !cubreTodaLaDeuda && (
+            <div style={{ marginTop: 10, background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 8, padding: '9px 12px', fontSize: 11.5, color: '#1d4ed8', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 6 }}>
+              <span>📅 <strong>Próximo aporte a cobrar:</strong> Cuota #{caso.proxima_cuota_num}</span>
+              <span>Fecha de vencimiento: <strong>{caso.proxima_cuota_fecha ? formatDate(caso.proxima_cuota_fecha) : 'Según cronograma'}</strong></span>
+            </div>
+          )}
+
           <div style={{ marginTop: 12, background: '#fef3c7', borderRadius: 8, padding: '8px 12px', fontSize: 11, color: '#92400e' }}>
-            ⚠️ Esta acción marcará <strong>{cuotasSeleccionadas.length} cuota(s)</strong> como pagadas con valor $0. La cuota original de <strong>{formatCOP(caso.valor_pagado)}</strong> ya fue registrada en la Cuota {caso.ultima_cuota_num}.
+            ⚠️ El pago total de <strong>{formatCOP(caso.valor_pagado)}</strong> queda registrado exclusivamente en la Cuota {caso.ultima_cuota_num} con su fecha real. Las siguientes {cuotasSeleccionadas.length} cuota(s) quedan limpias como pagas ($0).
           </div>
         </>
       ) : (

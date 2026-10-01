@@ -147,7 +147,7 @@ describe('abonosApi - detectarAbonosExtraordinarios y aplicarAmortizacion', () =
     expect(caso.cuotas_pendientes_amortizar[0].numero_cuota).toBe(3);
     expect(caso.cuotas_pendientes_amortizar[0].valor_pagado_nuevo).toBe(0);
     expect(caso.cuotas_pendientes_amortizar[0].estado_nuevo).toBe('PAGA');
-    expect(caso.cuotas_pendientes_amortizar[0].fecha_pago_nueva).toBe('2026-06-10');
+    expect(caso.cuotas_pendientes_amortizar[0].fecha_pago_nueva).toBeNull();
 
     expect(caso.cuotas_pendientes_amortizar[1].numero_cuota).toBe(4);
     expect(caso.cuotas_pendientes_amortizar[1].valor_pagado_nuevo).toBe(0);
@@ -194,7 +194,7 @@ describe('abonosApi - detectarAbonosExtraordinarios y aplicarAmortizacion', () =
     expect(cuotaUpdate).toBeDefined();
     expect(cuotaUpdate.payload.estado_cuota).toBe('PAGA');
     expect(cuotaUpdate.payload.valor_pagado).toBe(0.0);
-    expect(cuotaUpdate.payload.fecha_pago).toBe('2026-06-10');
+    expect(cuotaUpdate.payload.fecha_pago).toBeNull();
 
     // 2. Debe actualizar la observación en c2 (el abono grande)
     const obsUpdate = mockUpdates.find(u => u.table === 'cuotas' && u.val === 'c2');

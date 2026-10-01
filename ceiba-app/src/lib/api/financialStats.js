@@ -68,7 +68,7 @@ export const getSharedFinancialStats = async (forceRefresh = false) => {
   const totalSaldoFinanciado = vendidos.reduce((a, v) => a + (Number(v.saldo_financiado) || 0), 0);
   const totalCuotasPagadas   = rows.reduce((a, v) => a + (Number(v.cuotas_pagadas_monto) || 0), 0);
   const totalRecaudado       = totalCuotaInicial + totalCuotasPagadas;
-  const totalSaldo           = Math.max(0, totalSaldoFinanciado - totalCuotasPagadas);
+  const totalSaldo           = vendidos.reduce((a, v) => a + Math.max(0, Number(v.saldo) || 0), 0);
 
   const conSaldo             = vendidos.filter(v => (v.saldo || 0) > 0).length;
   const sinGestion           = vendidos.filter(v => !v.fecha_venta && (v.saldo || 0) > 0).length;

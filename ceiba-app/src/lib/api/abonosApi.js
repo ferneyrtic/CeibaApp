@@ -97,22 +97,18 @@ export async function detectarAbonosExtraordinarios() {
     // o marcadas como pagas por la administración), este abono ya fue gestionado y no requiere acción.
     if (!pendientes.length) continue;
 
-    // Preview de amortización
-    const amortizaciones = pendientes.map((c, i) => {
-      const esUltima = i === pendientes.length - 1;
-      const valorAmortizado = esUltima && remanente > 0 ? 0.0 : 0.0; // valor_pagado = 0 (amortizado)
-      return {
-        cuota_id: c.id,
-        numero_cuota: c.numero_cuota,
-        fecha_vencimiento: c.fecha_vencimiento,
-        estado_actual: c.estado_cuota,
-        valor_cuota: Number(c.valor_cuota),
-        valor_pagado_nuevo: 0.0,
-        fecha_pago_nueva: ultimaPagada.fecha_pago, // misma fecha que el abono
-        estado_nuevo: 'PAGA',
-        observacion_nueva: `Amortizada por abono extraordinario de $${valorPagado.toLocaleString('es-CO')} del ${ultimaPagada.fecha_pago}`
-      };
-    });
+    // Preview de amortización limpia (sin valores duplicados ni fechas falsas hacia adelante)
+    const amortizaciones = pendientes.map((c) => ({
+      cuota_id: c.id,
+      numero_cuota: c.numero_cuota,
+      fecha_vencimiento: c.fecha_vencimiento,
+      estado_actual: c.estado_cuota,
+      valor_cuota: Number(c.valor_cuota),
+      valor_pagado_nuevo: 0.0,
+      fecha_pago_nueva: null,
+      estado_nuevo: 'PAGA',
+      observacion_nueva: null
+    }));
 
     const lote = venta.lotes?.id_lote || '—';
     const loteId = venta.lotes?.id || venta.lote_id;
@@ -122,7 +118,15 @@ export async function detectarAbonosExtraordinarios() {
 
     // Cuotas pendientes sin pagar en este contrato
     const cuotasPendientesSinPagar = cuotasVenta.filter(c => !c.fecha_pago || c.estado_cuota !== 'PAGA');
-    const cubreTotalidad = amortizaciones.length >= cuotasPendientesSinPagar.length && cuotasPendientesSinPagar.length > 0;
+    const cubreTotalidad = (maxNumCubierto >= plazo) || (amortizaciones.length >= cuotasPendientesSinPagar.length && cuotasPendientesSinPagar.length > 0);
+
+    const proximaCuotaNum = maxNumCubierto + 1;
+    const proximaCuotaObj = cuotasVenta.find(c => c.numero_cuota === proximaCuotaNum);
+    const proximaFechaStr = proximaCuotaObj?.fecha_vencimiento || '';
+
+    const obsSugerida = cubreTotalidad
+      ? `Abono extraordinario de $${valorPagado.toLocaleString('es-CO')} salda hasta cuota ${maxNumCubierto} (contrato saldado en su totalidad)`
+      : `Abono extraordinario de $${valorPagado.toLocaleString('es-CO')} cubre ${cuotasEnterass} cuotas (hasta cuota ${maxNumCubierto}) - Próximo aporte: cuota ${proximaCuotaNum}${proximaFechaStr ? ` (${proximaFechaStr})` : ''}`;
 
     casos.push({
       venta_id: ventaId,
@@ -144,9 +148,10 @@ export async function detectarAbonosExtraordinarios() {
       remanente,
       plazo_total: plazo,
       cuotas_pendientes_amortizar: amortizaciones,
+      proxima_cuota_num: proximaCuotaNum,
+      proxima_cuota_fecha: proximaFechaStr,
       observacion_actual: ultimaPagada.observacion || null,
-      observacion_sugerida:
-        `Pago grande: cubre ~${cuotasEnterass} cuotas. Val: $${valorPagado.toLocaleString('es-CO')}. Fecha: ${ultimaPagada.fecha_pago}`,
+      observacion_sugerida: obsSugerida,
       nivel:
         cuotasQueCubre >= 6 ? 'critico' :
         cuotasQueCubre >= 3 ? 'alto' : 'moderado'
@@ -172,7 +177,7 @@ export async function aplicarAmortizacion(caso, customOptions = {}) {
 
   const ops = [];
 
-  // 1. Actualizar cada cuota a PAGA
+  // 1. Actualizar cada cuota subsecuente a PAGA limpia (sin fecha de pago falsa, sin valor duplicado)
   for (const am of (cuotasParaAmortizar || [])) {
     ops.push(
       supabase
@@ -180,8 +185,8 @@ export async function aplicarAmortizacion(caso, customOptions = {}) {
         .update({
           estado_cuota: 'PAGA',
           valor_pagado: 0.0,
-          fecha_pago: am.fecha_pago_nueva,
-          observacion: am.observacion_nueva
+          fecha_pago: null,
+          observacion: null
         })
         .eq('id', am.cuota_id)
     );
@@ -198,8 +203,6 @@ export async function aplicarAmortizacion(caso, customOptions = {}) {
   }
 
   // 3. Si se solicita marcar como PAGADO EN SU TOTALIDAD:
-  // Nota: La tabla 'lotes' de Postgres tiene un CHECK constraint que acepta 'VENDIDO',
-  // mientras que 'ventas' almacena 'PAGADO EN SU TOTALIDAD'.
   if (marcarPagadoTotal) {
     if (caso.lote_id) {
       ops.push(
@@ -213,7 +216,7 @@ export async function aplicarAmortizacion(caso, customOptions = {}) {
       ops.push(
         supabase
           .from('ventas')
-          .update({ estado: 'PAGADO EN SU TOTALIDAD' })
+          .update({ estado: 'PAGADO EN SU TOTALIDAD', saldo: 0.0 })
           .eq('id', caso.venta_id)
       );
     }
