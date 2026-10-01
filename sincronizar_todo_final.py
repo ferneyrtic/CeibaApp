@@ -174,6 +174,39 @@ def fix_end_of_month_if_needed(fv_str, expected_day):
     
     return fv_str
 
+def resolve_client_doc(doc, nom, lote_norm):
+    if not nom:
+        return None, None
+    nom_clean = norm(nom)
+
+    # Ortografía conocida
+    if 'REDONDO' in nom_clean and 'PABLO' in nom_clean:
+        return '17111343', 'PABLO EMILIO REDONDO FUQUENE'
+
+    # Titulares sin documento identificados
+    if 'RUBEN' in nom_clean and 'BUSTO' in nom_clean and not doc:
+        return 'CEDIDO-RUBEN-BUSTOS', 'RUBEN FABIAN BUSTOS'
+    if 'JEISSON' in nom_clean and not doc:
+        return 'PENDIENTE-JEISSON-VILLANUEVA', 'JEISSON VILLANUEVA GARCIA'
+    if ('MICO' in nom_clean or 'PERALTA' in nom_clean) and not doc:
+        return 'CEDIDO-JHON-PERALTA-MICO', 'JHON PERALTA (CEDIDO EN PAGO EL MICO)'
+    if 'INGRID' in nom_clean and 'DUVAN' in nom_clean and not doc:
+        return 'PENDIENTE-INGRID-Y-DUVAN', 'INGRID Y DUVAN'
+    if not doc:
+        return f'SIN-DOC-{nom_clean[:20]}', nom.strip()
+
+    # Documentos duplicados en Excel con personas diferentes
+    if doc == '35485787' and 'ELSA' in nom_clean:
+        return 'PENDIENTE-ELSA-ORTEGON-GAVILAN', nom.strip()
+    if doc == '1067465637' and 'JHON FREDY' in nom_clean:
+        return 'PENDIENTE-JHON-FREDY-ESCOBAR', nom.strip()
+
+    # Cotitulares que comparten documento
+    if '/' in nom or ('-' in nom and not any(c.isdigit() for c in nom)):
+        return f'{doc}-CO-{lote_norm}', nom.strip()
+
+    return doc, nom.strip()
+
 def api_req(method, path, data=None, params='', prefer='return=minimal'):
     url = BASE + path + (('?' + params) if params else '')
     headers = {
@@ -234,7 +267,7 @@ for r in ws_l.iter_rows(min_row=3, values_only=True):
     raw = clean(r[3])
     if not raw or raw == 'ID LOTE': continue
     k = norm(raw)
-    if '8-4' in k and 'LC1' in k and '3' not in k:
+    if k == 'LC1-8-4':
         continue  # Consolidado en LC1-8-3 Y 4
     curr = lotes_info.get(k)
     if not curr: continue
@@ -260,6 +293,11 @@ vendedores_set = set()
 
 for r in ws_v.iter_rows(min_row=3, values_only=True):
     if not any(r): continue
+    raw_lote = clean(r[1])
+    if not raw_lote or raw_lote == 'ID LOTE': continue
+    k = norm(raw_lote)
+    if k == 'LC1-8-4': continue
+
     doc  = clean(r[13])
     if doc and doc.endswith('.0'): doc = doc[:-2]
     nom  = clean(r[14])
@@ -270,19 +308,11 @@ for r in ws_v.iter_rows(min_row=3, values_only=True):
     vend = clean(r[18]) if len(r) > 18 else None
 
     if nom:
-        if 'RUBEN' in nom.upper() and 'BUSTOS' in nom.upper() and not doc:
-            doc_final = 'CEDIDO-RUBEN-BUSTOS'
-        elif 'JEISSON' in nom.upper() and not doc:
-            doc_final = 'PENDIENTE-JEISSON-VILLANUEVA'
-        elif not doc:
-            doc_final = f'SIN-DOC-{norm(nom)[:20]}'
-        else:
-            doc_final = doc
-
-        if doc_final not in clientes_dict:
+        doc_final, nom_final = resolve_client_doc(doc, nom, k)
+        if doc_final and doc_final not in clientes_dict:
             clientes_dict[doc_final] = {
                 'doc_cliente': doc_final,
-                'nombre': nom,
+                'nombre': nom_final,
                 'celular': cel,
                 'direccion': dir_c,
                 'ciudad': ciu
@@ -297,7 +327,7 @@ vend_records = [{'nombre': v, 'activo': True} for v in sorted(vendedores_set)]
 upload_batch('vendedores', vend_records, 'vendedores')
 
 cli_records = list(clientes_dict.values())
-upload_batch('clientes', cli_records, 'clientes')
+upload_batch('clientes?on_conflict=doc_cliente', cli_records, 'clientes', prefer='return=minimal,resolution=merge-duplicates')
 
 status, clientes_db = api_req('GET', 'clientes', params='select=id,doc_cliente,nombre&limit=1000')
 clientes_id_map = {str(c['doc_cliente']).strip(): c['id'] for c in clientes_db}
@@ -332,7 +362,7 @@ for idx, r in enumerate(ws_v.iter_rows(min_row=3, values_only=True), 3):
     if not raw or raw == 'ID LOTE': continue
 
     k = norm(raw)
-    if '8-4' in k and 'LC1' in k and '3' not in k:
+    if k == 'LC1-8-4':
         continue  # Consolidado en LC1-8-3 Y 4
 
     lote_uuid = lotes_map.get(k)
@@ -345,17 +375,8 @@ for idx, r in enumerate(ws_v.iter_rows(min_row=3, values_only=True), 3):
     if doc and doc.endswith('.0'): doc = doc[:-2]
     nom    = clean(r[14])
 
-    # Resolver cliente_id
-    cli_uuid = None
-    if doc and doc in clientes_id_map:
-        cli_uuid = clientes_id_map[doc]
-    elif nom:
-        if 'RUBEN' in nom.upper() and 'BUSTOS' in nom.upper():
-            cli_uuid = clientes_id_map.get('CEDIDO-RUBEN-BUSTOS')
-        elif 'JEISSON' in nom.upper():
-            cli_uuid = clientes_id_map.get('PENDIENTE-JEISSON-VILLANUEVA')
-        else:
-            cli_uuid = clientes_id_map.get(f'SIN-DOC-{norm(nom)[:20]}')
+    doc_final, nom_final = resolve_client_doc(doc, nom, k)
+    cli_uuid = clientes_id_map.get(doc_final) if doc_final else None
 
     f_venta, _ = inferir_fecha(r[5])
     f_ci,    _ = inferir_fecha(r[7])
@@ -443,7 +464,7 @@ for idx, r in enumerate(ws_p.iter_rows(min_row=4, values_only=True), 4):
     if not raw or raw == 'ID LOTE': continue
 
     k = norm(raw)
-    if '8-4' in k and 'LC1' in k and '3' not in k:
+    if k == 'LC1-8-4':
         continue  # Consolidado en LC1-8-3 Y 4
 
     lote_uuid = lotes_map.get(k)

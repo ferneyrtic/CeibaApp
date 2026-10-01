@@ -8,10 +8,12 @@ ceiba-app/dist/
 dist-ssr/
 ceiba-app/dist-ssr/
 
-# Environment files
+# Environment & credentials files
 *.local
 .env.local
 ceiba-app/.env.local
+service_account.json
+credentials.json
 
 # Python cache & logs
 __pycache__/
