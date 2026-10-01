@@ -155,20 +155,31 @@ def resolve_client_doc(doc, nom, lote_norm):
         return f'{doc}-CO-{lote_norm}', nom.strip()
     return doc, nom.strip()
 
-def api_req(method, path, data=None, params='', prefer='return=minimal'):
+def api_req(method, path, data=None, params='', prefer='return=minimal', max_retries=3):
     url = BASE + path + (('?' + params) if params else '')
     headers = {
         'apikey': KEY, 'Authorization': 'Bearer ' + KEY,
         'Content-Type': 'application/json', 'Prefer': prefer,
     }
     body = json.dumps(data, ensure_ascii=False, default=str).encode('utf-8') if data else None
-    req = urllib.request.Request(url, data=body, headers=headers, method=method)
-    try:
-        with urllib.request.urlopen(req, context=ctx, timeout=45) as r:
-            raw = r.read()
-            return r.status, json.loads(raw) if raw else None
-    except urllib.error.HTTPError as e:
-        return e.code, e.read().decode()[:400]
+
+    for attempt in range(max_retries):
+        req = urllib.request.Request(url, data=body, headers=headers, method=method)
+        try:
+            with urllib.request.urlopen(req, context=ctx, timeout=60) as r:
+                raw = r.read()
+                return r.status, json.loads(raw) if raw else None
+        except urllib.error.HTTPError as e:
+            err_body = e.read().decode('utf-8', errors='ignore')[:400]
+            if e.code >= 500 and attempt < max_retries - 1:
+                time.sleep(2 * (attempt + 1))
+                continue
+            return e.code, err_body
+        except (urllib.error.URLError, TimeoutError, Exception) as e:
+            if attempt < max_retries - 1:
+                time.sleep(2 * (attempt + 1))
+                continue
+            return 599, str(e)
 
 def upload_batch(table, records, label, prefer='return=minimal,resolution=ignore-duplicates'):
     total = len(records); done = 0; errs = 0
@@ -181,7 +192,7 @@ def upload_batch(table, records, label, prefer='return=minimal,resolution=ignore
             errs += len(batch)
             print(f'\n    ⚠️ Batch {i//BATCH+1} ({status}): {str(err)[:160]}')
         print(f'    Progreso {label}: {min(i+BATCH,total)}/{total}...', end='\r')
-        time.sleep(0.04)
+        time.sleep(0.05)
     print(f'    ✅ {done}/{total} {label} procesados. Errores: {errs}               ')
     return done
 
@@ -273,7 +284,7 @@ for r in rows_ventas[2:]:
         vendedores_set.add(vend)
 
 vend_records = [{'nombre': v, 'activo': True} for v in sorted(vendedores_set)]
-upload_batch('vendedores', vend_records, 'vendedores')
+upload_batch('vendedores?on_conflict=nombre', vend_records, 'vendedores', prefer='return=minimal,resolution=ignore-duplicates')
 
 cli_records = list(clientes_dict.values())
 upload_batch('clientes?on_conflict=doc_cliente', cli_records, 'clientes', prefer='return=minimal,resolution=merge-duplicates')
@@ -303,8 +314,15 @@ print(f"  ✓ Tablas limpiadas ({len(test_venta_ids)} ventas de prueba preservad
 
 # ── PASO 4: VENTAS ────────────────────────────────────
 print("\n[4/6] Construyendo e insertando VENTAS...")
+# Mapa de total pagado en cuotas por lote desde PROYECCIÓN (Col HS)
+proy_pagado_map = {}
+for r_p in rows_proy[3:]:
+    if len(r_p) > 226 and r_p[2]:
+        proy_pagado_map[norm(r_p[2])] = to_num(r_p[226])
+
 ventas_insert = []
 ventas_lote_norm = {}
+lotes_pagados_total_count = 0
 
 for idx, r in enumerate(rows_ventas[2:], 3):
     if not any(r) or len(r) < 15: continue
@@ -357,6 +375,7 @@ for idx, r in enumerate(rows_ventas[2:], 3):
         }
         ventas_insert.append(venta_rec)
         ventas_lote_norm[k] = venta_rec
+        lotes_pagados_total_count += 1
         continue
 
     # Typo LC2-42-7
@@ -364,25 +383,40 @@ for idx, r in enumerate(rows_ventas[2:], 3):
     if '42-7' in raw_lote_norm and 'LC2' in raw_lote_norm and f_ci is None:
         f_ci = '2026-05-01'
 
+    pv_val = to_num(r[3])
+    ci_val = to_num(r[6]) if len(r) > 6 else 0.0
+    sf_val = to_num(r[9]) if len(r) > 9 else 0.0
+    pagado_cuotas = proy_pagado_map.get(k, 0.0)
+    total_recaudado = ci_val + pagado_cuotas
+
+    # Clasificación automática: si ya pagó el 100% del contrato
+    if pv_val > 0 and (total_recaudado >= (pv_val - 5000) or (sf_val > 0 and pagado_cuotas >= (sf_val - 5000))):
+        estado_final_venta = 'PAGADO EN SU TOTALIDAD'
+        saldo_final_venta = 0.0
+        lotes_pagados_total_count += 1
+    else:
+        estado_final_venta = estado
+        saldo_final_venta = max(0.0, pv_val - total_recaudado) if pv_val > 0 else (to_num(r[22]) if len(r) > 22 else 0.0)
+
     venta_rec = {
         'lote_id':                  lote_uuid,
         'cliente_id':               cli_uuid,
         'vendedor_nombre':          clean(r[18]) if len(r) > 18 else None,
-        'estado':                   estado,
-        'precio_venta':             to_num(r[3]),
+        'estado':                   estado_final_venta,
+        'precio_venta':             pv_val,
         'apartados':                to_num(r[4]) if len(r) > 4 else 0.0,
         'fecha_venta':              f_venta,
-        'valor_cuota_inicial':      to_num(r[6]) if len(r) > 6 else 0.0,
+        'valor_cuota_inicial':      ci_val,
         'fecha_pago_cuota_inicial': f_ci,
         'medio_pago':               clean(r[8]) if len(r) > 8 else None,
-        'saldo_financiado':         to_num(r[9]) if len(r) > 9 else 0.0,
+        'saldo_financiado':         sf_val,
         'plazo_cuotas':             int(to_num(r[10])) if len(r) > 10 and to_num(r[10]) else None,
         'valor_cuota':              to_num(r[11]) if len(r) > 11 else 0.0,
         'dias_pago':                dias_pago_raw,
         'comision_vendedor':        to_num(r[19]) if len(r) > 19 else 0.0,
         'abonos':                   to_num(r[20]) if len(r) > 20 else 0.0,
         'descuentos':               to_num(r[21]) if len(r) > 21 else 0.0,
-        'saldo':                    to_num(r[22]) if len(r) > 22 else 0.0,
+        'saldo':                    saldo_final_venta,
     }
     ventas_insert.append(venta_rec)
     ventas_lote_norm[k] = venta_rec
@@ -510,28 +544,18 @@ for r in rows_proy[3:]:
             cuotas_amortizadas_total += 1
             estado_final = 'PAGA'
             val_programado = cuota_contrato if cuota_contrato > 0 else vc
-            val_pagado = 0.0  # ¡No duplicar dinero en casilla de valor!
-            abono_info = cobertura_abonos[n]
-            if not fp_str:
-                fp_str = abono_info['fecha_abono']
-            
-            f_abono_display = abono_info['fecha_abono'] or 'fecha de consignación'
-            v_abono_fmt = f"${abono_info['valor_abono']:,.0f}"
-
-            if abono_info['saldado_total']:
-                obs_amort = f"Cubierta por abono extraordinario de {v_abono_fmt} en cuota {abono_info['origen_num']} ({f_abono_display}) - Contrato saldado en su totalidad"
-            else:
-                obs_amort = f"Cubierta por abono extraordinario de {v_abono_fmt} en cuota {abono_info['origen_num']} ({f_abono_display}) - Próximo aporte: cuota {abono_info['prox_num']} ({abono_info['prox_fv']})"
-
-            observacion = obs_amort
+            val_pagado = 0.0  # Sin valor numérico en casillas futuras
+            fp_str = None     # Sin fecha de pago inventada en cuotas futuras
+            observacion = None # Limpio, sin saturar con observaciones repetidas
 
         elif es_paga_en_sheets and not tiene_pago_directo:
-            # Cuota marcada como PAGA en Sheets pero sin valor directo (abono acumulado)
+            # Cuota cubierta por saldo a favor acumulado
             cuotas_amortizadas_total += 1
             estado_final = 'PAGA'
             val_programado = cuota_contrato if cuota_contrato > 0 else 0.0
             val_pagado = 0.0
-            observacion = "Cubierta por saldo a favor anticipado del contrato"
+            fp_str = None
+            observacion = None
 
         else:
             # Cuota normal

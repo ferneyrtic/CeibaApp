@@ -47,8 +47,8 @@ export const resolveCuotaDisplay = (cuota, numCuota, plazoTotal) => {
 
     return {
       num: `CUOTA ${numCuota}`,
-      fecha: fechaPago || fechaVenc,
-      fechaPago,
+      fecha: tienePagoDirecto ? (fechaPago || fechaVenc) : fechaVenc,
+      fechaPago: tienePagoDirecto ? fechaPago : null,
       fechaVenc,
       estado: 'PAGA',
       valor: valorDisplay,

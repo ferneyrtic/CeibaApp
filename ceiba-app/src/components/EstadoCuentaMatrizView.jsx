@@ -251,8 +251,16 @@ export default function EstadoCuentaMatrizView({ venta, cuotas = [] }) {
             <div style={{ fontSize: 14, fontWeight: 800, color: '#1e293b', letterSpacing: '0.5px' }}>
               LA CEIBA GROUP — PROYECTO CAMPESTRE
             </div>
-            <div style={{ fontSize: 11, fontWeight: 700, color: '#475569', marginTop: 2 }}>
-              ESTADO DE CUENTA CLIENTES
+            <div style={{ fontSize: 11, fontWeight: 700, color: '#475569', marginTop: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+              <span>ESTADO DE CUENTA CLIENTES</span>
+              {(saldoActual <= 0 || venta.estado === 'PAGADO EN SU TOTALIDAD') && (
+                <span style={{
+                  background: '#dcfce7', color: '#16a34a', border: '1px solid #86efac',
+                  fontSize: 10, fontWeight: 800, padding: '2px 8px', borderRadius: 9999
+                }}>
+                  ✓ PAGADO EN SU TOTALIDAD
+                </span>
+              )}
             </div>
           </div>
         </div>
@@ -272,7 +280,12 @@ export default function EstadoCuentaMatrizView({ venta, cuotas = [] }) {
           </thead>
           <tbody>
             <tr style={{ textAlign: 'center', background: '#f8fafc', color: '#1e293b', fontWeight: 600 }}>
-              <td style={{ padding: '7px 8px', border: '1px solid #cbd5e1', fontFamily: 'monospace' }}>{loteId}</td>
+              <td style={{ padding: '7px 8px', border: '1px solid #cbd5e1', fontFamily: 'monospace' }}>
+                <div>{loteId}</div>
+                {(saldoActual <= 0 || venta.estado === 'PAGADO EN SU TOTALIDAD') && (
+                  <div style={{ fontSize: 8.5, color: '#16a34a', fontWeight: 700, marginTop: 2 }}>PAGADO</div>
+                )}
+              </td>
               <td style={{ padding: '7px 8px', border: '1px solid #cbd5e1' }}>{docCliente}</td>
               <td style={{ padding: '7px 8px', border: '1px solid #cbd5e1', textAlign: 'left' }}>{nombreCliente}</td>
               <td style={{ padding: '7px 8px', border: '1px solid #cbd5e1', textAlign: 'right' }}>{formatCOP(cuotaInicial)}</td>
@@ -385,7 +398,10 @@ export default function EstadoCuentaMatrizView({ venta, cuotas = [] }) {
             <tbody>
               <tr style={{ textAlign: 'center', fontWeight: 800, background: '#f8fafc', fontSize: 12 }}>
                 <td style={{ padding: '8px', border: '1px solid #cbd5e1', color: '#16a34a' }}>{formatCOP(totalPagado)}</td>
-                <td style={{ padding: '8px', border: '1px solid #cbd5e1', color: saldoActual > 0 ? '#dc2626' : '#16a34a' }}>{formatCOP(saldoActual)}</td>
+                <td style={{ padding: '8px', border: '1px solid #cbd5e1', color: saldoActual > 0 ? '#dc2626' : '#16a34a' }}>
+                  {formatCOP(saldoActual)}
+                  {saldoActual <= 0 && <span style={{ marginLeft: 6, fontSize: 10, color: '#16a34a' }}>(PAZ Y SALVO)</span>}
+                </td>
               </tr>
             </tbody>
           </table>
