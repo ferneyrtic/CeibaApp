@@ -26,7 +26,7 @@ export async function detectarAbonosExtraordinarios() {
         valor_cuota, valor_pagado,
         estado_cuota, medio_pago, observacion,
         ventas(
-          id, valor_cuota, saldo_financiado, plazo_cuotas, lote_id, estado,
+          id, valor_cuota, saldo_financiado, plazo_cuotas, lote_id, estado, saldo,
           lotes(id, id_lote, manzana, lote, estado),
           clientes(nombre, doc_cliente, celular)
         )
@@ -66,6 +66,23 @@ export async function detectarAbonosExtraordinarios() {
     const venta = ultimaPagada.ventas;
     if (!venta) continue;
 
+    // 1. Si el contrato o lote ya está PAGADO EN SU TOTALIDAD o tiene saldo $0, NO debe aparecer aquí
+    const estadoVentaUpper = (venta.estado || '').toUpperCase();
+    const estadoLoteUpper  = (venta.lotes?.estado || '').toUpperCase();
+    if (
+      estadoVentaUpper.includes('PAGADO EN SU TOTALIDAD') ||
+      estadoVentaUpper === 'PAGADO' ||
+      estadoVentaUpper === 'SALDADO' ||
+      estadoLoteUpper.includes('PAGADO EN SU TOTALIDAD') ||
+      (venta.saldo !== undefined && venta.saldo !== null && Number(venta.saldo) <= 0)
+    ) {
+      continue;
+    }
+
+    // 2. Si el contrato ya tiene todas sus cuotas marcadas como PAGA, está 100% saldado/gestionado
+    const quedanCuotasPorPagar = cuotasVenta.some(c => c.estado_cuota !== 'PAGA');
+    if (!quedanCuotasPorPagar) continue;
+
     // Valor estándar de la cuota (desde ventas o desde las cuotas mismas)
     const valorCuotaEstandar =
       Number(venta.valor_cuota) ||
@@ -88,13 +105,15 @@ export async function detectarAbonosExtraordinarios() {
     const plazo = Number(venta.plazo_cuotas) || cuotasVenta.length;
     const maxNumCubierto = Math.min(ultimaPagada.numero_cuota + cuotasEnterass - 1, plazo);
 
-    // Cuotas pendientes (sin fecha_pago y no marcadas como PAGA) dentro del rango cubierto por el abono
+    // Cuotas pendientes dentro del rango cubierto por el abono.
+    // Una cuota es pendiente ÚNICAMENTE si su estado_cuota NO es 'PAGA'.
+    // Las cuotas ya amortizadas (estado_cuota === 'PAGA') ya fueron gestionadas limpiamente.
     const pendientes = cuotasVenta
-      .filter(c => c.numero_cuota >= siguienteNum && c.numero_cuota <= maxNumCubierto && (!c.fecha_pago || c.estado_cuota !== 'PAGA'))
+      .filter(c => c.numero_cuota >= siguienteNum && c.numero_cuota <= maxNumCubierto && c.estado_cuota !== 'PAGA')
       .sort((a, b) => a.numero_cuota - b.numero_cuota);
 
     // Si ya no quedan cuotas pendientes en el rango cubierto (es decir, ya fueron amortizadas
-    // o marcadas como pagas por la administración), este abono ya fue gestionado y no requiere acción.
+    // o marcadas como pagas), este abono ya fue gestionado y no requiere acción.
     if (!pendientes.length) continue;
 
     // Preview de amortización limpia (sin valores duplicados ni fechas falsas hacia adelante)

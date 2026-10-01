@@ -522,6 +522,23 @@ export default function AbonosExtraordinariosView({ onVerExtracto }) {
   useEffect(() => { cargar(); }, [cargar]);
 
   const casosFiltrados = casos.filter(c => {
+    // Si el contrato ya está saldado / pagado en su totalidad, no debe figurar como pendiente
+    const estVenta = (c.venta_estado_actual || '').toUpperCase();
+    const estLote  = (c.lote_estado_actual || '').toUpperCase();
+    if (
+      estVenta.includes('PAGADO EN SU TOTALIDAD') ||
+      estVenta === 'PAGADO' ||
+      estVenta === 'SALDADO' ||
+      estLote.includes('PAGADO EN SU TOTALIDAD')
+    ) {
+      return false;
+    }
+
+    // Si ya no le quedan cuotas pendientes por amortizar, ya fue gestionado
+    if (!c.cuotas_pendientes_amortizar || c.cuotas_pendientes_amortizar.length === 0) {
+      return false;
+    }
+
     if (filtroNivel === 'Todos') return true;
     if (filtroNivel === 'Críticos') return c.nivel === 'critico';
     if (filtroNivel === 'Altos') return c.nivel === 'alto';
@@ -529,8 +546,8 @@ export default function AbonosExtraordinariosView({ onVerExtracto }) {
     return true;
   });
 
-  const totalAbonos = casos.reduce((s, c) => s + c.valor_pagado, 0);
-  const totalAmortizables = casos.reduce((s, c) => s + c.cuotas_pendientes_amortizar.length, 0);
+  const totalAbonos = casosFiltrados.reduce((s, c) => s + c.valor_pagado, 0);
+  const totalAmortizables = casosFiltrados.reduce((s, c) => s + c.cuotas_pendientes_amortizar.length, 0);
 
   return (
     <div>
