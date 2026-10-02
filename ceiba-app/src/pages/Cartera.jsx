@@ -189,15 +189,18 @@ export default function Cartera() {
     setSelected(v);
     setActiveTab('resumen');
     setLoadingCuotas(true);
+    const targetId = v?.id || v?.venta_id;
     try {
-      const [cuotas, recs] = await Promise.all([
-        getCuotasByVenta(v.id),
-        obtenerRecibosPorVenta(v.id)
+      const [cuotasRes, recsRes] = await Promise.allSettled([
+        getCuotasByVenta(targetId),
+        obtenerRecibosPorVenta(targetId)
       ]);
+      const cuotas = cuotasRes.status === 'fulfilled' ? cuotasRes.value : [];
+      const recs = recsRes.status === 'fulfilled' ? recsRes.value : [];
       setCuotasVenta(cuotas || []);
       setRecibosVenta(recs || []);
     } catch (e) {
-      console.error(e);
+      console.error('Error abriendo detalle de contrato:', e);
     } finally {
       setLoadingCuotas(false);
     }
@@ -206,14 +209,16 @@ export default function Cartera() {
   const refreshCuotas = async (ventaId) => {
     if (!ventaId) return;
     try {
-      const [cuotas, recs] = await Promise.all([
+      const [cuotasRes, recsRes] = await Promise.allSettled([
         getCuotasByVenta(ventaId),
         obtenerRecibosPorVenta(ventaId)
       ]);
+      const cuotas = cuotasRes.status === 'fulfilled' ? cuotasRes.value : [];
+      const recs = recsRes.status === 'fulfilled' ? recsRes.value : [];
       setCuotasVenta(cuotas || []);
       setRecibosVenta(recs || []);
     } catch (e) {
-      console.error(e);
+      console.error('Error refrescando cuotas:', e);
     }
   };
 

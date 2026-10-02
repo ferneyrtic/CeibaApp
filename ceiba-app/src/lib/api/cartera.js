@@ -51,12 +51,18 @@ export const getCartera = async ({ search, filtroEstado, forceRefresh = false, r
     const ventasMap = new Map((ventasDetalleRes.data || []).map(v => [v.id, v]));
     const critIds = new Set((vCriticasRes.data || []).map(c => c.venta_id));
 
-    const consolidated = (carteraRes.data || []).map(item => {
-      const detalle = ventasMap.get(item.venta_id) || {};
-      const cuotasPagadas = Number(item.cuotas_pagadas) || 0;
-      const cuotaInicial  = Number(item.cuota_inicial) || 0;
-      const saldoFin      = Number(item.saldo_financiado) || 0;
-      const precioVenta   = Number(item.valor_venta) || 0;
+    const consolidated = (carteraRes.data || [])
+      .filter(item => {
+        const esVenta = item.estado === 'VENDIDO' || item.estado === 'PAGADO EN SU TOTALIDAD' || item.estado === 'CEDIDO EN FORMA DE PAGO';
+        const tieneCliente = Boolean(item.cliente_nombre && item.cliente_nombre.trim() !== '—' && item.cliente_nombre.trim() !== '');
+        return esVenta || tieneCliente;
+      })
+      .map(item => {
+        const detalle = ventasMap.get(item.venta_id) || {};
+        const cuotasPagadas = Number(item.cuotas_pagadas) || 0;
+        const cuotaInicial  = Number(item.cuota_inicial) || 0;
+        const saldoFin      = Number(item.saldo_financiado) || 0;
+        const precioVenta   = Number(item.valor_venta) || 0;
 
       // Saldo y pagos limpios sin mezclar comisiones de asesores
       const saldoReal = saldoFin > 0
