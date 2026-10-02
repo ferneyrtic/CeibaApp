@@ -16,72 +16,6 @@ export const CATEGORIAS_GASTOS = [
 
 export const MEDIOS_PAGO_GASTOS = ['TRANSFERENCIA', 'EFECTIVO', 'CHEQUE', 'OTRO'];
 
-/**
- * Semilla inicial con registros realistas del proyecto para ilustrar el control
- */
-const GASTOS_SEMILLA = [
-  {
-    id: 'gasto_seed_1',
-    fecha: '2026-09-18',
-    categoria: 'MATERIALES',
-    concepto: 'Compra de 70 bultos de cemento gris Argos para fundición de cunetas y bordillos',
-    proveedor: 'Ferretería El Progreso - Acacías',
-    numero_factura: 'FAC-48912',
-    medio_pago: 'TRANSFERENCIA',
-    banco: 'Bancolombia',
-    referencia: 'TR-892341',
-    valor: 2450000,
-    observaciones: 'Material entregado en obra. Recibido por maestro de obra.',
-    registrado_por: 'Propietario',
-    created_at: '2026-09-18T10:30:00.000Z'
-  },
-  {
-    id: 'gasto_seed_2',
-    fecha: '2026-09-21',
-    categoria: 'MAQUINARIA',
-    concepto: 'Alquiler de Retroexcavadora (22 horas) y 50 galones de ACPM para adecuación de vías',
-    proveedor: 'Maquinaria y Transportes del Llano',
-    numero_factura: 'CC-1082',
-    medio_pago: 'TRANSFERENCIA',
-    banco: 'Bancolombia',
-    referencia: 'TR-901234',
-    valor: 3850000,
-    observaciones: 'Trabajo de cuneteo y nivelación de la calzada de acceso principal.',
-    registrado_por: 'Propietario',
-    created_at: '2026-09-21T16:00:00.000Z'
-  },
-  {
-    id: 'gasto_seed_3',
-    fecha: '2026-09-24',
-    categoria: 'MANO_OBRA',
-    concepto: 'Jornales y pago de nómina quincenal a cuadrilla de 4 oficiales de obra',
-    proveedor: 'Nómina Cuadrilla de Obra',
-    numero_factura: 'NOM-2026-09-Q2',
-    medio_pago: 'EFECTIVO',
-    banco: '',
-    referencia: 'Recibo Caja #3180',
-    valor: 3200000,
-    observaciones: 'Firmada planilla de pago por el maestro y oficiales a satisfacción.',
-    registrado_por: 'Propietario',
-    created_at: '2026-09-24T18:00:00.000Z'
-  },
-  {
-    id: 'gasto_seed_4',
-    fecha: '2026-09-25',
-    categoria: 'HONORARIOS_LEGAL',
-    concepto: 'Servicios de topografía: levantamiento planimétrico y replanteo de linderos Etapa 2',
-    proveedor: 'Ing. Topógrafo Carlos Méndez',
-    numero_factura: 'CC-094',
-    medio_pago: 'TRANSFERENCIA',
-    banco: 'Davivienda',
-    referencia: 'TR-918273',
-    valor: 1600000,
-    observaciones: 'Entrega de planos en DWG y PDF con coordenadas Magna-Sirgas.',
-    registrado_por: 'Propietario',
-    created_at: '2026-09-25T11:00:00.000Z'
-  }
-];
-
 let gastosCache = null;
 let gastosCacheTime = 0;
 
@@ -91,23 +25,29 @@ export const clearGastosCache = () => {
 };
 
 const getGastosLocales = () => {
-  if (typeof window === 'undefined' || !window.localStorage) return GASTOS_SEMILLA;
+  if (typeof window === 'undefined' || !window.localStorage) return [];
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(GASTOS_SEMILLA));
-      return GASTOS_SEMILLA;
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    // Purgar cualquier dato de prueba / semilla antiguo (gasto_seed_*)
+    const limpios = parsed.filter(g => g && g.id && !String(g.id).startsWith('gasto_seed_'));
+    if (limpios.length !== parsed.length) {
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(limpios));
     }
-    return JSON.parse(raw);
+    return limpios;
   } catch (e) {
-    return GASTOS_SEMILLA;
+    return [];
   }
 };
 
 const saveGastosLocales = (gastos) => {
   if (typeof window === 'undefined' || !window.localStorage) return;
   try {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(gastos));
+    // Asegurar que nunca se persistan semillas
+    const limpios = (gastos || []).filter(g => g && g.id && !String(g.id).startsWith('gasto_seed_'));
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(limpios));
   } catch (e) {
     console.warn('Error guardando gastos en localStorage:', e);
   }
@@ -142,6 +82,7 @@ export const getGastos = async (forceRefresh = false) => {
       data.forEach(item => {
         try {
           const parsed = typeof item.valor === 'string' ? JSON.parse(item.valor) : item.valor;
+          if (parsed && parsed.id && String(parsed.id).startsWith('gasto_seed_')) return;
           const idFinal = parsed.id || `gasto_db_${item.id}`;
           mapa.set(idFinal, {
             ...parsed,
