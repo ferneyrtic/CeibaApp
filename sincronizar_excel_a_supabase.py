@@ -393,13 +393,17 @@ for r in ws_v.iter_rows(min_row=4, values_only=True):
         estado_final_venta = 'PAGADO EN SU TOTALIDAD'
         saldo_final_venta = 0.0
         totalmente_pagados_count += 1
+    elif not es_lote_vendido and not cli_uuid:
+        estado_final_venta = estado_original
+        saldo_final_venta = 0.0
+        sf_val = 0.0
     else:
         estado_final_venta = estado_original
         saldo_final_venta = saldo_calculado
 
     dias_pago_raw = clean(r[12])
     raw_lote_norm = norm(raw)
-    if '42-7' in raw_lote_norm and 'LC2' in raw_lote_norm and f_ci is None:
+    if '42-7' in raw_lote_norm and 'LC2' in raw_lote_norm and (f_ci is None or '0206' in str(r[7])):
         f_ci = '2026-05-01'
 
     # Caso especial LC1-8-3 Y 4 consolidado
@@ -431,6 +435,7 @@ for r in ws_v.iter_rows(min_row=4, values_only=True):
         totalmente_pagados_count += 1
         continue
 
+    es_venta_real = es_lote_vendido or bool(cli_uuid)
     venta_rec = {
         'lote_id':                  lote_uuid,
         'cliente_id':               cli_uuid,
@@ -442,10 +447,10 @@ for r in ws_v.iter_rows(min_row=4, values_only=True):
         'valor_cuota_inicial':      ci_val,
         'fecha_pago_cuota_inicial': f_ci,
         'medio_pago':               clean(r[8]),
-        'saldo_financiado':         sf_val,
-        'plazo_cuotas':             int(to_num(r[10])) if to_num(r[10]) else None,
-        'valor_cuota':              to_num(r[11]),
-        'dias_pago':                dias_pago_raw,
+        'saldo_financiado':         sf_val if es_venta_real else 0.0,
+        'plazo_cuotas':             int(to_num(r[10])) if (to_num(r[10]) and es_venta_real) else None,
+        'valor_cuota':              to_num(r[11]) if es_venta_real else 0.0,
+        'dias_pago':                dias_pago_raw if es_venta_real else None,
         'comision_vendedor':        to_num(r[19]),
         'abonos':                   to_num(r[20]),
         'descuentos':               to_num(r[21]),
