@@ -494,6 +494,9 @@ for r in ws_p.iter_rows(min_row=4, values_only=True):
 
     cuotas_lote_raw = []
     primer_fv_valido = None
+    f_ci_base = v_rec.get('fecha_pago_cuota_inicial') or v_rec.get('fecha_venta')
+    if f_ci_base and plazo_contrato > 0 and expected_day:
+        primer_fv_valido = project_next_month_date(f_ci_base, expected_day, 1)
 
     for n in range(1, 37):
         cs = 10 + (n - 1) * 6
@@ -514,7 +517,7 @@ for r in ws_p.iter_rows(min_row=4, values_only=True):
                 fechas_eom_corregidas += 1
                 fv_str = fv_fixed
 
-        if fv_str and not primer_fv_valido and n == 1:
+        if fv_str and n == 1:
             primer_fv_valido = fv_str
 
         # Si no hay fecha de vencimiento explícita pero hay primera cuota y plazo contratado, proyectar
