@@ -158,15 +158,166 @@ body.dark-mode .watermark img {
 }
 
 body.dark-mode .btn-outline,
-body.dark-mode .btn-ghost {
-  color: var(--text-primary);
-  border-color: var(--border-light);
+body.dark-mode .btn-ghost,
+body.dark-mode .btn-secondary {
+  background: #142414 !important;
+  color: #e2ece2 !important;
+  border: 1px solid #233e23 !important;
 }
 
 body.dark-mode .btn-outline:hover,
-body.dark-mode .btn-ghost:hover {
-  background: var(--accent-soft);
-  color: var(--accent);
+body.dark-mode .btn-ghost:hover,
+body.dark-mode .btn-secondary:hover {
+  background: #1e381e !important;
+  color: #86efac !important;
+  border-color: var(--accent) !important;
+}
+
+body.dark-mode .btn-ghost:disabled,
+body.dark-mode .btn-outline:disabled {
+  opacity: 0.35 !important;
+  background: #0f1c0f !important;
+  color: #4a664a !important;
+  border-color: #1a2f1a !important;
+  cursor: not-allowed;
+}
+
+body.dark-mode .btn-editar-contrato {
+  color: #60a5fa !important;
+  background: rgba(37, 99, 235, 0.16) !important;
+  border-color: rgba(96, 165, 250, 0.35) !important;
+}
+
+body.dark-mode .btn-editar-contrato:hover {
+  background: rgba(37, 99, 235, 0.28) !important;
+  border-color: #60a5fa !important;
+}
+
+/* Acciones y botones con color inline en modo oscuro */
+body.dark-mode .btn[style*="2563eb"],
+body.dark-mode button[style*="2563eb"],
+body.dark-mode .btn[style*="color: #2563eb"],
+body.dark-mode button[style*="color: #2563eb"] {
+  color: #60a5fa !important;
+  background: rgba(37, 99, 235, 0.16) !important;
+  border: 1px solid rgba(96, 165, 250, 0.35) !important;
+}
+
+body.dark-mode .btn[style*="16a34a"],
+body.dark-mode button[style*="16a34a"],
+body.dark-mode .btn[style*="15803d"],
+body.dark-mode button[style*="15803d"] {
+  color: #4ade80 !important;
+  background: rgba(22, 163, 74, 0.16) !important;
+  border: 1px solid rgba(34, 197, 94, 0.35) !important;
+}
+
+body.dark-mode .btn[style*="0369a1"],
+body.dark-mode button[style*="0369a1"],
+body.dark-mode .btn[style*="0284c7"],
+body.dark-mode button[style*="0284c7"] {
+  color: #38bdf8 !important;
+  background: rgba(3, 105, 161, 0.16) !important;
+  border: 1px solid rgba(56, 189, 248, 0.35) !important;
+}
+
+body.dark-mode .btn[style*="dc2626"],
+body.dark-mode button[style*="dc2626"],
+body.dark-mode .btn[style*="b91c1c"],
+body.dark-mode button[style*="b91c1c"] {
+  color: #f87171 !important;
+  background: rgba(220, 38, 38, 0.16) !important;
+  border: 1px solid rgba(239, 68, 68, 0.35) !important;
+}
+
+/* Global Form Controls & Inputs in Dark Mode */
+body.dark-mode input,
+body.dark-mode select,
+body.dark-mode textarea {
+  background: #0f1c0f !important;
+  color: #f0fdf4 !important;
+  border-color: #244024 !important;
+}
+
+body.dark-mode input:focus,
+body.dark-mode select:focus,
+body.dark-mode textarea:focus {
+  background: #142614 !important;
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 3px var(--accent-glow) !important;
+}
+
+body.dark-mode select option {
+  background: #0f1c0f !important;
+  color: #f0fdf4 !important;
+}
+
+/* Contenedores con fondos pastel claros inline */
+body.dark-mode div[style*="background: #f8fafc"],
+body.dark-mode div[style*="background:#f8fafc"],
+body.dark-mode div[style*="background: #f1f5f9"],
+body.dark-mode div[style*="background:#f1f5f9"] {
+  background: #142414 !important;
+  border-color: var(--border) !important;
+  color: var(--text-primary);
+}
+
+body.dark-mode div[style*="background: #f0fdf4"],
+body.dark-mode div[style*="background:#f0fdf4"],
+body.dark-mode div[style*="background: #ecfdf5"],
+body.dark-mode div[style*="background:#ecfdf5"] {
+  background: rgba(22, 163, 74, 0.15) !important;
+  border-color: rgba(34, 197, 94, 0.3) !important;
+}
+
+body.dark-mode div[style*="background: #f0f9ff"],
+body.dark-mode div[style*="background:#f0f9ff"],
+body.dark-mode div[style*="background: #eff6ff"],
+body.dark-mode div[style*="background:#eff6ff"] {
+  background: rgba(14, 165, 233, 0.15) !important;
+  border-color: rgba(56, 189, 248, 0.3) !important;
+}
+
+body.dark-mode div[style*="background: #fef2f2"],
+body.dark-mode div[style*="background:#fef2f2"] {
+  background: rgba(220, 38, 38, 0.15) !important;
+  border-color: rgba(239, 68, 68, 0.3) !important;
+}
+
+body.dark-mode div[style*="background: #fffbeb"],
+body.dark-mode div[style*="background:#fffbeb"],
+body.dark-mode div[style*="background: #fef3c7"],
+body.dark-mode div[style*="background:#fef3c7"] {
+  background: rgba(217, 119, 6, 0.15) !important;
+  border-color: rgba(245, 158, 11, 0.3) !important;
+}
+
+/* Corregir textos oscuros inline en modo oscuro */
+body.dark-mode [style*="color: #1e293b"],
+body.dark-mode [style*="color:#1e293b"],
+body.dark-mode [style*="color: #0f172a"],
+body.dark-mode [style*="color:#0f172a"],
+body.dark-mode [style*="color: #374151"],
+body.dark-mode [style*="color:#374151"],
+body.dark-mode [style*="color: #475569"],
+body.dark-mode [style*="color:#475569"],
+body.dark-mode [style*="color: #334155"],
+body.dark-mode [style*="color:#334155"] {
+  color: var(--text-primary) !important;
+}
+
+/* Tablas con filas claras inline */
+body.dark-mode tr[style*="background: #f8fafc"],
+body.dark-mode tr[style*="background:#f8fafc"],
+body.dark-mode tr[style*="background: #f1f5f9"],
+body.dark-mode tr[style*="background:#f1f5f9"] {
+  background: #172a17 !important;
+  color: var(--text-primary) !important;
+}
+
+body.dark-mode td[style*="border: 1px solid #cbd5e1"],
+body.dark-mode th[style*="border: 1px solid #cbd5e1"] {
+  border-color: var(--border) !important;
 }
 
 body.dark-mode .kpi-card {
@@ -427,11 +578,36 @@ body.dark-mode .sidebar-brand-title {
 }
 
 .btn-ghost {
-  background: white;
+  background: var(--bg-card);
   color: var(--text-secondary);
-  border-color: var(--border);
+  border: 1px solid var(--border);
 }
-.btn-ghost:hover { background: var(--bg-card2); border-color: var(--border-light); color: var(--text-primary); }
+.btn-ghost:hover {
+  background: var(--bg-card2);
+  border-color: var(--border-light);
+  color: var(--text-primary);
+}
+
+.btn-secondary {
+  background: var(--bg-card2);
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+}
+.btn-secondary:hover {
+  background: var(--border-light);
+  color: var(--text-primary);
+}
+
+.btn-editar-contrato {
+  color: #2563eb;
+  border: 1px solid #bfdbfe;
+  background: #eff6ff;
+}
+.btn-editar-contrato:hover {
+  background: #dbeafe;
+  border-color: #93c5fd;
+  color: #1d4ed8;
+}
 
 .btn-danger {
   background: linear-gradient(135deg, var(--red), #b91c1c);

@@ -171,8 +171,7 @@ export default function Ventas() {
                               <FileText size={12} /> Ver
                             </button>
                             <button
-                              className="btn btn-ghost"
-                              style={{ padding: '4px 8px', fontSize: 12, gap: 4, color: '#2563eb' }}
+                              className="btn btn-ghost btn-editar-contrato" style={{ padding: '4px 8px', fontSize: 12, gap: 4 }}
                               onClick={() => setEditingVenta(v)}
                               title="Editar contrato y titular del lote"
                             >
