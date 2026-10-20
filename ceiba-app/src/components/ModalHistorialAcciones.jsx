@@ -1,3 +1,4 @@
+import { useAuth } from '../context/AuthContext';
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   FileText, Search, RefreshCw, Download, X,
@@ -27,6 +28,9 @@ function getActionBadge(accion) {
 }
 
 export default function ModalHistorialAcciones({ onClose, loteFiltroInicial = '' }) {
+  const { isAdmin, permissions } = useAuth();
+  if (!isAdmin && !permissions?.canViewHistorialAcciones) return null;
+
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState(loteFiltroInicial);

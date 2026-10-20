@@ -1,3 +1,4 @@
+import { useAuth } from '../context/AuthContext';
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   Zap, RefreshCw, AlertTriangle, CheckCircle2, Eye,
@@ -499,6 +500,7 @@ function CasoCard({ caso: initialCaso, onVerExtracto, onAmortizacionAplicada }) 
 
 // ─── Panel Principal ──────────────────────────────────────────────────────────
 export default function AbonosExtraordinariosView({ onVerExtracto }) {
+  const { isAdmin, permissions } = useAuth();
   const [casos, setCasos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -562,8 +564,8 @@ export default function AbonosExtraordinariosView({ onVerExtracto }) {
           </div>
         </div>
 
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          <button
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>          {(isAdmin || permissions?.canViewHistorialAcciones) && (
+  <button
             className="btn btn-ghost"
             style={{
               fontSize: 12, gap: 6, padding: '7px 12px', fontWeight: 700,
@@ -574,6 +576,7 @@ export default function AbonosExtraordinariosView({ onVerExtracto }) {
           >
             <ShieldCheck size={14} /> 📋 Historial de Acciones
           </button>
+          )}
 
           <button
             className="btn btn-ghost"
@@ -677,7 +680,7 @@ export default function AbonosExtraordinariosView({ onVerExtracto }) {
         </div>
       )}
 
-      {showHistorialLogs && (
+      {(isAdmin || permissions?.canViewHistorialAcciones) && showHistorialLogs && (
         <ModalHistorialAcciones
           onClose={() => setShowHistorialLogs(false)}
         />

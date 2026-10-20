@@ -92,7 +92,7 @@ function KpiCard({ color, icon, value, label, sub, subColor }) {
 }
 
 export default function Cartera() {
-  const { user, permissions, role, isSecretaria } = useAuth();
+  const { user, permissions, role, isSecretaria, isAdmin } = useAuth();
 
   // Delegación de estado, filtros, verificación y paginación al Hook useCarteraLogic (SRP)
   const {
@@ -361,9 +361,8 @@ export default function Cartera() {
           </button>
         </div>
 
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-
-          <button
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>          {(isAdmin || permissions?.canViewHistorialAcciones) && (
+  <button
             className="btn btn-ghost"
             style={{
               fontSize: 12, gap: 6, padding: '8px 14px', fontWeight: 700,
@@ -374,6 +373,7 @@ export default function Cartera() {
           >
             <ShieldCheck size={15} /> 📋 Historial de Acciones
           </button>
+          )}
 
           {vistaModo === 'verificacion' && (
             <button
@@ -1242,7 +1242,7 @@ export default function Cartera() {
       )}
 
       {/* Modal Historial de Acciones y Auditoría */}
-      {showModalLogs && (
+      {(isAdmin || permissions?.canViewHistorialAcciones) && showModalLogs && (
         <ModalHistorialAcciones
           onClose={() => setShowModalLogs(false)}
         />
