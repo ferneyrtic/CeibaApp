@@ -72,11 +72,11 @@ export const ROLE_PERMISSIONS = {
     canDeleteCasosEspeciales: false,
     canManageUsers: false,
     canViewHistorialAcciones: false,
-    label: 'Secretaría',
+    label: 'Secretaría (Tatiana)',
     badgeColor: '#059669',
     badgeBg: '#ecfdf5',
     badgeBorder: '#a7f3d0',
-    description: 'Operación diaria, recaudo de pagos, recibos y desembolso de comisiones'
+    description: 'Operación diaria, recaudo de pagos, recibos y desembolso de comisiones (Tatiana)'
   }
 };
 
@@ -86,13 +86,13 @@ export function getNormalizedRole(user) {
   if (['admin', 'administrador'].includes(rawRole)) return 'admin';
   if (['propietario', 'gerencia', 'owner'].includes(rawRole)) return 'propietario';
   if (['contadora', 'contador', 'financiero'].includes(rawRole)) return 'contadora';
-  if (['secretaria', 'secretario', 'asistente', 'cajero', 'cartera', 'asesor'].includes(rawRole)) return 'secretaria';
+  if (['secretaria', 'secretario', 'asistente', 'cajero', 'cartera', 'asesor', 'tatiana'].includes(rawRole)) return 'secretaria';
 
   const email = (user.email || '').toLowerCase();
   if (email.startsWith('admin')) return 'admin';
   if (email.startsWith('propietario')) return 'propietario';
   if (email.startsWith('contadora')) return 'contadora';
-  if (email.startsWith('secretaria')) return 'secretaria';
+  if (email.startsWith('secretaria') || email.startsWith('tatiana')) return 'secretaria';
 
   return 'contadora';
 }

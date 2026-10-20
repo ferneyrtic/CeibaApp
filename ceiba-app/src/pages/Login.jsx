@@ -311,7 +311,7 @@ export default function Login() {
                 { label: '👑 Admin', email: 'admin@ceiba.com', pw: 'admin123', color: '#7c3aed', bg: '#f5f3ff', border: '#ddd6fe' },
                 { label: '🏛️ Propietario', email: 'propietario@ceiba.com', pw: 'propietario123', color: '#b45309', bg: '#fffbeb', border: '#fde68a' },
                 { label: '📊 Contadora', email: 'contadora@ceiba.com', pw: 'contadora123', color: '#1d4ed8', bg: '#eff6ff', border: '#bfdbfe' },
-                { label: '💼 Secretaría', email: 'secretaria@ceiba.com', pw: 'secretaria123', color: '#059669', bg: '#ecfdf5', border: '#a7f3d0' }
+                { label: '💼 Tatiana (Secretaría)', email: 'secretaria@ceiba.com', pw: 'secretaria123', color: '#059669', bg: '#ecfdf5', border: '#a7f3d0' }
               ].map(r => (
                 <button
                   key={r.email}

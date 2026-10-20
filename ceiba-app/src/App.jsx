@@ -59,7 +59,9 @@ const PAGE_META = {
 
 function Sidebar({ active, onNav, user, onSignOut, isOpen, onClose, permissions, roleInfo, role }) {
   let lastSection = null;
-  const initials = user?.email?.slice(0, 2).toUpperCase() || 'US';
+  const isSecretaria = role === 'secretaria';
+  const displayName = user?.user_metadata?.nombre || (isSecretaria ? 'Tatiana (Secretaría)' : (user?.email?.split('@')[0] || 'Usuario'));
+  const initials = isSecretaria && !user?.user_metadata?.nombre ? 'TA' : (user?.email?.slice(0, 2).toUpperCase() || 'US');
 
   const visibleNavItems = NAV_ITEMS.filter(item => {
     if (item.id === 'cierre' && !permissions?.canViewCierre) return false;
@@ -131,10 +133,10 @@ function Sidebar({ active, onNav, user, onSignOut, isOpen, onClose, permissions,
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div className="user-name" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: 700, fontSize: 13 }}>
-                  {user?.user_metadata?.nombre || user?.email?.split('@')[0]}
+                  {displayName}
                 </div>
                 <div style={{ fontSize: 11, color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {user?.email}
+                  {user?.email || (isSecretaria ? 'secretaria@ceiba.com' : '')}
                 </div>
               </div>
               <button

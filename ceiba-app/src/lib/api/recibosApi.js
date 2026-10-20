@@ -346,7 +346,7 @@ export const registrarPagoConRecibo = async ({
       p_referencia: referenciaPago || '',
       p_concepto: concepto || (cuotaId ? `Abono a cuota` : 'Abono a contrato'),
       p_observaciones: observaciones || '',
-      p_registrado_por: registradoPor || 'Secretaría',
+      p_registrado_por: registradoPor || 'Tatiana (Secretaría)',
       p_ciudad: ciudad || 'Acacías',
       p_lote_id_str: loteIdStr || '',
       p_cliente_nombre: clienteNombre || '',

@@ -14,10 +14,11 @@ function getCurrentUserInfo() {
         const parsed = JSON.parse(sessionStr);
         const user = parsed?.user;
         if (user) {
+          const isSec = (user.user_metadata?.role || '').toLowerCase() === 'secretaria' || (user.email || '').toLowerCase().startsWith('secretaria') || (user.email || '').toLowerCase().startsWith('tatiana');
           return {
-            email: user.email || 'usuario@laceiba.com',
-            nombre: user.user_metadata?.nombre || user.email?.split('@')[0] || 'Usuario Operativo',
-            role: user.user_metadata?.role || 'secretaria'
+            email: user.email || 'tatiana@laceiba.com',
+            nombre: user.user_metadata?.nombre || (isSec ? 'Tatiana (Secretaría)' : user.email?.split('@')[0]) || 'Usuario Operativo',
+            role: user.user_metadata?.role || (isSec ? 'secretaria' : 'secretaria')
           };
         }
       }
@@ -28,7 +29,7 @@ function getCurrentUserInfo() {
 
   return {
     email: 'secretaria@laceiba.com',
-    nombre: 'Secretaría / Operaciones',
+    nombre: 'Tatiana (Secretaría)',
     role: 'secretaria'
   };
 }
