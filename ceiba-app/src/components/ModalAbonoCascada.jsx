@@ -157,7 +157,7 @@ export default function ModalAbonoCascada({ venta, ventaPreseleccionada, allVent
 
         {/* Info del contrato actual */}
         {currentVenta && (
-          <div style={{ background: '#f8fafc', border: '1px solid var(--border)', borderRadius: 8, padding: 12, marginBottom: 16 }}>
+          <div style={{ background: 'var(--bg-card2)', border: '1px solid var(--border)', borderRadius: 8, padding: 12, marginBottom: 16 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 13 }}>
               <div>
                 <strong>{currentVenta.id_lote || currentVenta.lotes?.id_lote}</strong> — {currentVenta.cliente_nombre || currentVenta.clientes?.nombre}
@@ -268,7 +268,7 @@ export default function ModalAbonoCascada({ venta, ventaPreseleccionada, allVent
         {simulacion && simulacion.afectaciones.length > 0 && (
           <div style={{
             marginBottom: 16,
-            background: '#f0fdf4',
+            background: 'var(--bg-card2)',
             border: '2px solid #16a34a',
             borderRadius: 10,
             padding: 14,
@@ -329,7 +329,7 @@ export default function ModalAbonoCascada({ venta, ventaPreseleccionada, allVent
             {/* Aviso si salda todo el contrato */}
             {saldaraTodo && (
               <div style={{
-                background: '#fef3c7',
+                background: 'var(--bg-card2)',
                 border: '1px solid #f59e0b',
                 borderRadius: 8,
                 padding: '8px 12px',
@@ -348,7 +348,7 @@ export default function ModalAbonoCascada({ venta, ventaPreseleccionada, allVent
             {/* Lista detallada cuota por cuota */}
             <div style={{ maxHeight: 160, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 6 }}>
               {simulacion.afectaciones.map(a => (
-                <div key={a.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 12, background: 'white', padding: '6px 10px', borderRadius: 6, border: '1px solid #e2e8f0' }}>
+                <div key={a.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 12, background: 'var(--bg-card)', padding: '6px 10px', borderRadius: 6, border: '1px solid var(--border)' }}>
                   <div>
                     <strong>Cuota #{a.numero_cuota}</strong> ({formatDate(a.fecha_vencimiento)})
                   </div>

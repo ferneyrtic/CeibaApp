@@ -59,7 +59,7 @@ function PreviewAmortizacion({ caso, onConfirmar, onCerrar, aplicando }) {
 
   return (
     <div style={{
-      background: '#f8fafc', border: '2px solid #0ea5e9',
+      background: 'var(--bg-card2)', border: '2px solid #0ea5e9',
       borderRadius: 12, padding: 20, marginTop: 12
     }}>
       {/* Header */}
@@ -102,10 +102,10 @@ function PreviewAmortizacion({ caso, onConfirmar, onCerrar, aplicando }) {
               value={obsPrincipal}
               onChange={e => setObsPrincipal(e.target.value)}
               rows={2}
-              style={{ width: '100%', fontSize: 12, padding: '6px 8px', borderRadius: 6, border: '1px solid #3b82f6', background: '#fff' }}
+              style={{ width: '100%', fontSize: 12, padding: '6px 8px', borderRadius: 6, border: '1px solid #3b82f6', background: 'var(--bg-card)', color: 'var(--text-primary)' }}
             />
           ) : (
-            <div style={{ fontSize: 11, color: '#1e3a8a', fontStyle: 'italic', background: '#eff6ff', padding: '6px 10px', borderRadius: 6 }}>
+            <div style={{ fontSize: 11, color: '#60a5fa', fontStyle: 'italic', background: 'var(--bg-card2)', padding: '6px 10px', borderRadius: 6, border: '1px solid var(--border)' }}>
               {obsPrincipal || 'Sin observación'}
             </div>
           )}
@@ -114,10 +114,10 @@ function PreviewAmortizacion({ caso, onConfirmar, onCerrar, aplicando }) {
 
       {/* Selector interactivo de cuotas a amortizar */}
       {maxCuotas > 0 && (
-        <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 8, padding: '12px 14px', marginBottom: 14 }}>
+        <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 8, padding: '12px 14px', marginBottom: 14 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10 }}>
             <div>
-              <div style={{ fontSize: 12, fontWeight: 700, color: '#0f172a' }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-primary)' }}>
                 ⚙️ Cuotas siguientes a amortizar:
               </div>
               <div style={{ fontSize: 11, color: '#64748b', marginTop: 2 }}>
@@ -153,7 +153,7 @@ function PreviewAmortizacion({ caso, onConfirmar, onCerrar, aplicando }) {
           <div style={{ display: 'grid', gap: 6 }}>
             {cuotasSeleccionadas.map((am) => (
               <div key={am.cuota_id} style={{
-                background: '#f0fdf4', border: '1px solid #bbf7d0',
+                background: 'var(--bg-card2)', border: '1px solid var(--border)',
                 borderRadius: 8, padding: '8px 12px', fontSize: 12
               }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
@@ -185,7 +185,7 @@ function PreviewAmortizacion({ caso, onConfirmar, onCerrar, aplicando }) {
           </div>
         </>
       ) : (
-        <div style={{ background: '#f1f5f9', borderRadius: 8, padding: 12, fontSize: 12, color: '#475569' }}>
+        <div style={{ background: 'var(--bg-card2)', border: '1px solid var(--border)', borderRadius: 8, padding: 12, fontSize: 12, color: 'var(--text-secondary)' }}>
           <Info size={14} style={{ display: 'inline', marginRight: 6 }} />
           No se amortizarán cuotas adicionales. Solo se actualizará la observación en la Cuota #{caso.ultima_cuota_num}.
         </div>
@@ -196,8 +196,8 @@ function PreviewAmortizacion({ caso, onConfirmar, onCerrar, aplicando }) {
         marginTop: 14,
         padding: '12px 16px',
         borderRadius: 8,
-        background: marcarPagadoTotal ? '#ecfdf5' : '#f8fafc',
-        border: `1px solid ${marcarPagadoTotal ? '#6ee7b7' : '#cbd5e1'}`,
+        background: marcarPagadoTotal ? 'rgba(16, 185, 129, 0.15)' : 'var(--bg-card2)',
+        border: `1px solid ${marcarPagadoTotal ? '#10b981' : 'var(--border)'}`,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
@@ -315,7 +315,7 @@ function ObservacionEditor({ cuotaId, observacionActual, onSaved }) {
       <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
         <button
           onClick={() => { setEditando(false); setTexto(observacionActual || ''); }}
-          style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: 6, padding: '3px 10px', cursor: 'pointer', fontSize: 11 }}
+          style={{ background: 'var(--bg-card2)', color: 'var(--text-primary)', border: '1px solid var(--border)', borderRadius: 6, padding: '3px 10px', cursor: 'pointer', fontSize: 11 }}
           disabled={guardando}
         >
           <X size={10} /> Cancelar
@@ -368,14 +368,14 @@ function CasoCard({ caso: initialCaso, onVerExtracto, onAmortizacionAplicada }) 
     <div style={{
       border: `2px solid ${borderColor}22`,
       borderLeft: `4px solid ${borderColor}`,
-      borderRadius: 10, background: '#fff',
+      borderRadius: 10, background: 'var(--bg-card)',
       padding: '14px 18px', marginBottom: 12
     }}>
       {/* Cabecera del caso */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 10 }}>
         <div style={{ flex: 1, minWidth: 200 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-            <span style={{ fontWeight: 800, fontSize: 14, color: '#1e293b', fontFamily: 'monospace' }}>
+            <span style={{ fontWeight: 800, fontSize: 14, color: 'var(--text-primary)', fontFamily: 'monospace' }}>
               {caso.id_lote}
             </span>
             <NivelBadge nivel={caso.nivel} cuotas={caso.cuotas_enteras} />
@@ -655,7 +655,7 @@ export default function AbonosExtraordinariosView({ onVerExtracto }) {
         </div>
       ) : casosFiltrados.length === 0 ? (
         <div style={{
-          background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 10,
+          background: 'var(--bg-card2)', border: '1px solid var(--border)', borderRadius: 10,
           padding: '32px', textAlign: 'center', color: '#64748b'
         }}>
           <CheckCircle2 size={32} color="#16a34a" style={{ display: 'block', margin: '0 auto 12px' }} />

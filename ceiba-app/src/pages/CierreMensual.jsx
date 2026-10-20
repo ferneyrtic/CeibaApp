@@ -520,7 +520,7 @@ export default function CierreMensual() {
         <div style={{
           display: 'flex',
           borderBottom: '1px solid var(--border)',
-          background: '#f8fafc',
+          background: 'var(--bg-card2)',
           padding: '0 16px',
           gap: 6,
           overflowX: 'auto'
@@ -624,7 +624,7 @@ export default function CierreMensual() {
               <div style={{ overflowX: 'auto' }}>
                 <table className="data-table" style={{ width: '100%', fontSize: 12 }}>
                   <thead>
-                    <tr style={{ background: '#f8fafc', color: '#475569', fontSize: 11, textAlign: 'left' }}>
+                    <tr style={{ background: 'var(--bg-card2)', color: 'var(--text-secondary)', fontSize: 11, textAlign: 'left' }}>
                       <th style={{ padding: '8px 10px', textAlign: 'center' }}>FECHA DE PAGO</th>
                       <th style={{ padding: '8px 10px' }}>ID LOTE</th>
                       <th style={{ padding: '8px 10px' }}>CLIENTE / TITULAR</th>
@@ -652,7 +652,7 @@ export default function CierreMensual() {
                       </tr>
                     ) : (
                       paginatedItems.map((item) => (
-                        <tr key={item.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                        <tr key={item.id} style={{ borderBottom: '1px solid var(--border)' }}>
                           {/* FECHA DE PAGO (DESTACADA) */}
                           <td style={{ padding: '9px 10px', textAlign: 'center', whiteSpace: 'nowrap' }}>
                             <span style={{
@@ -793,7 +793,7 @@ export default function CierreMensual() {
               <div style={{ overflowX: 'auto' }}>
                 <table className="data-table" style={{ width: '100%', fontSize: 12 }}>
                   <thead>
-                    <tr style={{ background: '#f8fafc', color: '#475569', fontSize: 11, textAlign: 'left' }}>
+                    <tr style={{ background: 'var(--bg-card2)', color: 'var(--text-secondary)', fontSize: 11, textAlign: 'left' }}>
                       <th style={{ padding: '8px 10px', textAlign: 'center' }}>FECHA DE PAGO</th>
                       <th style={{ padding: '8px 10px' }}>ASESOR COMERCIAL</th>
                       <th style={{ padding: '8px 10px' }}>LOTE IMPUTADO</th>
@@ -813,7 +813,7 @@ export default function CierreMensual() {
                       </tr>
                     ) : (
                       paginatedComisiones.map((c) => (
-                        <tr key={c.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                        <tr key={c.id} style={{ borderBottom: '1px solid var(--border)' }}>
                           {/* FECHA PAGO */}
                           <td style={{ padding: '9px 10px', textAlign: 'center', whiteSpace: 'nowrap' }}>
                             <span style={{
@@ -876,7 +876,7 @@ export default function CierreMensual() {
 
                           {/* REGISTRADO POR */}
                           <td style={{ padding: '9px 10px', textAlign: 'center', fontSize: 10, color: '#94a3b8' }}>
-                            <span style={{ background: '#f1f5f9', padding: '2px 6px', borderRadius: 4 }}>
+                            <span style={{ background: 'var(--bg-card2)', padding: '2px 6px', borderRadius: 4 }}>
                               {c.registrado_por || 'ADMIN'}
                             </span>
                           </td>
@@ -923,7 +923,7 @@ export default function CierreMensual() {
                 <div style={{ overflowX: 'auto' }}>
                   <table className="data-table" style={{ width: '100%', fontSize: 12 }}>
                     <thead>
-                      <tr style={{ background: '#f8fafc', color: '#475569', fontSize: 11 }}>
+                      <tr style={{ background: 'var(--bg-card2)', color: 'var(--text-secondary)', fontSize: 11 }}>
                         <th style={{ textAlign: 'left', padding: '10px 12px' }}>Fecha</th>
                         <th style={{ textAlign: 'left', padding: '10px 12px' }}>Categoría</th>
                         <th style={{ textAlign: 'left', padding: '10px 12px' }}>Concepto</th>
@@ -962,7 +962,7 @@ export default function CierreMensual() {
               <div style={{ overflowX: 'auto' }}>
                 <table className="data-table" style={{ width: '100%', fontSize: 12 }}>
                   <thead>
-                    <tr style={{ background: '#f8fafc', color: '#475569', fontSize: 11 }}>
+                    <tr style={{ background: 'var(--bg-card2)', color: 'var(--text-secondary)', fontSize: 11 }}>
                       <th style={{ padding: '8px 10px', width: 40, textAlign: 'center' }}>#</th>
                       <th style={{ padding: '8px 10px' }}>ASESOR COMERCIAL</th>
                       <th style={{ padding: '8px 10px', textAlign: 'right' }}>TOTAL RECAUDADO</th>
@@ -976,7 +976,7 @@ export default function CierreMensual() {
                   </thead>
                   <tbody>
                     {(data?.rankingAsesores || []).map((a, idx) => (
-                      <tr key={a.vendedor} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                      <tr key={a.vendedor} style={{ borderBottom: '1px solid var(--border)' }}>
                         <td style={{ padding: '8px 10px', textAlign: 'center', fontWeight: 700, color: idx < 3 ? '#16a34a' : '#94a3b8' }}>
                           {idx + 1}
                         </td>
@@ -1063,7 +1063,7 @@ export default function CierreMensual() {
               <div style={{ overflowX: 'auto' }}>
                 <table className="data-table" style={{ width: '100%', fontSize: 12 }}>
                   <thead>
-                    <tr style={{ background: '#f8fafc', color: '#475569', fontSize: 11 }}>
+                    <tr style={{ background: 'var(--bg-card2)', color: 'var(--text-secondary)', fontSize: 11 }}>
                       <th style={{ padding: '8px 10px', textAlign: 'center' }}>DÍA</th>
                       <th style={{ padding: '8px 10px' }}>FECHA</th>
                       <th style={{ padding: '8px 10px', textAlign: 'right' }}>CUOTAS ($)</th>
@@ -1078,7 +1078,7 @@ export default function CierreMensual() {
                       const maxDia = Math.max(1, ...(data.recaudoPorDia.map(x => x.totalDia)));
                       const barPct = (d.totalDia / maxDia) * 100;
                       return (
-                        <tr key={d.fecha} style={{ borderBottom: '1px solid #f1f5f9', background: d.totalDia > 0 ? '#ffffff' : '#fafafa' }}>
+                        <tr key={d.fecha} style={{ borderBottom: '1px solid var(--border)', background: d.totalDia > 0 ? '#ffffff' : '#fafafa' }}>
                           <td style={{ padding: '7px 10px', textAlign: 'center', fontWeight: 700, color: d.totalDia > 0 ? '#16a34a' : '#94a3b8' }}>
                             Día {d.dia}
                           </td>

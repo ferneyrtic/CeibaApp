@@ -233,7 +233,7 @@ export default function EstadoCuentaMatrizView({ venta, cuotas = [] }) {
 
       {/* CONTENEDOR ESTILO EXCEL (Limpio y profesional) */}
       <div style={{
-        background: '#ffffff',
+        background: 'var(--bg-card)',
         border: '1px solid #cbd5e1',
         borderRadius: 8,
         padding: 16,
@@ -279,7 +279,7 @@ export default function EstadoCuentaMatrizView({ venta, cuotas = [] }) {
             </tr>
           </thead>
           <tbody>
-            <tr style={{ textAlign: 'center', background: '#f8fafc', color: '#1e293b', fontWeight: 600 }}>
+            <tr style={{ textAlign: 'center', background: 'var(--bg-card2)', color: 'var(--text-primary)', fontWeight: 600 }}>
               <td style={{ padding: '7px 8px', border: '1px solid #cbd5e1', fontFamily: 'monospace' }}>
                 <div>{loteId}</div>
                 {(saldoActual <= 0 || venta.estado === 'PAGADO EN SU TOTALIDAD') && (
@@ -313,7 +313,7 @@ export default function EstadoCuentaMatrizView({ venta, cuotas = [] }) {
         {/* Tabla 2: Matriz 3 Columnas (Cuotas 1-12, 13-24, 25-36) */}
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 10 }}>
           <thead>
-            <tr style={{ background: '#f1f5f9', color: '#334155', fontSize: 9, textAlign: 'center', fontWeight: 700 }}>
+            <tr style={{ background: 'var(--bg-card2)', color: 'var(--text-secondary)', fontSize: 9, textAlign: 'center', fontWeight: 700 }}>
               <th style={{ padding: '4px 6px', border: '1px solid #cbd5e1' }}># DE CUOTA</th>
               <th style={{ padding: '4px 6px', border: '1px solid #cbd5e1' }}>FECHA PAGO / VENC.</th>
               <th style={{ padding: '4px 6px', border: '1px solid #cbd5e1' }}>ESTADO CUOTA</th>

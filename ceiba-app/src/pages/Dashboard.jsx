@@ -30,8 +30,8 @@ const EMPTY_KPIS = {
 const TooltipCOP = ({ active, payload, label }) => {
   if (!active || !payload?.length) return null;
   return (
-    <div style={{ background:'#fff', border:'1px solid #e2ece2', borderRadius:8, padding:'10px 14px', fontSize:12, boxShadow:'0 4px 16px rgba(0,0,0,0.1)' }}>
-      <p style={{ color:'#6b7280', marginBottom:6, fontWeight:600 }}>{label}</p>
+    <div style={{ background:'var(--bg-card)', border:'1px solid var(--border)', borderRadius:8, padding:'10px 14px', fontSize:12, boxShadow:'var(--shadow)' }}>
+      <p style={{ color:'var(--text-muted)', marginBottom:6, fontWeight:600 }}>{label}</p>
       {payload.map((p, i) => (
         <p key={i} style={{ color: p.color, fontWeight:700 }}>
           {p.name}: {formatCOP(p.value)}
@@ -235,7 +235,7 @@ export default function Dashboard() {
               <YAxis type="category" dataKey="name" tick={{ fill:'#374151', fontSize:11 }} axisLine={false} tickLine={false} width={90} />
               <Tooltip
                 formatter={(v) => [v, 'Ventas']}
-                contentStyle={{ background:'#fff', border:'1px solid #e2ece2', borderRadius:8, fontSize:12, boxShadow:'0 4px 16px rgba(0,0,0,0.1)' }}
+                contentStyle={{ background:'var(--bg-card)', border:'1px solid var(--border)', borderRadius:8, fontSize:12, boxShadow:'var(--shadow)', color: 'var(--text-primary)' }}
               />
               <Bar dataKey="ventas" fill="#3b82f6" radius={[0,4,4,0]}>
                 {kpis.ventasPorVendedor.map((_, i) => (
@@ -264,7 +264,7 @@ export default function Dashboard() {
               </Pie>
               <Tooltip
                 formatter={(v, n) => [v + ' cuotas', n]}
-                contentStyle={{ background:'#fff', border:'1px solid #e2ece2', borderRadius:8, fontSize:12, boxShadow:'0 4px 16px rgba(0,0,0,0.1)' }}
+                contentStyle={{ background:'var(--bg-card)', border:'1px solid var(--border)', borderRadius:8, fontSize:12, boxShadow:'var(--shadow)', color: 'var(--text-primary)' }}
               />
             </PieChart>
           </ResponsiveContainer>

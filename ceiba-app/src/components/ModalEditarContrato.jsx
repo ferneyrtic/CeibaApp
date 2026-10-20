@@ -168,7 +168,7 @@ export default function ModalEditarContrato({ venta, onClose, onSuccess }) {
 
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
         {/* Sección Titular */}
-        <div style={{ background: '#f8fafc', border: '1px solid var(--border)', borderRadius: 8, padding: 12 }}>
+        <div style={{ background: 'var(--bg-card2)', border: '1px solid var(--border)', borderRadius: 8, padding: 12 }}>
           <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 8 }}>
             👤 Datos del Titular / Cliente
           </div>
@@ -237,7 +237,7 @@ export default function ModalEditarContrato({ venta, onClose, onSuccess }) {
         </div>
 
         {/* Sección Condiciones Financieras */}
-        <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 8, padding: 12 }}>
+        <div style={{ background: 'var(--bg-card2)', border: '1px solid var(--border)', borderRadius: 8, padding: 12 }}>
           <div style={{ fontSize: 12, fontWeight: 700, color: '#16a34a', marginBottom: 8 }}>
             💰 Condiciones Financieras del Contrato
           </div>

@@ -884,7 +884,7 @@ export default function Reportes() {
             <Search size={14} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
             <input
               className="search-input"
-              style={{ paddingLeft: 36, width: '100%', background: '#fff' }}
+              style={{ paddingLeft: 36, width: '100%', background: 'var(--bg-card)' }}
               placeholder="Filtrar por lote o nombre de cliente..."
               value={searchFilter}
               onChange={e => setSearchFilter(e.target.value)}
@@ -893,7 +893,7 @@ export default function Reportes() {
 
           <select
             className="filter-select"
-            style={{ flex: 1.5, minWidth: 280, background: '#fff' }}
+            style={{ flex: 1.5, minWidth: 280, background: 'var(--bg-card)' }}
             value={selectedVentaId}
             onChange={e => handleSelectVenta(e.target.value)}
           >

@@ -363,7 +363,7 @@ export default function ModalRegistrarPagoRecibo({
         {/* Tarjeta del contrato seleccionado */}
         {selectedVenta && (
           <div style={{
-            background: '#f8fafc',
+            background: 'var(--bg-card2)',
             border: '1.5px solid #cbd5e1',
             borderRadius: 10,
             padding: '12px 16px',

@@ -321,7 +321,7 @@ export default function Lotes() {
                               title="Clic para cambiar el estado de este lote"
                             >
                               {ESTADOS.slice(1).map(st => (
-                                <option key={st} value={st} style={{ background: '#ffffff', color: '#1e293b' }}>
+                                <option key={st} value={st} style={{ background: '#ffffff', color: 'var(--text-primary)' }}>
                                   {getEstadoBadge(st).label}
                                 </option>
                               ))}
@@ -430,7 +430,7 @@ export default function Lotes() {
           <div style={{
             marginTop: 18,
             padding: '14px 16px',
-            background: '#f8fafc',
+            background: 'var(--bg-card2)',
             border: '1px solid #e2e8f0',
             borderRadius: 10
           }}>
@@ -461,8 +461,8 @@ export default function Lotes() {
                       padding: '6px 14px',
                       borderRadius: 20,
                       border: isCurrent ? `2px solid ${b.color}` : '1px solid #cbd5e1',
-                      background: isCurrent ? b.bg : '#ffffff',
-                      color: isCurrent ? b.color : '#475569',
+                      background: isCurrent ? b.bg : 'var(--bg-card)',
+                      color: isCurrent ? b.color : 'var(--text-secondary)',
                       fontWeight: isCurrent ? 800 : 500,
                       fontSize: 12,
                       cursor: statusLoadingId === selected.id ? 'not-allowed' : 'pointer',

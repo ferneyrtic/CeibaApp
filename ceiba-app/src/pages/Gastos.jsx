@@ -657,8 +657,8 @@ export default function Gastos() {
               </div>
             </div>
 
-            <div style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 8, padding: 14 }}>
-              <label className="label" style={{ fontSize: 12, fontWeight: 800, color: '#92400e' }}>
+            <div style={{ background: 'var(--bg-card2)', border: '1px solid var(--border)', borderRadius: 8, padding: 14 }}>
+              <label className="label" style={{ fontSize: 12, fontWeight: 800, color: 'var(--text-primary)' }}>
                 Valor Total del Gasto ($ COP) *
               </label>
               <div style={{ position: 'relative', marginTop: 4 }}>
@@ -722,13 +722,13 @@ export default function Gastos() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             <div style={{
               display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-              padding: '12px 16px', background: '#fffbeb', borderRadius: 8, border: '1px solid #fde68a'
+              padding: '12px 16px', background: 'var(--bg-card2)', borderRadius: 8, border: '1px solid var(--border)'
             }}>
               <div>
-                <div style={{ fontSize: 11, color: '#92400e', fontWeight: 700, textTransform: 'uppercase' }}>
+                <div style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase' }}>
                   Valor del Desembolso
                 </div>
-                <div style={{ fontSize: 24, fontWeight: 800, color: '#b45309' }}>
+                <div style={{ fontSize: 24, fontWeight: 800, color: 'var(--accent)' }}>
                   {formatCOP(gastoParaVer.valor)}
                 </div>
               </div>

@@ -462,7 +462,7 @@ export default function ModalRegistrarVenta({
               
               {/* SECCIÓN 1: LOTE */}
               <div style={{
-                background: '#f8fafc',
+                background: 'var(--bg-card2)',
                 border: '1px solid #e2e8f0',
                 borderRadius: 10,
                 padding: '16px 18px'
@@ -514,7 +514,7 @@ export default function ModalRegistrarVenta({
                       display: 'flex',
                       alignItems: 'center',
                       gap: 16,
-                      background: '#fff',
+                      background: 'var(--bg-card)',
                       padding: '8px 14px',
                       borderRadius: 8,
                       border: '1px solid #e2e8f0',
@@ -1095,7 +1095,7 @@ export default function ModalRegistrarVenta({
                   </div>
                 ) : (
                   <div style={{
-                    background: '#f0fdf4',
+                    background: 'var(--bg-card2)',
                     border: '1px solid #bbf7d0',
                     color: '#15803d',
                     padding: '10px 14px',

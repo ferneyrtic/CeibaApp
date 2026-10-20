@@ -320,6 +320,69 @@ body.dark-mode th[style*="border: 1px solid #cbd5e1"] {
   border-color: var(--border) !important;
 }
 
+/* Dark mode catch-all for any browser-serialized inline RGB light backgrounds */
+body.dark-mode [style*="rgb(248, 250, 252)"],
+body.dark-mode [style*="rgb(241, 245, 249)"],
+body.dark-mode [style*="rgb(248,250,252)"],
+body.dark-mode [style*="rgb(241,245,249)"] {
+  background: var(--bg-card2) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border) !important;
+}
+
+body.dark-mode [style*="rgb(240, 253, 244)"],
+body.dark-mode [style*="rgb(240,253,244)"],
+body.dark-mode [style*="rgb(220, 252, 231)"],
+body.dark-mode [style*="rgb(220,252,231)"] {
+  background: rgba(34, 197, 94, 0.14) !important;
+  border-color: rgba(34, 197, 94, 0.3) !important;
+  color: var(--text-primary) !important;
+}
+
+body.dark-mode [style*="rgb(239, 246, 255)"],
+body.dark-mode [style*="rgb(239,246,255)"],
+body.dark-mode [style*="rgb(219, 234, 254)"],
+body.dark-mode [style*="rgb(219,234,254)"] {
+  background: rgba(59, 130, 246, 0.14) !important;
+  border-color: rgba(59, 130, 246, 0.3) !important;
+  color: var(--text-primary) !important;
+}
+
+body.dark-mode [style*="rgb(254, 242, 242)"],
+body.dark-mode [style*="rgb(254,242,242)"],
+body.dark-mode [style*="rgb(254, 226, 226)"],
+body.dark-mode [style*="rgb(254,226,226)"] {
+  background: rgba(239, 68, 68, 0.14) !important;
+  border-color: rgba(239, 68, 68, 0.3) !important;
+  color: var(--text-primary) !important;
+}
+
+body.dark-mode [style*="rgb(254, 243, 199)"],
+body.dark-mode [style*="rgb(254,243,199)"],
+body.dark-mode [style*="rgb(255, 251, 235)"],
+body.dark-mode [style*="rgb(255,251,235)"] {
+  background: rgba(245, 158, 11, 0.14) !important;
+  border-color: rgba(245, 158, 11, 0.3) !important;
+  color: var(--text-primary) !important;
+}
+
+body.dark-mode div:not(.recibo-hoja-blanca):not([data-print-sheet="true"])[style*="rgb(255, 255, 255)"],
+body.dark-mode div:not(.recibo-hoja-blanca):not([data-print-sheet="true"])[style*="rgb(255,255,255)"],
+body.dark-mode span:not(.recibo-hoja-blanca):not([data-print-sheet="true"])[style*="rgb(255, 255, 255)"],
+body.dark-mode span:not(.recibo-hoja-blanca):not([data-print-sheet="true"])[style*="rgb(255,255,255)"] {
+  background: var(--bg-card) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border) !important;
+}
+
+body.dark-mode [style*="color: rgb(30, 41, 59)"],
+body.dark-mode [style*="color: rgb(15, 23, 42)"],
+body.dark-mode [style*="color: rgb(55, 65, 81)"],
+body.dark-mode [style*="color: rgb(71, 85, 105)"],
+body.dark-mode [style*="color: rgb(51, 65, 85)"] {
+  color: var(--text-primary) !important;
+}
+
 body.dark-mode .kpi-card {
   background: var(--bg-card);
   border-color: var(--border);

@@ -155,7 +155,7 @@ export default function ModalEditarCuota({ cuota, onClose, onSuccess }) {
         </div>
 
         {/* Datos del pago */}
-        <div style={{ background: '#f8fafc', border: '1px solid var(--border)', borderRadius: 8, padding: 12 }}>
+        <div style={{ background: 'var(--bg-card2)', border: '1px solid var(--border)', borderRadius: 8, padding: 12 }}>
           <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 8, color: 'var(--text-primary)' }}>
             💳 Información del Pago
           </div>

@@ -190,7 +190,7 @@ export default function ModalNuevoLote({
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
         {/* Ubicación y Nomenclatura */}
         <div style={{
-          background: '#f8fafc',
+          background: 'var(--bg-card2)',
           border: '1px solid #e2e8f0',
           borderRadius: 8,
           padding: 14
@@ -282,7 +282,7 @@ export default function ModalNuevoLote({
               />
             ) : (
               <div style={{
-                background: '#fff',
+                background: 'var(--bg-card)',
                 border: '1px solid #cbd5e1',
                 borderRadius: 6,
                 padding: '8px 12px',
