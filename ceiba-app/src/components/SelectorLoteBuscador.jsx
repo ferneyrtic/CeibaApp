@@ -75,8 +75,8 @@ export default function SelectorLoteBuscador({
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          background: '#f0fdf4',
-          border: '1.5px solid #86efac',
+          background: 'rgba(22, 163, 74, 0.12)',
+          border: '1.5px solid rgba(22, 163, 74, 0.35)',
           borderRadius: 8,
           padding: '10px 14px',
           gap: 12
@@ -95,12 +95,12 @@ export default function SelectorLoteBuscador({
               {selectedVenta.id_lote || selectedVenta.lotes?.id_lote}
             </span>
             <div style={{ minWidth: 0 }}>
-              <div style={{ fontSize: 13, fontWeight: 700, color: '#166534', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                 {selectedVenta.cliente_nombre || selectedVenta.clientes?.nombre || 'Sin cliente asignado'}
               </div>
-              <div style={{ fontSize: 11, color: '#64748b' }}>
+              <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>
                 {selectedVenta.clientes?.doc_cliente && `C.C. ${selectedVenta.clientes.doc_cliente} · `}
-                Saldo pendiente: <strong style={{ color: (selectedVenta.saldo || 0) > 0 ? '#d97706' : '#16a34a' }}>{formatCOP(selectedVenta.saldo)}</strong>
+                Saldo pendiente: <strong style={{ color: (selectedVenta.saldo || 0) > 0 ? '#d97706' : '#22c55e' }}>{formatCOP(selectedVenta.saldo)}</strong>
               </div>
             </div>
           </div>
@@ -113,9 +113,9 @@ export default function SelectorLoteBuscador({
               style={{
                 fontSize: 11,
                 padding: '4px 10px',
-                borderColor: '#bbf7d0',
-                background: '#fff',
-                color: '#166534',
+                borderColor: 'var(--border)',
+                background: 'var(--bg-card)',
+                color: 'var(--text-secondary)',
                 fontWeight: 600,
                 gap: 4
               }}
@@ -151,7 +151,8 @@ export default function SelectorLoteBuscador({
                 height: 40,
                 borderRadius: 8,
                 border: isOpen ? '1.5px solid #16a34a' : '1px solid var(--border)',
-                background: disabled ? '#f8fafc' : '#fff'
+                background: disabled ? 'var(--bg-card2)' : 'var(--bg-card)',
+                color: 'var(--text-primary)'
               }}
               placeholder={placeholder}
               value={searchTerm}
@@ -190,16 +191,16 @@ export default function SelectorLoteBuscador({
               top: 'calc(100% + 4px)',
               left: 0,
               right: 0,
-              background: '#fff',
-              border: '1px solid #cbd5e1',
+              background: 'var(--bg-card)',
+              border: '1px solid var(--border)',
               borderRadius: 8,
-              boxShadow: '0 10px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1)',
+              boxShadow: '0 10px 25px -5px rgba(0,0,0,0.3), 0 8px 10px -6px rgba(0,0,0,0.2)',
               maxHeight: 280,
               overflowY: 'auto',
               zIndex: 1000
             }}>
               {filteredVentas.length === 0 ? (
-                <div style={{ padding: '16px 20px', textAlign: 'center', color: '#64748b', fontSize: 13 }}>
+                <div style={{ padding: '16px 20px', textAlign: 'center', color: 'var(--text-muted)', fontSize: 13 }}>
                   No se encontraron lotes ni clientes con "<strong>{searchTerm}</strong>"
                 </div>
               ) : (
@@ -216,15 +217,15 @@ export default function SelectorLoteBuscador({
                       onClick={() => handleSelect(v)}
                       style={{
                         padding: '10px 14px',
-                        borderBottom: '1px solid #f1f5f9',
+                        borderBottom: '1px solid var(--border)',
                         cursor: 'pointer',
                         display: 'flex',
                         justifyContent: 'space-between',
                         alignItems: 'center',
-                        background: isSelected ? '#f0fdf4' : 'transparent',
+                        background: isSelected ? 'rgba(22, 163, 74, 0.15)' : 'transparent',
                         transition: 'background 0.15s ease'
                       }}
-                      onMouseEnter={(e) => { if (!isSelected) e.currentTarget.style.background = '#f8fafc'; }}
+                      onMouseEnter={(e) => { if (!isSelected) e.currentTarget.style.background = 'var(--bg-card2)'; }}
                       onMouseLeave={(e) => { if (!isSelected) e.currentTarget.style.background = 'transparent'; }}
                     >
                       <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0, flex: 1 }}>
@@ -232,8 +233,9 @@ export default function SelectorLoteBuscador({
                           fontFamily: 'monospace',
                           fontWeight: 700,
                           fontSize: 12,
-                          background: '#e2e8f0',
-                          color: '#1e293b',
+                          background: 'var(--bg-card2)',
+                          color: 'var(--text-primary)',
+                          border: '1px solid var(--border)',
                           padding: '2px 7px',
                           borderRadius: 4,
                           whiteSpace: 'nowrap'
@@ -242,11 +244,11 @@ export default function SelectorLoteBuscador({
                         </span>
 
                         <div style={{ minWidth: 0, flex: 1 }}>
-                          <div style={{ fontSize: 13, fontWeight: 600, color: '#1e293b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                             {cliStr}
                           </div>
                           {docStr && (
-                            <div style={{ fontSize: 11, color: '#64748b' }}>
+                            <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>
                               Cédula: {docStr}
                             </div>
                           )}
@@ -261,7 +263,7 @@ export default function SelectorLoteBuscador({
                         }}>
                           {formatCOP(saldoNum)}
                         </div>
-                        <div style={{ fontSize: 10, color: '#94a3b8' }}>
+                        <div style={{ fontSize: 10, color: 'var(--text-muted)' }}>
                           {saldoNum > 0 ? 'Saldo pendiente' : 'Saldado'}
                         </div>
                       </div>

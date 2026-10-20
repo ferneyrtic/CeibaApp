@@ -346,17 +346,17 @@ export default function ModalNuevoLote({
             </div>
 
             <div>
-              <label style={{ fontSize: 11, fontWeight: 600, color: '#475569', display: 'block', marginBottom: 4 }}>
+              <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: 4 }}>
                 Precio por m² (COP)
               </label>
               <div style={{
-                background: '#fff',
-                border: '1px solid #cbd5e1',
+                background: 'var(--bg-card2)',
+                border: '1px solid var(--border)',
                 borderRadius: 6,
                 padding: '8px 12px',
                 fontSize: 13,
                 fontWeight: 700,
-                color: '#334155'
+                color: 'var(--text-primary)'
               }}>
                 {formatCOP(finalPrecioM2)} / m²
               </div>

@@ -57,24 +57,24 @@ export default function EstadoCuentaMatrizView({ venta, cuotas = [] }) {
     const [texto, setTexto] = useState(cuota?.observacion || '');
     const [saving, setSaving] = useState(false);
 
-    if (!cuota) return <td style={{ padding: '3px', border: '1px solid #e2e8f0', background: '#fafafa' }} />;
+    if (!cuota) return <td style={{ padding: '3px', border: '1px solid var(--border)', background: 'var(--bg-base)' }} />;
 
     if (!editing) {
       return (
-        <td style={{ padding: '3px 5px', border: '1px solid #e2e8f0', maxWidth: 120 }}>
+        <td style={{ padding: '3px 5px', border: '1px solid var(--border)', maxWidth: 120 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 4, minHeight: 22 }}>
             {texto ? (
-              <span style={{ fontSize: 9, color: '#475569', flexGrow: 1, lineHeight: 1.3, wordBreak: 'break-word' }}
+              <span style={{ fontSize: 9, color: 'var(--text-secondary)', flexGrow: 1, lineHeight: 1.3, wordBreak: 'break-word' }}
                 title={texto}>
-                <MessageSquare size={9} style={{ display: 'inline', marginRight: 2, color: '#3b82f6' }} />
+                <MessageSquare size={9} style={{ display: 'inline', marginRight: 2, color: 'var(--accent)' }} />
                 {texto.length > 40 ? texto.slice(0, 40) + '…' : texto}
               </span>
             ) : (
-              <span style={{ fontSize: 9, color: '#cbd5e1', flexGrow: 1 }}>—</span>
+              <span style={{ fontSize: 9, color: 'var(--text-muted)', flexGrow: 1 }}>—</span>
             )}
             <button
               onClick={() => setEditing(true)}
-              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 1, color: '#94a3b8', flexShrink: 0 }}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 1, color: 'var(--text-muted)', flexShrink: 0 }}
               title="Editar observación"
             >
               <Edit2 size={9} />
@@ -99,17 +99,17 @@ export default function EstadoCuentaMatrizView({ venta, cuotas = [] }) {
     };
 
     return (
-      <td style={{ padding: '3px 5px', border: '1px solid #3b82f6', background: '#eff6ff', maxWidth: 150 }}>
+      <td style={{ padding: '3px 5px', border: '1px solid var(--accent)', background: 'var(--accent-soft)', maxWidth: 150 }}>
         <textarea
           value={texto}
           onChange={e => setTexto(e.target.value)}
           rows={2}
-          style={{ width: '100%', fontSize: 9, border: 'none', background: 'transparent', resize: 'vertical', fontFamily: 'inherit', outline: 'none' }}
+          style={{ width: '100%', fontSize: 9, border: 'none', background: 'transparent', color: 'var(--text-primary)', resize: 'vertical', fontFamily: 'inherit', outline: 'none' }}
           autoFocus
         />
         <div style={{ display: 'flex', gap: 4, justifyContent: 'flex-end', marginTop: 2 }}>
           <button onClick={() => { setEditing(false); setTexto(cuota?.observacion || ''); }}
-            style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: 4, padding: '1px 5px', cursor: 'pointer', fontSize: 9 }}
+            style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-secondary)', borderRadius: 4, padding: '1px 5px', cursor: 'pointer', fontSize: 9 }}
             disabled={saving}>
             <X size={8} />
           </button>
@@ -127,13 +127,13 @@ export default function EstadoCuentaMatrizView({ venta, cuotas = [] }) {
 
   const renderBadge = (d) => {
     if (d.isExceeded || d.estado === '—') {
-      return <span style={{ color: '#cbd5e1' }}>—</span>;
+      return <span style={{ color: 'var(--text-muted)' }}>—</span>;
     }
     if (d.estado === 'PAGA') {
       return (
         <span style={{
-          background: '#dcfce7', color: '#16a34a', fontWeight: 700,
-          padding: '2px 6px', borderRadius: 4, fontSize: 9
+          background: 'rgba(34, 197, 94, 0.16)', color: '#22c55e', fontWeight: 700,
+          padding: '2px 6px', borderRadius: 4, fontSize: 9, border: '1px solid rgba(34, 197, 94, 0.3)'
         }}>
           PAGA
         </span>
@@ -142,8 +142,8 @@ export default function EstadoCuentaMatrizView({ venta, cuotas = [] }) {
     if (d.estado === 'VENCIDA') {
       return (
         <span style={{
-          background: '#fee2e2', color: '#dc2626', fontWeight: 700,
-          padding: '2px 6px', borderRadius: 4, fontSize: 9
+          background: 'rgba(239, 68, 68, 0.16)', color: '#ef4444', fontWeight: 700,
+          padding: '2px 6px', borderRadius: 4, fontSize: 9, border: '1px solid rgba(239, 68, 68, 0.3)'
         }}>
           VENCIDA
         </span>
@@ -152,8 +152,8 @@ export default function EstadoCuentaMatrizView({ venta, cuotas = [] }) {
     if (d.estado === 'POR VENCER') {
       return (
         <span style={{
-          background: '#fef3c7', color: '#d97706', fontWeight: 700,
-          padding: '2px 6px', borderRadius: 4, fontSize: 9
+          background: 'rgba(245, 158, 11, 0.16)', color: '#f59e0b', fontWeight: 700,
+          padding: '2px 6px', borderRadius: 4, fontSize: 9, border: '1px solid rgba(245, 158, 11, 0.3)'
         }}>
           POR VENCER
         </span>
@@ -162,8 +162,8 @@ export default function EstadoCuentaMatrizView({ venta, cuotas = [] }) {
     if (d.estado === 'AL DÍA') {
       return (
         <span style={{
-          background: '#dbeafe', color: '#2563eb', fontWeight: 600,
-          padding: '2px 6px', borderRadius: 4, fontSize: 9
+          background: 'rgba(59, 130, 246, 0.16)', color: '#3b82f6', fontWeight: 600,
+          padding: '2px 6px', borderRadius: 4, fontSize: 9, border: '1px solid rgba(59, 130, 246, 0.3)'
         }}>
           AL DÍA
         </span>
@@ -171,22 +171,22 @@ export default function EstadoCuentaMatrizView({ venta, cuotas = [] }) {
     }
     // PROGRAMADA / FUTURA
     return (
-      <span style={{ color: '#94a3b8', fontSize: 9, fontWeight: 500 }}>
+      <span style={{ color: 'var(--text-muted)', fontSize: 9, fontWeight: 500 }}>
         PROGRAMADA
       </span>
     );
   };
 
   const renderFecha = (d) => {
-    if (d.isExceeded || d.estado === '—') return <span style={{ color: '#cbd5e1' }}>—</span>;
+    if (d.isExceeded || d.estado === '—') return <span style={{ color: 'var(--text-muted)' }}>—</span>;
     if (d.estado === 'PAGA') {
       return (
         <div style={{ lineHeight: 1.2 }}>
-          <div style={{ fontWeight: 700, color: '#15803d', fontSize: 10 }}>
+          <div style={{ fontWeight: 700, color: '#22c55e', fontSize: 10 }}>
             {d.fechaPago ? d.fechaPago : d.fecha}
           </div>
           {d.fechaVenc && d.fechaPago && d.fechaVenc !== d.fechaPago && (
-            <div style={{ fontSize: 8, color: '#64748b' }}>
+            <div style={{ fontSize: 8, color: 'var(--text-muted)' }}>
               Venc: {d.fechaVenc}
             </div>
           )}
@@ -234,7 +234,7 @@ export default function EstadoCuentaMatrizView({ venta, cuotas = [] }) {
       {/* CONTENEDOR ESTILO EXCEL (Limpio y profesional) */}
       <div style={{
         background: 'var(--bg-card)',
-        border: '1px solid #cbd5e1',
+        border: '1px solid var(--border)',
         borderRadius: 8,
         padding: 16,
         overflowX: 'auto',
@@ -248,14 +248,14 @@ export default function EstadoCuentaMatrizView({ venta, cuotas = [] }) {
             style={{ height: 46, position: 'absolute', left: 4, top: 0, objectFit: 'contain' }}
           />
           <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: 14, fontWeight: 800, color: '#1e293b', letterSpacing: '0.5px' }}>
+            <div style={{ fontSize: 14, fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '0.5px' }}>
               LA CEIBA GROUP — PROYECTO CAMPESTRE
             </div>
-            <div style={{ fontSize: 11, fontWeight: 700, color: '#475569', marginTop: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)', marginTop: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
               <span>ESTADO DE CUENTA CLIENTES</span>
               {(saldoActual <= 0 || venta.estado === 'PAGADO EN SU TOTALIDAD') && (
                 <span style={{
-                  background: '#dcfce7', color: '#16a34a', border: '1px solid #86efac',
+                  background: 'rgba(34, 197, 94, 0.16)', color: '#22c55e', border: '1px solid rgba(34, 197, 94, 0.3)',
                   fontSize: 10, fontWeight: 800, padding: '2px 8px', borderRadius: 9999
                 }}>
                   ✓ PAGADO EN SU TOTALIDAD
@@ -280,18 +280,18 @@ export default function EstadoCuentaMatrizView({ venta, cuotas = [] }) {
           </thead>
           <tbody>
             <tr style={{ textAlign: 'center', background: 'var(--bg-card2)', color: 'var(--text-primary)', fontWeight: 600 }}>
-              <td style={{ padding: '7px 8px', border: '1px solid #cbd5e1', fontFamily: 'monospace' }}>
+              <td style={{ padding: '7px 8px', border: '1px solid var(--border)', fontFamily: 'monospace' }}>
                 <div>{loteId}</div>
                 {(saldoActual <= 0 || venta.estado === 'PAGADO EN SU TOTALIDAD') && (
-                  <div style={{ fontSize: 8.5, color: '#16a34a', fontWeight: 700, marginTop: 2 }}>PAGADO</div>
+                  <div style={{ fontSize: 8.5, color: '#22c55e', fontWeight: 700, marginTop: 2 }}>PAGADO</div>
                 )}
               </td>
-              <td style={{ padding: '7px 8px', border: '1px solid #cbd5e1' }}>{docCliente}</td>
-              <td style={{ padding: '7px 8px', border: '1px solid #cbd5e1', textAlign: 'left' }}>{nombreCliente}</td>
-              <td style={{ padding: '7px 8px', border: '1px solid #cbd5e1', textAlign: 'right' }}>{formatCOP(cuotaInicial)}</td>
-              <td style={{ padding: '7px 8px', border: '1px solid #cbd5e1', textAlign: 'right' }}>{formatCOP(saldoFinanciado)}</td>
-              <td style={{ padding: '7px 8px', border: '1px solid #cbd5e1' }}>{plazo}</td>
-              <td style={{ padding: '7px 8px', border: '1px solid #cbd5e1', textAlign: 'right' }}>{formatCOP(valorCuota)}</td>
+              <td style={{ padding: '7px 8px', border: '1px solid var(--border)' }}>{docCliente}</td>
+              <td style={{ padding: '7px 8px', border: '1px solid var(--border)', textAlign: 'left' }}>{nombreCliente}</td>
+              <td style={{ padding: '7px 8px', border: '1px solid var(--border)', textAlign: 'right' }}>{formatCOP(cuotaInicial)}</td>
+              <td style={{ padding: '7px 8px', border: '1px solid var(--border)', textAlign: 'right' }}>{formatCOP(saldoFinanciado)}</td>
+              <td style={{ padding: '7px 8px', border: '1px solid var(--border)' }}>{plazo}</td>
+              <td style={{ padding: '7px 8px', border: '1px solid var(--border)', textAlign: 'right' }}>{formatCOP(valorCuota)}</td>
             </tr>
           </tbody>
         </table>
@@ -314,69 +314,69 @@ export default function EstadoCuentaMatrizView({ venta, cuotas = [] }) {
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 10 }}>
           <thead>
             <tr style={{ background: 'var(--bg-card2)', color: 'var(--text-secondary)', fontSize: 9, textAlign: 'center', fontWeight: 700 }}>
-              <th style={{ padding: '4px 6px', border: '1px solid #cbd5e1' }}># DE CUOTA</th>
-              <th style={{ padding: '4px 6px', border: '1px solid #cbd5e1' }}>FECHA PAGO / VENC.</th>
-              <th style={{ padding: '4px 6px', border: '1px solid #cbd5e1' }}>ESTADO CUOTA</th>
-              <th style={{ padding: '4px 6px', border: '1px solid #cbd5e1' }}>VALOR</th>
-              <th style={{ padding: '4px 6px', border: '1px solid #cbd5e1', background: '#eff6ff', color: '#1d4ed8' }}>OBSERVACIÓN ✏️</th>
+              <th style={{ padding: '4px 6px', border: '1px solid var(--border)' }}># DE CUOTA</th>
+              <th style={{ padding: '4px 6px', border: '1px solid var(--border)' }}>FECHA PAGO / VENC.</th>
+              <th style={{ padding: '4px 6px', border: '1px solid var(--border)' }}>ESTADO CUOTA</th>
+              <th style={{ padding: '4px 6px', border: '1px solid var(--border)' }}>VALOR</th>
+              <th style={{ padding: '4px 6px', border: '1px solid var(--border)', background: 'var(--accent-soft)', color: 'var(--accent)' }}>OBSERVACIÓN ✏️</th>
 
-              <th style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderLeft: '2px solid #94a3b8' }}># DE CUOTA</th>
-              <th style={{ padding: '4px 6px', border: '1px solid #cbd5e1' }}>FECHA PAGO / VENC.</th>
-              <th style={{ padding: '4px 6px', border: '1px solid #cbd5e1' }}>ESTADO CUOTA</th>
-              <th style={{ padding: '4px 6px', border: '1px solid #cbd5e1' }}>VALOR</th>
-              <th style={{ padding: '4px 6px', border: '1px solid #cbd5e1', background: '#eff6ff', color: '#1d4ed8' }}>OBSERVACIÓN ✏️</th>
+              <th style={{ padding: '4px 6px', border: '1px solid var(--border)', borderLeft: '2px solid var(--border)' }}># DE CUOTA</th>
+              <th style={{ padding: '4px 6px', border: '1px solid var(--border)' }}>FECHA PAGO / VENC.</th>
+              <th style={{ padding: '4px 6px', border: '1px solid var(--border)' }}>ESTADO CUOTA</th>
+              <th style={{ padding: '4px 6px', border: '1px solid var(--border)' }}>VALOR</th>
+              <th style={{ padding: '4px 6px', border: '1px solid var(--border)', background: 'var(--accent-soft)', color: 'var(--accent)' }}>OBSERVACIÓN ✏️</th>
 
-              <th style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderLeft: '2px solid #94a3b8' }}># DE CUOTA</th>
-              <th style={{ padding: '4px 6px', border: '1px solid #cbd5e1' }}>FECHA PAGO / VENC.</th>
-              <th style={{ padding: '4px 6px', border: '1px solid #cbd5e1' }}>ESTADO CUOTA</th>
-              <th style={{ padding: '4px 6px', border: '1px solid #cbd5e1' }}>VALOR</th>
-              <th style={{ padding: '4px 6px', border: '1px solid #cbd5e1', background: '#eff6ff', color: '#1d4ed8' }}>OBSERVACIÓN ✏️</th>
+              <th style={{ padding: '4px 6px', border: '1px solid var(--border)', borderLeft: '2px solid var(--border)' }}># DE CUOTA</th>
+              <th style={{ padding: '4px 6px', border: '1px solid var(--border)' }}>FECHA PAGO / VENC.</th>
+              <th style={{ padding: '4px 6px', border: '1px solid var(--border)' }}>ESTADO CUOTA</th>
+              <th style={{ padding: '4px 6px', border: '1px solid var(--border)' }}>VALOR</th>
+              <th style={{ padding: '4px 6px', border: '1px solid var(--border)', background: 'var(--accent-soft)', color: 'var(--accent)' }}>OBSERVACIÓN ✏️</th>
             </tr>
           </thead>
           <tbody>
             {rows.map(({ r, c1, c2, c3, d1, d2, d3 }) => (
               <tr key={r} style={{ textAlign: 'center' }}>
                 {/* Bloque 1 */}
-                <td style={{ padding: '4px', border: '1px solid #e2e8f0', fontWeight: 600, background: d1.isExceeded ? '#fafafa' : '#f8fafc' }}>
+                <td style={{ padding: '4px', border: '1px solid var(--border)', fontWeight: 600, background: d1.isExceeded ? 'var(--bg-base)' : 'var(--bg-card2)', color: d1.isExceeded ? 'var(--text-muted)' : 'var(--text-primary)' }}>
                   {d1.num}
                 </td>
-                <td style={{ padding: '4px', border: '1px solid #e2e8f0' }}>
+                <td style={{ padding: '4px', border: '1px solid var(--border)', color: 'var(--text-primary)' }}>
                   {renderFecha(d1)}
                 </td>
-                <td style={{ padding: '4px', border: '1px solid #e2e8f0' }}>
+                <td style={{ padding: '4px', border: '1px solid var(--border)' }}>
                   {renderBadge(d1)}
                 </td>
-                <td style={{ padding: '4px', border: '1px solid #e2e8f0', textAlign: 'right', color: d1.isExceeded ? '#cbd5e1' : undefined }}>
+                <td style={{ padding: '4px', border: '1px solid var(--border)', textAlign: 'right', color: d1.isExceeded ? 'var(--text-muted)' : 'var(--text-primary)' }}>
                   {d1.valor}
                 </td>
                 <ObsCell cuota={c1} />
 
                 {/* Bloque 2 */}
-                <td style={{ padding: '4px', border: '1px solid #e2e8f0', fontWeight: 600, background: d2.isExceeded ? '#fafafa' : '#f8fafc', borderLeft: '2px solid #cbd5e1' }}>
+                <td style={{ padding: '4px', border: '1px solid var(--border)', fontWeight: 600, background: d2.isExceeded ? 'var(--bg-base)' : 'var(--bg-card2)', borderLeft: '2px solid var(--border)', color: d2.isExceeded ? 'var(--text-muted)' : 'var(--text-primary)' }}>
                   {d2.num}
                 </td>
-                <td style={{ padding: '4px', border: '1px solid #e2e8f0' }}>
+                <td style={{ padding: '4px', border: '1px solid var(--border)', color: 'var(--text-primary)' }}>
                   {renderFecha(d2)}
                 </td>
-                <td style={{ padding: '4px', border: '1px solid #e2e8f0' }}>
+                <td style={{ padding: '4px', border: '1px solid var(--border)' }}>
                   {renderBadge(d2)}
                 </td>
-                <td style={{ padding: '4px', border: '1px solid #e2e8f0', textAlign: 'right', color: d2.isExceeded ? '#cbd5e1' : undefined }}>
+                <td style={{ padding: '4px', border: '1px solid var(--border)', textAlign: 'right', color: d2.isExceeded ? 'var(--text-muted)' : 'var(--text-primary)' }}>
                   {d2.valor}
                 </td>
                 <ObsCell cuota={c2} />
 
                 {/* Bloque 3 */}
-                <td style={{ padding: '4px', border: '1px solid #e2e8f0', fontWeight: 600, background: d3.isExceeded ? '#fafafa' : '#f8fafc', borderLeft: '2px solid #cbd5e1' }}>
+                <td style={{ padding: '4px', border: '1px solid var(--border)', fontWeight: 600, background: d3.isExceeded ? 'var(--bg-base)' : 'var(--bg-card2)', borderLeft: '2px solid var(--border)', color: d3.isExceeded ? 'var(--text-muted)' : 'var(--text-primary)' }}>
                   {d3.num}
                 </td>
-                <td style={{ padding: '4px', border: '1px solid #e2e8f0' }}>
+                <td style={{ padding: '4px', border: '1px solid var(--border)', color: 'var(--text-primary)' }}>
                   {renderFecha(d3)}
                 </td>
-                <td style={{ padding: '4px', border: '1px solid #e2e8f0' }}>
+                <td style={{ padding: '4px', border: '1px solid var(--border)' }}>
                   {renderBadge(d3)}
                 </td>
-                <td style={{ padding: '4px', border: '1px solid #e2e8f0', textAlign: 'right', color: d3.isExceeded ? '#cbd5e1' : undefined }}>
+                <td style={{ padding: '4px', border: '1px solid var(--border)', textAlign: 'right', color: d3.isExceeded ? 'var(--text-muted)' : 'var(--text-primary)' }}>
                   {d3.valor}
                 </td>
                 <ObsCell cuota={c3} />
@@ -396,9 +396,9 @@ export default function EstadoCuentaMatrizView({ venta, cuotas = [] }) {
               </tr>
             </thead>
             <tbody>
-              <tr style={{ textAlign: 'center', fontWeight: 800, background: '#f8fafc', fontSize: 12 }}>
-                <td style={{ padding: '8px', border: '1px solid #cbd5e1', color: '#16a34a' }}>{formatCOP(totalPagado)}</td>
-                <td style={{ padding: '8px', border: '1px solid #cbd5e1', color: saldoActual > 0 ? '#dc2626' : '#16a34a' }}>
+              <tr style={{ textAlign: 'center', fontWeight: 800, background: 'var(--bg-card2)', fontSize: 12 }}>
+                <td style={{ padding: '8px', border: '1px solid var(--border)', color: '#16a34a' }}>{formatCOP(totalPagado)}</td>
+                <td style={{ padding: '8px', border: '1px solid var(--border)', color: saldoActual > 0 ? '#dc2626' : '#16a34a' }}>
                   {formatCOP(saldoActual)}
                   {saldoActual <= 0 && <span style={{ marginLeft: 6, fontSize: 10, color: '#16a34a' }}>(PAZ Y SALVO)</span>}
                 </td>

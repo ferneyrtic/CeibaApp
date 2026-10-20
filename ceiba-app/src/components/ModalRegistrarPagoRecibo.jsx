@@ -364,7 +364,7 @@ export default function ModalRegistrarPagoRecibo({
         {selectedVenta && (
           <div style={{
             background: 'var(--bg-card2)',
-            border: '1.5px solid #cbd5e1',
+            border: '1.5px solid var(--border)',
             borderRadius: 10,
             padding: '12px 16px',
             marginBottom: 16
@@ -375,30 +375,30 @@ export default function ModalRegistrarPagoRecibo({
                   fontFamily: 'monospace',
                   fontSize: 14,
                   fontWeight: 900,
-                  color: '#166534',
-                  background: '#dcfce7',
+                  color: '#16a34a',
+                  background: 'rgba(22, 163, 74, 0.15)',
                   padding: '2px 8px',
                   borderRadius: 6,
                   marginRight: 8
                 }}>
                   {selectedVenta.id_lote || selectedVenta.lotes?.id_lote}
                 </span>
-                <span style={{ fontSize: 13, fontWeight: 700, color: '#1e293b' }}>
+                <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)' }}>
                   {selectedVenta.cliente_nombre || selectedVenta.clientes?.nombre}
                 </span>
-                <span style={{ fontSize: 11, color: '#64748b', marginLeft: 8 }}>
+                <span style={{ fontSize: 11, color: 'var(--text-muted)', marginLeft: 8 }}>
                   C.C. {selectedVenta.clientes?.doc_cliente || selectedVenta.doc_cliente || '—'}
                 </span>
               </div>
               <div style={{ textAlign: 'right' }}>
-                <div style={{ fontSize: 11, color: '#64748b' }}>Saldo Pendiente</div>
+                <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>Saldo Pendiente</div>
                 <div style={{ fontSize: 15, fontWeight: 800, color: (selectedVenta.saldo || 0) > 0 ? '#dc2626' : '#16a34a' }}>
                   {formatCOP(selectedVenta.saldo || 0)}
                 </div>
               </div>
             </div>
 
-            <div style={{ display: 'flex', gap: 16, marginTop: 8, fontSize: 11.5, color: '#475569', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', gap: 16, marginTop: 8, fontSize: 11.5, color: 'var(--text-secondary)', flexWrap: 'wrap' }}>
               <span>Cuota pactada: <strong>{formatCOP(selectedVenta.valor_cuota)}</strong></span>
               <span>Días de pago: <strong>{selectedVenta.dias_pago || '—'}</strong></span>
               <span>
@@ -412,7 +412,7 @@ export default function ModalRegistrarPagoRecibo({
 
         {/* 2. Selector de Modo: Cascada Automática vs Cuota Específica */}
         <div style={{ marginBottom: 14 }}>
-          <label style={{ fontSize: 12, fontWeight: 700, display: 'block', marginBottom: 6, color: '#334155' }}>
+          <label style={{ fontSize: 12, fontWeight: 700, display: 'block', marginBottom: 6, color: 'var(--text-primary)' }}>
             Destino del Abono / Pago:
           </label>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
@@ -422,9 +422,9 @@ export default function ModalRegistrarPagoRecibo({
               style={{
                 padding: '8px 12px',
                 borderRadius: 8,
-                border: modoImputacion === 'cascada' ? '2px solid #16a34a' : '1px solid #cbd5e1',
-                background: modoImputacion === 'cascada' ? '#f0fdf4' : '#fff',
-                color: modoImputacion === 'cascada' ? '#166534' : '#475569',
+                border: modoImputacion === 'cascada' ? '2px solid #16a34a' : '1px solid var(--border)',
+                background: modoImputacion === 'cascada' ? 'rgba(22, 163, 74, 0.15)' : 'var(--bg-card2)',
+                color: modoImputacion === 'cascada' ? '#22c55e' : 'var(--text-secondary)',
                 fontWeight: 700,
                 fontSize: 12,
                 cursor: 'pointer',
@@ -443,9 +443,9 @@ export default function ModalRegistrarPagoRecibo({
               style={{
                 padding: '8px 12px',
                 borderRadius: 8,
-                border: modoImputacion === 'cuota' ? '2px solid #16a34a' : '1px solid #cbd5e1',
-                background: modoImputacion === 'cuota' ? '#f0fdf4' : '#fff',
-                color: modoImputacion === 'cuota' ? '#166534' : '#475569',
+                border: modoImputacion === 'cuota' ? '2px solid #16a34a' : '1px solid var(--border)',
+                background: modoImputacion === 'cuota' ? 'rgba(22, 163, 74, 0.15)' : 'var(--bg-card2)',
+                color: modoImputacion === 'cuota' ? '#22c55e' : 'var(--text-secondary)',
                 fontWeight: 700,
                 fontSize: 12,
                 cursor: 'pointer',
@@ -463,7 +463,7 @@ export default function ModalRegistrarPagoRecibo({
         {/* Dropdown de Cuota si está en modo cuota */}
         {modoImputacion === 'cuota' && (
           <div style={{ marginBottom: 14 }}>
-            <label style={{ fontSize: 11.5, fontWeight: 600, display: 'block', marginBottom: 4, color: '#475569' }}>
+            <label style={{ fontSize: 11.5, fontWeight: 600, display: 'block', marginBottom: 4, color: 'var(--text-secondary)' }}>
               Seleccionar Cuota a Pagar:
             </label>
             <select
@@ -496,13 +496,13 @@ export default function ModalRegistrarPagoRecibo({
         {/* 3. Monto a Pagar y Fecha */}
         <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 12, marginBottom: 14 }}>
           <div>
-            <label style={{ fontSize: 12, fontWeight: 700, display: 'block', marginBottom: 4, color: '#334155' }}>
+            <label style={{ fontSize: 12, fontWeight: 700, display: 'block', marginBottom: 4, color: 'var(--text-primary)' }}>
               Monto a Pagar ($ COP):
             </label>
             <input
               type="number"
               className="search-input"
-              style={{ width: '100%', fontSize: 16, fontWeight: 800, paddingLeft: 12, color: '#166534' }}
+              style={{ width: '100%', fontSize: 16, fontWeight: 800, paddingLeft: 12, color: 'var(--accent)' }}
               placeholder="Ej: 1000000"
               value={monto}
               onChange={e => setMonto(e.target.value)}
@@ -518,7 +518,7 @@ export default function ModalRegistrarPagoRecibo({
           </div>
 
           <div>
-            <label style={{ fontSize: 12, fontWeight: 700, display: 'block', marginBottom: 4, color: '#334155' }}>
+            <label style={{ fontSize: 12, fontWeight: 700, display: 'block', marginBottom: 4, color: 'var(--text-primary)' }}>
               Fecha del Pago:
             </label>
             <input
@@ -535,26 +535,26 @@ export default function ModalRegistrarPagoRecibo({
         {/* Simulación en vivo de las cuotas afectadas */}
         {simulacion && simulacion.afectaciones.length > 0 && (
           <div style={{
-            background: '#f0fdf4',
-            border: '1.5px solid #86efac',
+            background: 'rgba(34, 197, 94, 0.12)',
+            border: '1.5px solid rgba(34, 197, 94, 0.35)',
             borderRadius: 8,
             padding: '10px 14px',
             marginBottom: 14
           }}>
-            <div style={{ fontSize: 11.5, fontWeight: 800, color: '#166534', marginBottom: 6, display: 'flex', alignItems: 'center', gap: 6 }}>
-              <CheckCircle2 size={14} color="#16a34a" />
+            <div style={{ fontSize: 11.5, fontWeight: 800, color: '#22c55e', marginBottom: 6, display: 'flex', alignItems: 'center', gap: 6 }}>
+              <CheckCircle2 size={14} color="#22c55e" />
               Imputación Contable del Recibo Nº {proximoReciboNum}:
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
               {simulacion.afectaciones.map(a => (
-                <div key={a.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12 }}>
+                <div key={a.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--text-primary)' }}>
                   <span>
                     <strong>Cuota #{a.numero_cuota}</strong> (Vence: {formatDate(a.fecha_vencimiento)})
                   </span>
                   <span>
-                    <strong style={{ color: '#15803d' }}>+{formatCOP(a.valor_abono)}</strong>
+                    <strong style={{ color: '#22c55e' }}>+{formatCOP(a.valor_abono)}</strong>
                     {a.completo ? (
-                      <span style={{ marginLeft: 6, color: '#16a34a', fontWeight: 700 }}>✓ Total</span>
+                      <span style={{ marginLeft: 6, color: '#22c55e', fontWeight: 700 }}>✓ Total</span>
                     ) : (
                       <span style={{ marginLeft: 6, color: '#d97706', fontWeight: 700 }}>
                         ⚠ Parcial (Resta {formatCOP(Math.max(0, a.valor_cuota - a.nuevo_pagado))})
@@ -569,13 +569,13 @@ export default function ModalRegistrarPagoRecibo({
 
         {/* 4. Medios de Pago: ÚNICAMENTE EFECTIVO O TRANSFERENCIA */}
         <div style={{
-          background: '#f8fafc',
-          border: '1.5px solid #e2e8f0',
+          background: 'var(--bg-card2)',
+          border: '1.5px solid var(--border)',
           borderRadius: 10,
           padding: '12px 14px',
           marginBottom: 14
         }}>
-          <label style={{ fontSize: 12, fontWeight: 800, color: '#334155', display: 'block', marginBottom: 8 }}>
+          <label style={{ fontSize: 12, fontWeight: 800, color: 'var(--text-primary)', display: 'block', marginBottom: 8 }}>
             Medio de Pago:
           </label>
 
@@ -587,9 +587,9 @@ export default function ModalRegistrarPagoRecibo({
               style={{
                 padding: '8px 12px',
                 borderRadius: 8,
-                border: medioPago === 'TRANSFERENCIA' ? '2px solid #2563eb' : '1px solid #cbd5e1',
-                background: medioPago === 'TRANSFERENCIA' ? '#eff6ff' : '#fff',
-                color: medioPago === 'TRANSFERENCIA' ? '#1d4ed8' : '#475569',
+                border: medioPago === 'TRANSFERENCIA' ? '2px solid #3b82f6' : '1px solid var(--border)',
+                background: medioPago === 'TRANSFERENCIA' ? 'rgba(59, 130, 246, 0.15)' : 'var(--bg-card)',
+                color: medioPago === 'TRANSFERENCIA' ? '#3b82f6' : 'var(--text-secondary)',
                 fontWeight: 700,
                 fontSize: 12,
                 cursor: 'pointer',
@@ -608,9 +608,9 @@ export default function ModalRegistrarPagoRecibo({
               style={{
                 padding: '8px 12px',
                 borderRadius: 8,
-                border: medioPago === 'EFECTIVO' ? '2px solid #16a34a' : '1px solid #cbd5e1',
-                background: medioPago === 'EFECTIVO' ? '#f0fdf4' : '#fff',
-                color: medioPago === 'EFECTIVO' ? '#15803d' : '#475569',
+                border: medioPago === 'EFECTIVO' ? '2px solid #16a34a' : '1px solid var(--border)',
+                background: medioPago === 'EFECTIVO' ? 'rgba(22, 163, 74, 0.15)' : 'var(--bg-card)',
+                color: medioPago === 'EFECTIVO' ? '#22c55e' : 'var(--text-secondary)',
                 fontWeight: 700,
                 fontSize: 12,
                 cursor: 'pointer',
@@ -628,7 +628,7 @@ export default function ModalRegistrarPagoRecibo({
           {medioPago === 'TRANSFERENCIA' && (
             <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1.5fr', gap: 10 }}>
               <div>
-                <label style={{ fontSize: 11, fontWeight: 700, color: '#475569', display: 'block', marginBottom: 4 }}>
+                <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: 4 }}>
                   Cuenta Receptora:
                 </label>
                 <select
@@ -644,7 +644,7 @@ export default function ModalRegistrarPagoRecibo({
               </div>
 
               <div>
-                <label style={{ fontSize: 11, fontWeight: 700, color: '#475569', display: 'block', marginBottom: 4 }}>
+                <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: 4 }}>
                   No. de Referencia / Comprobante:
                 </label>
                 <input
@@ -662,7 +662,7 @@ export default function ModalRegistrarPagoRecibo({
           {/* Opciones de EFECTIVO */}
           {medioPago === 'EFECTIVO' && (
             <div>
-              <div style={{ display: 'flex', gap: 16, marginBottom: 8, fontSize: 12 }}>
+              <div style={{ display: 'flex', gap: 16, marginBottom: 8, fontSize: 12, color: 'var(--text-primary)' }}>
                 <label style={{ display: 'flex', alignItems: 'center', gap: 5, cursor: 'pointer', fontWeight: 600 }}>
                   <input
                     type="radio"
@@ -686,7 +686,7 @@ export default function ModalRegistrarPagoRecibo({
               {subTipoEfectivo === 'CONSIGNACION' && (
                 <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1.5fr', gap: 10 }}>
                   <div>
-                    <label style={{ fontSize: 11, fontWeight: 700, color: '#475569', display: 'block', marginBottom: 4 }}>
+                    <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: 4 }}>
                       Banco Consignado:
                     </label>
                     <select
@@ -701,7 +701,7 @@ export default function ModalRegistrarPagoRecibo({
                     </select>
                   </div>
                   <div>
-                    <label style={{ fontSize: 11, fontWeight: 700, color: '#475569', display: 'block', marginBottom: 4 }}>
+                    <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: 4 }}>
                       No. Comprobante / Recibo:
                     </label>
                     <input
@@ -722,17 +722,17 @@ export default function ModalRegistrarPagoRecibo({
         {/* 5. Concepto que irá impreso en el Recibo */}
         <div style={{ marginBottom: 12 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-            <label style={{ fontSize: 11.5, fontWeight: 700, color: '#334155' }}>
+            <label style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--text-primary)' }}>
               Concepto del Recibo (Oficial):
             </label>
-            <span style={{ fontSize: 10.5, color: '#64748b' }}>
+            <span style={{ fontSize: 10.5, color: 'var(--text-muted)' }}>
               Incluye cuotas cubiertas, lote oficial y nombre del cliente
             </span>
           </div>
           <input
             type="text"
             className="search-input"
-            style={{ width: '100%', fontSize: 12.5, fontWeight: 600, color: '#0f172a' }}
+            style={{ width: '100%', fontSize: 12.5, fontWeight: 600, color: 'var(--text-primary)' }}
             value={conceptoManual}
             onChange={e => {
               setConceptoManual(e.target.value);
@@ -745,10 +745,10 @@ export default function ModalRegistrarPagoRecibo({
         {/* 6. Observaciones que irán impresas en el Recibo */}
         <div style={{ marginBottom: 16 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-            <label style={{ fontSize: 11.5, fontWeight: 700, color: '#334155' }}>
+            <label style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--text-primary)' }}>
               Observaciones del Recibo:
             </label>
-            <span style={{ fontSize: 10.5, color: '#64748b' }}>
+            <span style={{ fontSize: 10.5, color: 'var(--text-muted)' }}>
               Referencia y canal bancario de recepción
             </span>
           </div>
@@ -764,7 +764,7 @@ export default function ModalRegistrarPagoRecibo({
         </div>
 
         {/* Botones de Acción */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: 10, borderTop: '1px solid #e2e8f0' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: 10, borderTop: '1px solid var(--border)' }}>
           <button
             type="button"
             className="btn btn-ghost"

@@ -605,9 +605,10 @@ export default function ModalRegistrarVenta({
                           width: '100%',
                           padding: '7px 10px 7px 32px',
                           fontSize: 12,
-                          border: '1px solid #cbd5e1',
+                          border: '1px solid var(--border)',
                           borderRadius: 6,
-                          background: '#fff'
+                          background: 'var(--bg-card2)',
+                          color: 'var(--text-primary)'
                         }}
                       />
                     </div>
@@ -927,14 +928,14 @@ export default function ModalRegistrarVenta({
                     display: 'grid',
                     gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
                     gap: 12,
-                    background: '#fff',
+                    background: 'var(--bg-card2)',
                     padding: '10px 14px',
                     borderRadius: 8,
-                    border: '1px dashed #cbd5e1',
+                    border: '1px dashed var(--border)',
                     marginBottom: 14
                   }}>
                     <div>
-                      <label style={{ fontSize: 11, fontWeight: 600, color: '#475569', display: 'block', marginBottom: 4 }}>
+                      <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: 4 }}>
                         Fecha Pago Cuota Inicial
                       </label>
                       <input
@@ -945,7 +946,7 @@ export default function ModalRegistrarVenta({
                       />
                     </div>
                     <div>
-                      <label style={{ fontSize: 11, fontWeight: 600, color: '#475569', display: 'block', marginBottom: 4 }}>
+                      <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: 4 }}>
                         Medio de Pago Cuota Inicial
                       </label>
                       <select
@@ -964,18 +965,18 @@ export default function ModalRegistrarVenta({
                 {/* Plan de financiación si saldo > 0 */}
                 {saldoFinanciado > 0 ? (
                   <div style={{
-                    background: '#fff',
-                    border: '1px solid #e2e8f0',
+                    background: 'var(--bg-card2)',
+                    border: '1px solid var(--border)',
                     borderRadius: 8,
                     padding: 14
                   }}>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: '#1e293b', marginBottom: 10 }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 10 }}>
                       🗓️ Estructura de Financiación (Cuotas Mensuales)
                     </div>
 
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 10, marginBottom: 12 }}>
                       <div>
-                        <label style={{ fontSize: 11, fontWeight: 600, color: '#475569', display: 'block', marginBottom: 4 }}>
+                        <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: 4 }}>
                           Plazo (Número de Cuotas) *
                         </label>
                         <select
