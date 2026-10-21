@@ -7,6 +7,7 @@ const SERVICE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
 const supabase = createClient(SUPABASE_URL, SERVICE_KEY);
 
 const PAGOS_DATA = [
+  // 19 de Octubre de 2026 (En orden de escritura en Excel, iniciando en #3398 como corte acordado)
   {
     reciboNum: 3398,
     loteIdStr: 'LC1 - 11 - 2',
@@ -34,6 +35,14 @@ const PAGOS_DATA = [
   },
   {
     reciboNum: 3401,
+    loteIdStr: 'LC1 - 15 - 8',
+    cuotaNum: 9,
+    monto: 875000,
+    fechaPago: '2026-10-19',
+    clienteNombre: 'MARIA YOLANDA CARACAS LEON / JORGE EDGAR GOMEZ'
+  },
+  {
+    reciboNum: 3402,
     loteIdStr: 'LC1 - 21 - 4',
     cuotaNum: 10,
     monto: 1083000,
@@ -41,7 +50,7 @@ const PAGOS_DATA = [
     clienteNombre: 'NURY JULIETH RODRIGUEZ CASTILLO'
   },
   {
-    reciboNum: 3402,
+    reciboNum: 3403,
     loteIdStr: 'LC2 - 33 - 12',
     cuotaNum: 9,
     monto: 1000000,
@@ -49,7 +58,7 @@ const PAGOS_DATA = [
     clienteNombre: 'SANDRA PATRICIA ESCOBAR CABALLERO'
   },
   {
-    reciboNum: 3403,
+    reciboNum: 3404,
     loteIdStr: 'LC2 - 35 - 9',
     cuotaNum: 6,
     monto: 1000000,
@@ -57,31 +66,33 @@ const PAGOS_DATA = [
     clienteNombre: 'DIANA MARCELA HERRERA RODRIGUEZ'
   },
   {
-    reciboNum: 3404,
+    reciboNum: 3405,
     loteIdStr: 'LC2 - 37 - 11',
     cuotaNum: 5,
     monto: 1000000,
     fechaPago: '2026-10-19',
     clienteNombre: 'RUBEN DARIO REYES MARTIN'
   },
+
+  // 20 de Octubre de 2026 (En orden de escritura en Excel)
   {
-    reciboNum: 3405,
+    reciboNum: 3406,
     loteIdStr: 'LC1 - 3 - 9',
     cuotaNum: 14,
     monto: 875000,
     fechaPago: '2026-10-20',
-    clienteNombre: 'LUISA FERNANDA GOMEZ CARRERO/JUAN DAVID REY'
+    clienteNombre: 'LUISA FERNANDA GOMEZ CARRERO / JUAN DAVID REY'
   },
   {
-    reciboNum: 3406,
+    reciboNum: 3407,
     loteIdStr: 'LC1 - 5 - 6',
     cuotaNum: 8,
     monto: 1231000,
     fechaPago: '2026-10-20',
-    clienteNombre: 'MILENA JOHANNA COCA MEJIA/YEISON ALBERTO MONROY'
+    clienteNombre: 'MILENA JOHANNA COCA MEJIA / YEISON ALBERTO MONROY'
   },
   {
-    reciboNum: 3407,
+    reciboNum: 3408,
     loteIdStr: 'LC1 - 13 - 8',
     cuotaNum: 15,
     monto: 800000,
@@ -89,7 +100,7 @@ const PAGOS_DATA = [
     clienteNombre: 'AURORA LUCIA PAEZ CALDERON'
   },
   {
-    reciboNum: 3408,
+    reciboNum: 3409,
     loteIdStr: 'LC2 - 31 - 1 - 2 - 11 Y 12',
     cuotaNum: 16,
     monto: 3416800,
@@ -97,7 +108,7 @@ const PAGOS_DATA = [
     clienteNombre: 'TULIA ETELVINA VELASQUEZ RODRIGUEZ'
   },
   {
-    reciboNum: 3409,
+    reciboNum: 3410,
     loteIdStr: 'LC2 - 35 - 6',
     cuotaNum: 8,
     monto: 1126300,
@@ -105,21 +116,15 @@ const PAGOS_DATA = [
     clienteNombre: 'RUTH DENIS ALVAREZ BUITRAGO'
   },
   {
-    reciboNum: 3410,
+    reciboNum: 3411,
     loteIdStr: 'LC2 - 47 - 2',
     cuotaNum: 6,
     monto: 1000000,
     fechaPago: '2026-10-20',
     clienteNombre: 'DORA EMILCE CASAS GONZALEZ / JAVIER ERNESTO VIDARTE PENNA'
   },
-  {
-    reciboNum: 3411,
-    loteIdStr: 'LC1 - 15 - 8',
-    cuotaNum: 9,
-    monto: 875000,
-    fechaPago: '2026-10-19',
-    clienteNombre: 'MARIA YOLANDA CARACAS LEON/JORGE EDGAR GOMEZ'
-  },
+
+  // 21 de Octubre de 2026 (En orden de escritura en Excel)
   {
     reciboNum: 3412,
     loteIdStr: 'LC2 - 42 - 5',
