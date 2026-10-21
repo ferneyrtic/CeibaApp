@@ -298,4 +298,67 @@ describe('cierreApi - getCierreMensualData', () => {
     expect(maria).toBeDefined();
     expect(maria.totalComisionesCobradas).toBe(400000);
   });
+
+  it('debe excluir el recibo #3398 del total recaudado del cierre e iniciar estadísticas desde el #3399', async () => {
+    const mockCuotas = [
+      {
+        id: 'c-3398',
+        venta_id: 'v1',
+        numero_cuota: 10,
+        fecha_pago: '2026-10-19',
+        valor_cuota: 875000,
+        valor_pagado: 875000,
+        observacion: 'Recibo #3398 - Transferencia Bancolombia',
+        ventas: {
+          id: 'v1',
+          vendedor_nombre: 'Secretaría',
+          lotes: { id_lote: 'LC1 - 11 - 2' },
+          clientes: { nombre: 'Cesar Lopez', doc_cliente: '79280833' }
+        }
+      },
+      {
+        id: 'c-3399',
+        venta_id: 'v2',
+        numero_cuota: 5,
+        fecha_pago: '2026-10-19',
+        valor_cuota: 1640800,
+        valor_pagado: 1640800,
+        observacion: 'Recibo #3399 - Transferencia Bancolombia',
+        ventas: {
+          id: 'v2',
+          vendedor_nombre: 'Secretaría',
+          lotes: { id_lote: 'LC1 - 4 - 1' },
+          clientes: { nombre: 'Maria Yolanda', doc_cliente: '51648764' }
+        }
+      }
+    ];
+
+    supabase.from.mockImplementation((table) => {
+      if (table === 'cuotas') {
+        return {
+          select: () => ({
+            gte: () => ({
+              lte: () => ({
+                order: async () => ({ data: mockCuotas, error: null })
+              })
+            })
+          })
+        };
+      }
+      return {
+        select: () => ({
+          gte: () => ({ lte: () => ({ order: async () => ({ data: [], error: null }) }) }),
+          eq: () => ({ order: async () => ({ data: [], error: null }) }),
+          in: async () => ({ data: [], error: null })
+        })
+      };
+    });
+
+    const data = await getCierreMensualData('2026-10-01', '2026-10-31', true);
+
+    // Debe contener sólo el ingreso del recibo 3399, no el del 3398
+    expect(data.kpis.totalRecaudadoMes).toBe(1640800);
+    expect(data.cuotasMes.find(c => c.observacion.includes('3398'))).toBeUndefined();
+    expect(data.cuotasMes.find(c => c.observacion.includes('3399'))).toBeDefined();
+  });
 });

@@ -403,6 +403,27 @@ export default function CierreMensual() {
         </div>
       )}
 
+      {/* BANNER INFORMATIVO: RECIBOS EXCLUIDOS POR CORTE PREVIO */}
+      {data?.recibosExcluidosCierre?.length > 0 && (
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 12,
+          background: 'var(--bg-card, #f8fafc)',
+          border: '1px solid var(--border, #cbd5e1)',
+          borderRadius: 8,
+          padding: '12px 16px',
+          fontSize: 13,
+          color: 'var(--text-muted, #475569)'
+        }}>
+          <Receipt size={18} color="#0284c7" style={{ flexShrink: 0 }} />
+          <div>
+            <strong style={{ color: 'var(--text-main, #0f172a)' }}>Control Contable de Caja:</strong>{' '}
+            El Recibo #3398 ($875.000) no se suma al recaudo de este cierre por haberse liquidado en el corte anterior. Las estadísticas y recaudos de este período inician oficialmente desde el <strong>Recibo #3399</strong>.
+          </div>
+        </div>
+      )}
+
       {/* KPIS FINANCIEROS PRINCIPALES */}
       {data && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14, width: '100%', maxWidth: '100%', minWidth: 0, overflow: 'hidden' }}>

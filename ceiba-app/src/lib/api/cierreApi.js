@@ -97,8 +97,10 @@ export const getCierreMensualData = async (param1, param2, forceRefresh = false)
   const recibosCuotaIds = new Set(rawRecibos.filter(r => r.cuota_id).map(r => r.cuota_id));
 
   // 2. Normalizar y Unificar en Lista de Ingresos Efectivos
+  // Filtrar cuotas que ya tienen recibo emitido o que pertenecen a recibos excluidos del cierre (ej. #3398 ya dejado)
   const cuotasMesLegacy = rawCuotas
     .filter(c => !recibosCuotaIds.has(c.id))
+    .filter(c => !c.observacion?.includes('Recibo #3398') && !c.observacion?.includes('Recibo 3398') && !c.observacion?.includes('3398'))
     .map(c => {
       const valor = c.valor_pagado !== null && c.valor_pagado !== undefined
         ? Number(c.valor_pagado)
@@ -126,31 +128,37 @@ export const getCierreMensualData = async (param1, param2, forceRefresh = false)
     })
     .filter(c => c.valor > 0);
 
-  // Recibos Oficiales emitidos en el período (maneja pagos parciales exactos por día)
-  const recibosIngresos = rawRecibos.map(r => {
-    const valor = Number(r.valor) || 0;
-    return {
-      id: `recibo-${r.numero_recibo}`,
-      rawId: r.cuota_id || r.venta_id,
-      tipo: 'CUOTA_MENSUAL',
-      tipoLabel: r.es_pago_completo ? 'Cuota Mensual' : 'Abono Parcial (Recibo)',
-      concepto: r.concepto || (r.numero_cuota ? `Cuota #${r.numero_cuota}` : 'Abono'),
-      numero_cuota: r.numero_cuota || 0,
-      fecha_pago: r.fecha_pago,
-      fecha_vencimiento: r.fecha_pago,
-      valor,
-      medio_pago: r.medio_pago || 'Transferencia',
-      lote: r.lote_id_str || '—',
-      cliente: r.cliente_nombre || '—',
-      doc_cliente: r.cliente_doc || '—',
-      celular: '—',
-      vendedor: r.vendedor_nombre || 'Secretaría',
-      comprobante_url: null,
-      observacion: `Recibo Oficial #${r.numero_recibo}${r.observaciones ? ' | ' + r.observaciones : ''}`,
-      venta_id: r.venta_id,
-      numero_recibo: r.numero_recibo
-    };
-  }).filter(r => r.valor > 0);
+  // Recibos Oficiales emitidos en el período:
+  // Regla contable: El recibo #3398 no entra al cierre porque ya fue dejado/liquidado en el corte anterior.
+  // La estadística y los ingresos de este cierre inician oficialmente desde el recibo #3399 en adelante.
+  const recibosExcluidosCierre = rawRecibos.filter(r => Number(r.numero_recibo) === 3398 || r.excluido_cierre);
+
+  const recibosIngresos = rawRecibos
+    .filter(r => Number(r.numero_recibo) !== 3398 && !r.excluido_cierre)
+    .map(r => {
+      const valor = Number(r.valor) || 0;
+      return {
+        id: `recibo-${r.numero_recibo}`,
+        rawId: r.cuota_id || r.venta_id,
+        tipo: 'CUOTA_MENSUAL',
+        tipoLabel: r.es_pago_completo ? 'Cuota Mensual' : 'Abono Parcial (Recibo)',
+        concepto: r.concepto || (r.numero_cuota ? `Cuota #${r.numero_cuota}` : 'Abono'),
+        numero_cuota: r.numero_cuota || 0,
+        fecha_pago: r.fecha_pago,
+        fecha_vencimiento: r.fecha_pago,
+        valor,
+        medio_pago: r.medio_pago || 'Transferencia',
+        lote: r.lote_id_str || '—',
+        cliente: r.cliente_nombre || '—',
+        doc_cliente: r.cliente_doc || '—',
+        celular: '—',
+        vendedor: r.vendedor_nombre || 'Secretaría',
+        comprobante_url: null,
+        observacion: `Recibo Oficial #${r.numero_recibo}${r.observaciones ? ' | ' + r.observaciones : ''}`,
+        venta_id: r.venta_id,
+        numero_recibo: r.numero_recibo
+      };
+    }).filter(r => r.valor > 0);
 
   const cuotasMes = [...cuotasMesLegacy, ...recibosIngresos];
 
@@ -417,6 +425,7 @@ export const getCierreMensualData = async (param1, param2, forceRefresh = false)
     desgloseMedios,
     recaudoPorDia,
     lotesCompletamentePagados,
+    recibosExcluidosCierre: recibosExcluidosCierre || [],
   };
 
   cierreCache[periodKey] = payload;
