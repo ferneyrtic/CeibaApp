@@ -51,7 +51,7 @@ export default function ModalRegistrarPagoRecibo({
   const [conceptoModificado, setConceptoModificado] = useState(false);
   const [obsModificada, setObsModificada] = useState(false);
 
-  const [proximoReciboNum, setProximoReciboNum] = useState(3175);
+  const [proximoReciboNum, setProximoReciboNum] = useState(3398);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
 

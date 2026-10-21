@@ -2,7 +2,7 @@ import { supabase } from '../supabase';
 import { numeroALetrasCOP } from '../../utils/numeroALetras';
 import { registrarAccion } from './auditApi';
 
-const CONSECUTIVO_INICIAL = 3175;
+const CONSECUTIVO_INICIAL = 3398;
 const LOCAL_STORAGE_KEY = 'ceiba_recibos_caja';
 
 // Cache en memoria para recibos (TTL 15s)

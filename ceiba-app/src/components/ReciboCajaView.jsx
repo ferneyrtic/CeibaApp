@@ -65,7 +65,7 @@ function ReciboCajaContent({ recibo, onClose, onPrint, autoDownload = false }) {
 
   if (!recibo) return null;
 
-  const numRecibo = recibo?.numero_recibo || 3175;
+  const numRecibo = recibo?.numero_recibo || 3398;
   const valorNum = Math.round(Number(recibo?.valor) || 0);
   const valorLetras = typeof recibo?.valor_letras === 'string' && recibo.valor_letras.trim()
     ? recibo.valor_letras
