@@ -97,9 +97,10 @@ export const getCierreMensualData = async (param1, param2, forceRefresh = false)
   const recibosCuotaIds = new Set(rawRecibos.filter(r => r.cuota_id).map(r => r.cuota_id));
 
   // 2. Normalizar y Unificar en Lista de Ingresos Efectivos
-  // Filtrar cuotas que ya tienen recibo emitido o que pertenecen a recibos excluidos del cierre (ej. #3398 ya dejado)
+  // Filtrar cuotas que ya tienen recibo emitido, que pertenecen a lotes de prueba (TEST), o que pertenecen a recibos excluidos del cierre (ej. #3398 ya dejado)
   const cuotasMesLegacy = rawCuotas
     .filter(c => !recibosCuotaIds.has(c.id))
+    .filter(c => !c.ventas?.lotes?.id_lote?.toUpperCase().includes('TEST'))
     .filter(c => !c.observacion?.includes('Recibo #3398') && !c.observacion?.includes('Recibo 3398') && !c.observacion?.includes('3398'))
     .map(c => {
       const valor = c.valor_pagado !== null && c.valor_pagado !== undefined
