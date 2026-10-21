@@ -13,7 +13,8 @@ const PAGOS_DATA = [
     cuotaNum: 10,
     monto: 875000,
     fechaPago: '2026-10-19',
-    clienteNombre: 'CESAR AUGUSTO LOPEZ BUITRAGO'
+    clienteNombre: 'CESAR AUGUSTO LOPEZ BUITRAGO',
+    excluidoCierre: true
   },
   {
     reciboNum: 3399,
@@ -110,6 +111,22 @@ const PAGOS_DATA = [
     monto: 1000000,
     fechaPago: '2026-10-20',
     clienteNombre: 'DORA EMILCE CASAS GONZALEZ / JAVIER ERNESTO VIDARTE PENNA'
+  },
+  {
+    reciboNum: 3411,
+    loteIdStr: 'LC1 - 15 - 8',
+    cuotaNum: 9,
+    monto: 875000,
+    fechaPago: '2026-10-19',
+    clienteNombre: 'MARIA YOLANDA CARACAS LEON/JORGE EDGAR GOMEZ'
+  },
+  {
+    reciboNum: 3412,
+    loteIdStr: 'LC2 - 42 - 5',
+    cuotaNum: 4,
+    monto: 1000000,
+    fechaPago: '2026-10-21',
+    clienteNombre: 'JOSE ISBELIO RAMIREZ CORTES'
   }
 ];
 
@@ -213,6 +230,8 @@ async function main() {
       referencia: 'TRANSF-VERIFICADA',
       es_pago_completo: true,
       saldo_restante_cuota: 0,
+      excluido_cierre: !!item.excluidoCierre,
+      motivo_exclusion_cierre: item.excluidoCierre ? 'Pago previo ya dejado en corte anterior. Estadística entra desde recibo #3399.' : undefined,
       concepto,
       observaciones,
       registrado_por: 'Tatiana (Secretaría)',
