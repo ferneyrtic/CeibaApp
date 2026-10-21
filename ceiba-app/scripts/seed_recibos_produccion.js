@@ -9,11 +9,11 @@ const supabase = createClient(SUPABASE_URL, SERVICE_KEY);
 const PAGOS_DATA = [
   {
     reciboNum: 3398,
-    loteIdStr: 'LC1 - 15 - 8',
-    cuotaNum: 9,
+    loteIdStr: 'LC1 - 11 - 2',
+    cuotaNum: 10,
     monto: 875000,
     fechaPago: '2026-10-19',
-    clienteNombre: 'MARIA YOLANDA CARACAS LEON/JORGE EDGAR GOMEZ'
+    clienteNombre: 'CESAR AUGUSTO LOPEZ BUITRAGO'
   },
   {
     reciboNum: 3399,
