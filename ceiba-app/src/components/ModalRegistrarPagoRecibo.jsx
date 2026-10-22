@@ -51,7 +51,7 @@ export default function ModalRegistrarPagoRecibo({
   const [conceptoModificado, setConceptoModificado] = useState(false);
   const [obsModificada, setObsModificada] = useState(false);
 
-  const [proximoReciboNum, setProximoReciboNum] = useState(3398);
+  const [proximoReciboNum, setProximoReciboNum] = useState(3412);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
 
@@ -177,14 +177,10 @@ export default function ModalRegistrarPagoRecibo({
     }
   }, [cuotas, montoNum, modoImputacion, currentCuota]);
 
-  // Generación dinámica del texto oficial de Concepto
+  // Generación dinámica del texto oficial de Concepto (conciso: solo cuota/abono)
   const conceptoSugerido = useMemo(() => {
-    const rawLote = selectedVenta?.id_lote || selectedVenta?.lotes?.id_lote || '';
-    const loteDesc = formatearLoteDescripcion(rawLote);
-    const cliNom = selectedVenta?.cliente_nombre || selectedVenta?.clientes?.nombre || '';
-
     if (!simulacion || simulacion.afectaciones.length === 0) {
-      return `Abono a contrato - ${loteDesc} - Titular: ${cliNom}`.trim();
+      return 'Abono a contrato';
     }
 
     const afs = simulacion.afectaciones;
@@ -194,7 +190,7 @@ export default function ModalRegistrarPagoRecibo({
       const a = afs[0];
       cuotasTexto = a.completo
         ? `Pago Cuota ${a.numero_cuota} (Totalidad)`
-        : `Abono Parcial Cuota ${a.numero_cuota}`;
+        : `Abono Cuota ${a.numero_cuota}`;
     } else {
       const completas = afs.filter(a => a.completo).map(a => a.numero_cuota);
       const parciales = afs.filter(a => !a.completo).map(a => a.numero_cuota);
@@ -208,7 +204,7 @@ export default function ModalRegistrarPagoRecibo({
       }
     }
 
-    return `${cuotasTexto} - ${loteDesc} - Titular: ${cliNom}`.trim();
+    return cuotasTexto || 'Abono a contrato';
   }, [selectedVenta, simulacion]);
 
   // Generación dinámica del texto oficial de Observaciones
@@ -285,7 +281,7 @@ export default function ModalRegistrarPagoRecibo({
         referenciaPago: referenciaPago.trim() || undefined,
         concepto: conceptoManual.trim() || conceptoSugerido,
         observaciones: observacionesManual.trim() || observacionesSugeridas,
-        registradoPor: user?.user_metadata?.nombre || (isSoporte || role === 'soporte' || user?.email?.toLowerCase().includes('diana') ? 'Diana (Soporte)' : (isSecretaria ? 'Tatiana (Secretaría)' : (user?.email || 'Diana (Soporte)'))),
+        registradoPor: user?.user_metadata?.nombre || (isSoporte || role === 'soporte' || user?.email?.toLowerCase().includes('diana') || user?.email?.toLowerCase().includes('soporte') ? 'Soporte Mora' : (isSecretaria ? 'Secretaría' : (user?.email || 'Secretaría'))),
         ciudad: 'Acacías',
         loteIdStr: rawLote,
         clienteNombre: cliNom,

@@ -80,6 +80,59 @@ function generarCUV(recibo) {
   return `CUV-${num}-${hex.slice(0, 4)}-${hex.slice(4, 8)}`;
 }
 
+/**
+ * Formatea el bloque 'ID CLIENTE' con Nombre de la persona y descripción de Lote
+ * Ejemplo: Ferney Ramos — Lote 3 Manzana 4 (Etapa 2)
+ */
+function formatearIdCliente(recibo) {
+  const cliente = (recibo?.cliente_nombre || 'Cliente').trim();
+  const rawLote = (recibo?.lote_id_str || '').trim();
+  if (!rawLote) return cliente;
+
+  // Formato simple: LC[etapa] - [manzana] - [lote]
+  const matchSimple = rawLote.match(/^LC(\d+)\s*[-–]\s*(\d+)\s*[-–]\s*(\d+)$/i);
+  if (matchSimple) {
+    const [, etapa, manzana, loteNum] = matchSimple;
+    return `${cliente} — Lote ${loteNum} Manzana ${manzana} (Etapa ${etapa})`;
+  }
+
+  // Formato multi-lote: LC1 - 13 - 2 - 3 - 4 Y 5 o LC1 - 8 - 3 Y 4
+  const matchMulti = rawLote.match(/^LC(\d+)\s*[-–]\s*(\d+)\s*[-–]\s*(\d+)\s*(?:Y|&)\s*(\d+)$/i);
+  if (matchMulti) {
+    const [, etapa, manzana, loteA, loteB] = matchMulti;
+    return `${cliente} — Lotes ${loteA} y ${loteB} Manzana ${manzana} (Etapa ${etapa})`;
+  }
+
+  return `${cliente} — ${rawLote}`;
+}
+
+/**
+ * Limpia el texto de concepto para dejar únicamente el concepto de pago (ej. Pago Cuota #4, Abono Cuota #8)
+ * sin redundancias de lote ni cliente (los cuales ya van en 'ID CLIENTE').
+ */
+function limpiarConcepto(concepto, numeroCuota) {
+  if (!concepto && numeroCuota) {
+    return `Pago Cuota #${numeroCuota}`;
+  }
+  if (!concepto) return 'Abono a cuota pactada';
+
+  let texto = String(concepto).trim();
+  if (texto.includes(' - Titular:')) {
+    texto = texto.split(' - Titular:')[0];
+  }
+  if (texto.includes(' - LC')) {
+    texto = texto.split(' - LC')[0];
+  }
+  if (texto.includes(' - Lote TEST')) {
+    texto = texto.split(' - Lote TEST')[0];
+  }
+  if (texto.includes(' - Lote ')) {
+    texto = texto.split(' - Lote ')[0];
+  }
+
+  return texto.trim() || (numeroCuota ? `Pago Cuota #${numeroCuota}` : 'Abono a cuota pactada');
+}
+
 function ReciboCajaContent({ recibo, onClose, onPrint, autoDownload = false }) {
   const reciboRef = useRef(null);
   const [descargado, setDescargado] = useState(false);
@@ -87,7 +140,7 @@ function ReciboCajaContent({ recibo, onClose, onPrint, autoDownload = false }) {
 
   if (!recibo) return null;
 
-  const numRecibo = recibo?.numero_recibo || 3398;
+  const numRecibo = recibo?.numero_recibo || 3412;
   const valorNum = Math.round(Number(recibo?.valor) || 0);
   const valorLetras = typeof recibo?.valor_letras === 'string' && recibo.valor_letras.trim()
     ? recibo.valor_letras
@@ -186,11 +239,10 @@ function ReciboCajaContent({ recibo, onClose, onPrint, autoDownload = false }) {
         doc.setFontSize(10);
         doc.text(`Recibo Nº: ${numRecibo}`, 14, 40);
         doc.text(`Ciudad: Acacías | Fecha: ${fDia}/${fMes}/${fAnio}`, 14, 48);
-        doc.text(`Cliente: ${String(recibo?.cliente_nombre || '')} (Doc: ${String(recibo?.cliente_doc || '')})`, 14, 56);
-        doc.text(`Lote: ${String(recibo?.lote_id_str || '')}`, 14, 64);
-        doc.text(`Valor: $${valorNum.toLocaleString('es-CO')} (${valorLetras})`, 14, 72);
-        doc.text(`Concepto: ${String(recibo?.concepto || '')}`, 14, 80);
-        doc.text(`Observaciones: ${String(recibo?.observaciones || '')}`, 14, 88);
+        doc.text(`ID Cliente: ${formatearIdCliente(recibo)}`, 14, 56);
+        doc.text(`Valor: $${valorNum.toLocaleString('es-CO')} (${valorLetras})`, 14, 66);
+        doc.text(`Concepto: ${limpiarConcepto(recibo?.concepto, recibo?.numero_cuota)}`, 14, 76);
+        doc.text(`Observaciones: ${String(recibo?.observaciones || '')}`, 14, 86);
         doc.save(`Recibo_Caja_${numRecibo}.pdf`);
         setDescargado(true);
       } catch (fallbackErr) {
@@ -600,7 +652,7 @@ function ReciboCajaContent({ recibo, onClose, onPrint, autoDownload = false }) {
               </div>
             </div>
 
-            {/* FILA 2: PAGADO A (SIEMPRE PROYECTO CAMPESTRE LA CEIBA) */}
+            {/* FILA 2: ID CLIENTE */}
             <div style={{
               display: 'flex',
               alignItems: 'center',
@@ -618,17 +670,17 @@ function ReciboCajaContent({ recibo, onClose, onPrint, autoDownload = false }) {
                 letterSpacing: 0.5,
                 whiteSpace: 'nowrap'
               }}>
-                PAGADO A:
+                ID CLIENTE:
               </div>
               <div style={{
                 padding: '6px 14px',
-                fontSize: 13,
+                fontSize: 12.5,
                 fontWeight: 900,
                 color: '#166534',
                 flex: 1,
-                letterSpacing: 0.5
+                letterSpacing: 0.3
               }}>
-                PROYECTO CAMPESTRE LA CEIBA
+                {formatearIdCliente(recibo)}
               </div>
             </div>
 
@@ -686,8 +738,8 @@ function ReciboCajaContent({ recibo, onClose, onPrint, autoDownload = false }) {
               }}>
                 CONCEPTO:
               </div>
-              <div style={{ padding: '8px 12px', fontSize: 11.5, fontWeight: 600, color: '#334155', flex: 1 }}>
-                {typeof recibo?.concepto === 'string' ? recibo.concepto : (recibo?.concepto ? String(recibo.concepto) : 'Abono a cuota pactada')}
+              <div style={{ padding: '8px 12px', fontSize: 11.5, fontWeight: 700, color: '#1e293b', flex: 1 }}>
+                {limpiarConcepto(recibo?.concepto, recibo?.numero_cuota)}
               </div>
             </div>
 
@@ -723,7 +775,7 @@ function ReciboCajaContent({ recibo, onClose, onPrint, autoDownload = false }) {
               </div>
             </div>
 
-            {/* FILA INFERIOR: FIRMA DE RECIBIDO Y CASILLAS C.C. / NIT CON SELLO GRANDE Y AUTENTICADO */}
+            {/* FILA INFERIOR: AVISO OFICIAL Y CASILLAS C.C. / NIT CON SELLO GRANDE Y AUTENTICADO */}
             <div style={{
               display: 'flex',
               justifyContent: 'space-between',
@@ -732,11 +784,13 @@ function ReciboCajaContent({ recibo, onClose, onPrint, autoDownload = false }) {
               paddingTop: 12,
               gap: 20
             }}>
-              {/* Firma de recibido (Izquierda) */}
+              {/* Información Legal y Certificación Contable (Izquierda - sin firma de cliente) */}
               <div style={{ flex: 1.1, paddingBottom: 6 }}>
-                <div style={{ borderBottom: '1.5px solid #475569', width: '85%', marginBottom: 5 }} />
-                <div style={{ fontSize: 9.5, fontWeight: 800, color: '#475569', letterSpacing: 0.5 }}>
-                  FIRMA DE RECIBIDO {recibo?.cliente_nombre ? `· ${String(recibo.cliente_nombre).toUpperCase()}` : ''}
+                <div style={{ fontSize: 9.5, fontWeight: 700, color: '#334155', lineHeight: 1.4 }}>
+                  Comprobante oficial de recaudo emitido y registrado en el sistema contable de Proyecto Campestre La Ceiba S.A.S.
+                </div>
+                <div style={{ fontSize: 8.5, color: '#64748b', marginTop: 4 }}>
+                  Documento auténtico y válido tributariamente sin necesidad de firma manuscrita.
                 </div>
                 {/* Microtexto de seguridad antifalsificación */}
                 <div style={{

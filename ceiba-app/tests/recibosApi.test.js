@@ -28,7 +28,7 @@ describe('recibosApi - Gestión de Recibos de Caja Menor', () => {
     vi.clearAllMocks();
   });
 
-  it('inicia el consecutivo de recibos en 3398 si no existen registros previos', async () => {
+  it('inicia el consecutivo de recibos en 3412 si no existen registros previos', async () => {
     supabase.from.mockReturnValue({
       select: () => ({
         eq: () => ({
@@ -40,7 +40,7 @@ describe('recibosApi - Gestión de Recibos de Caja Menor', () => {
     });
 
     const sig = await obtenerSiguienteNumeroRecibo();
-    expect(sig).toBe(3398);
+    expect(sig).toBe(3412);
   });
 
   it('incrementa el consecutivo a partir del último recibo existente', async () => {
@@ -48,14 +48,14 @@ describe('recibosApi - Gestión de Recibos de Caja Menor', () => {
       select: () => ({
         eq: () => ({
           order: () => ({
-            limit: async () => ({ data: [{ orden: 3398 }], error: null })
+            limit: async () => ({ data: [{ orden: 3412 }], error: null })
           })
         })
       })
     });
 
     const sig = await obtenerSiguienteNumeroRecibo();
-    expect(sig).toBe(3399);
+    expect(sig).toBe(3413);
   });
 
   it('crearReciboCaja genera el texto en letras bancario automáticamente', async () => {
@@ -64,7 +64,7 @@ describe('recibosApi - Gestión de Recibos de Caja Menor', () => {
       select: () => ({
         eq: () => ({
           order: () => ({
-            limit: async () => ({ data: [{ orden: 3398 }], error: null })
+            limit: async () => ({ data: [{ orden: 3411 }], error: null })
           })
         })
       }),
@@ -84,9 +84,9 @@ describe('recibosApi - Gestión de Recibos de Caja Menor', () => {
       cliente_nombre: 'Maria Elvira Gonzalez'
     });
 
-    expect(res.numero_recibo).toBe(3399);
+    expect(res.numero_recibo).toBe(3412);
     expect(res.valor_letras).toBe('QUINIENTOS MIL PESOS M/CTE');
-    expect(insertedPayload.orden).toBe(3399);
+    expect(insertedPayload.orden).toBe(3412);
   });
 
   it('registrarPagoConRecibo mantiene la cuota en estado parcial si el pago no cubre la totalidad', async () => {
@@ -98,7 +98,7 @@ describe('recibosApi - Gestión de Recibos de Caja Menor', () => {
           select: () => ({
             eq: () => ({
               order: () => ({
-                limit: async () => ({ data: [{ orden: 3398 }], error: null })
+                limit: async () => ({ data: [{ orden: 3411 }], error: null })
               })
             })
           }),
@@ -158,8 +158,8 @@ describe('recibosApi - Gestión de Recibos de Caja Menor', () => {
     });
 
     // Verificaciones:
-    // 1. Recibo generado con consecutivo 3399
-    expect(resultado.recibo.numero_recibo).toBe(3399);
+    // 1. Recibo generado con consecutivo 3412
+    expect(resultado.recibo.numero_recibo).toBe(3412);
     expect(resultado.recibo.valor).toBe(500000);
     expect(resultado.recibo.es_pago_completo).toBe(false);
     expect(resultado.recibo.saldo_restante_cuota).toBe(500000);
@@ -168,7 +168,7 @@ describe('recibosApi - Gestión de Recibos de Caja Menor', () => {
     expect(cuotaActualizada.valor_pagado).toBe(500000);
     expect(cuotaActualizada.estado_cuota).not.toBe('PAGA');
     expect(cuotaActualizada.fecha_pago).toBe('2026-10-15');
-    expect(cuotaActualizada.observacion).toContain('Recibo #3399');
+    expect(cuotaActualizada.observacion).toContain('Recibo #3412');
   });
 
   it('no arroja excepción ni falla si datos_maestros rechaza la fila por violación de RLS', async () => {
@@ -205,7 +205,7 @@ describe('recibosApi - Gestión de Recibos de Caja Menor', () => {
     });
 
     expect(res).toBeDefined();
-    expect(res.numero_recibo).toBe(3398);
+    expect(res.numero_recibo).toBe(3412);
     expect(res.valor_letras).toBe('TRESCIENTOS MIL PESOS M/CTE');
   });
 

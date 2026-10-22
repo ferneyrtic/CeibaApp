@@ -2,7 +2,7 @@ import { supabase } from '../supabase';
 import { numeroALetrasCOP } from '../../utils/numeroALetras';
 import { registrarAccion } from './auditApi';
 
-const CONSECUTIVO_INICIAL = 3398;
+const CONSECUTIVO_INICIAL = 3412;
 const LOCAL_STORAGE_KEY = 'ceiba_recibos_caja';
 
 // Cache en memoria para recibos (TTL 15s)
@@ -64,7 +64,8 @@ const guardarReciboLocal = (recibo) => {
  * Inicia en 3175 si no existen recibos previos.
  */
 export const obtenerSiguienteNumeroRecibo = async () => {
-  let maxNum = CONSECUTIVO_INICIAL - 1;
+  // La base oficial confirmada es 3411 (el próximo recibo asignable inicia estrictamente en 3412)
+  let maxNum = Math.max(3411, CONSECUTIVO_INICIAL - 1);
 
   // 1. Verificar recibos en almacenamiento local
   const locales = obtenerRecibosLocales();

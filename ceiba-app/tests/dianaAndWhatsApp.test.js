@@ -14,11 +14,10 @@ describe('Rol y Permisos de Diana (Soporte)', () => {
     expect(getNormalizedRole(userSoporteEmail)).toBe('soporte');
   });
 
-  it('debe tener los permisos correctos definidos para Soporte (Diana)', () => {
+  it('debe tener los permisos correctos definidos para Soporte Mora', () => {
     const soportePerms = ROLE_PERMISSIONS.soporte;
     expect(soportePerms).toBeDefined();
-    expect(soportePerms.label).toContain('Diana');
-    expect(soportePerms.label).toContain('Soporte');
+    expect(soportePerms.label).toBe('Soporte Mora');
     expect(soportePerms.canManageRecibos).toBe(true);
     expect(soportePerms.canViewHistorialAcciones).toBe(true);
     expect(soportePerms.canViewCierre).toBe(false);

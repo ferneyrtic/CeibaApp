@@ -72,11 +72,11 @@ export const ROLE_PERMISSIONS = {
     canDeleteCasosEspeciales: false,
     canManageUsers: false,
     canViewHistorialAcciones: false,
-    label: 'Secretaría (Tatiana)',
+    label: 'Secretaría',
     badgeColor: '#059669',
     badgeBg: '#ecfdf5',
     badgeBorder: '#a7f3d0',
-    description: 'Operación diaria, recaudo de pagos, recibos y desembolso de comisiones (Tatiana)'
+    description: 'Operación diaria, recaudo de pagos, recibos y desembolso de comisiones'
   },
   soporte: {
     canViewCierre: false,
@@ -91,11 +91,11 @@ export const ROLE_PERMISSIONS = {
     canDeleteCasosEspeciales: false,
     canManageUsers: false,
     canViewHistorialAcciones: true,
-    label: 'Soporte (Diana)',
+    label: 'Soporte Mora',
     badgeColor: '#0284c7',
     badgeBg: '#f0f9ff',
     badgeBorder: '#bae6fd',
-    description: 'Gestión y atención de soporte operativo, recaudo y cartera (Diana)'
+    description: 'Gestión y atención de soporte operativo, recaudo y seguimiento de mora'
   }
 };
 
@@ -105,14 +105,14 @@ export function getNormalizedRole(user) {
   if (['admin', 'administrador'].includes(rawRole)) return 'admin';
   if (['propietario', 'gerencia', 'owner'].includes(rawRole)) return 'propietario';
   if (['contadora', 'contador', 'financiero'].includes(rawRole)) return 'contadora';
-  if (['soporte', 'support', 'diana'].includes(rawRole)) return 'soporte';
+  if (['soporte', 'support', 'diana', 'soportemora', 'mora'].includes(rawRole)) return 'soporte';
   if (['secretaria', 'secretario', 'asistente', 'cajero', 'cartera', 'asesor', 'tatiana'].includes(rawRole)) return 'secretaria';
 
   const email = (user.email || '').toLowerCase();
   if (email.startsWith('admin')) return 'admin';
   if (email.startsWith('propietario')) return 'propietario';
   if (email.startsWith('contadora')) return 'contadora';
-  if (email.startsWith('soporte') || email.startsWith('diana')) return 'soporte';
+  if (email.startsWith('soporte') || email.startsWith('soportemora') || email.startsWith('mora') || email.startsWith('diana')) return 'soporte';
   if (email.startsWith('secretaria') || email.startsWith('tatiana')) return 'secretaria';
 
   return 'contadora';

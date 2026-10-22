@@ -124,7 +124,7 @@ export default function Configuracion({ theme, onToggleTheme }) {
         <div className="detail-grid">
           <div className="detail-item">
             <div className="detail-label">Nombre del Usuario</div>
-            <div className="detail-value">{user?.user_metadata?.nombre || (role === 'secretaria' ? 'Tatiana (Secretaría)' : (role === 'soporte' ? 'Diana (Soporte)' : 'Usuario Principal'))}</div>
+            <div className="detail-value">{user?.user_metadata?.nombre || (role === 'secretaria' ? 'Secretaría' : (role === 'soporte' ? 'Soporte Mora' : 'Usuario Principal'))}</div>
           </div>
           <div className="detail-item">
             <div className="detail-label">Correo Electrónico</div>
