@@ -34,6 +34,31 @@ export const formatDate = (value) => {
 };
 
 /**
+ * Formatea una hora a partir de un string ISO, timestamp o string de hora (12 horas con a. m. / p. m.)
+ * en zona horaria de Colombia (America/Bogota).
+ */
+export const formatTime = (value) => {
+  if (!value || value === 'None' || value === 'nan') return null;
+  try {
+    const s = String(value).trim();
+    if (/^\d{4}-\d{2}-\d{2}$/.test(s) || /^\d{2}\/\d{2}\/\d{4}$/.test(s)) return null;
+    if (/^\d{1,2}:\d{2}(\s*(a\.?\s*m\.?|p\.?\s*m\.?|am|pm))?$/i.test(s)) {
+      return s;
+    }
+    const d = new Date(s);
+    if (isNaN(d.getTime())) return null;
+    return d.toLocaleTimeString('es-CO', {
+      timeZone: 'America/Bogota',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true
+    });
+  } catch {
+    return null;
+  }
+};
+
+/**
  * Devuelve el color y etiqueta de badge para un estado de lote
  */
 export const getEstadoBadge = (estado) => {

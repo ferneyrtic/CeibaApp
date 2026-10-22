@@ -212,7 +212,8 @@ export const obtenerTodosLosRecibos = async (forceRefresh = false) => {
                 es_pago_completo: Boolean(r.es_pago_completo),
                 concepto: r.concepto || (r.numero_cuota ? `Pago Cuota #${r.numero_cuota}` : 'Abono a contrato'),
                 observaciones: r.observaciones || (r.medio_pago === 'TRANSFERENCIA' ? `Transferencia a cuenta ${r.banco || 'Bancolombia'}${r.referencia ? ` · Ref: ${r.referencia}` : ''}` : 'Pago en Efectivo'),
-                created_at: r.created_at || (r.fecha_pago ? `${r.fecha_pago}T12:00:00.000Z` : new Date().toISOString()),
+                created_at: r.created_at || null,
+                hora: r.hora || r.hora_pago || null,
                 ...r
               };
               if (!fullRecibo.cliente_nombre) fullRecibo.cliente_nombre = c.ventas?.clientes?.nombre || '';
@@ -236,7 +237,7 @@ export const obtenerTodosLosRecibos = async (forceRefresh = false) => {
   try {
     const { data, error } = await supabase
       .from('datos_maestros')
-      .select('id, orden, valor, created_at')
+      .select('id, orden, valor')
       .eq('tipo', 'RECIBO_CAJA')
       .order('orden', { ascending: false });
 
@@ -283,7 +284,8 @@ export const obtenerTodosLosRecibos = async (forceRefresh = false) => {
               valor_pagado: valNum,
               cliente_doc: parsed.cliente_doc || parsed.cliente_cedula || existing?.cliente_doc || '',
               referencia: parsed.referencia || parsed.referencia_bancaria || existing?.referencia || '',
-              created_at: parsed.created_at || existing?.created_at || item.created_at
+              created_at: parsed.created_at || existing?.created_at || null,
+              hora: parsed.hora || parsed.hora_pago || existing?.hora || null
             };
             mapaRecibos.set(nr, fullRecibo);
           }

@@ -8,7 +8,7 @@ import {
 
 import { useAuth } from '../context/AuthContext';
 import { getCuotasByVenta } from '../lib/api/cartera';
-import { formatCOP, formatDate } from '../utils/helpers';
+import { formatCOP, formatDate, formatTime } from '../utils/helpers';
 import { exportEstadoCuentaMatrizPDF, exportEstadoCuentaInformePDF, exportEstadoCuentaPDF } from '../utils/exportEstadoCuenta';
 import EstadoCuentaMatrizView from '../components/EstadoCuentaMatrizView';
 import AbonosExtraordinariosView from '../components/AbonosExtraordinariosView';
@@ -1557,7 +1557,15 @@ export default function Cartera() {
                                   Nº {numRec}
                                 </span>
                               </td>
-                              <td style={{ padding: '8px 10px', fontWeight: 600 }}>{formatDate(r.fecha_pago)}</td>
+                              <td style={{ padding: '8px 10px', whiteSpace: 'nowrap' }}>
+                                <div style={{ fontWeight: 600, color: '#0f172a' }}>{formatDate(r.fecha_pago)}</div>
+                                {formatTime(r.hora || r.hora_pago || r.created_at || r.timestamp) && (
+                                  <div style={{ fontSize: 10.5, color: '#64748b', marginTop: 2, display: 'flex', alignItems: 'center', gap: 3 }}>
+                                    <Clock size={11} style={{ opacity: 0.7 }} />
+                                    <span>{formatTime(r.hora || r.hora_pago || r.created_at || r.timestamp)}</span>
+                                  </div>
+                                )}
+                              </td>
                               <td style={{ padding: '8px 10px' }}>
                                 <div style={{ fontWeight: 600, color: '#1e293b' }}>
                                   {r.numero_cuota ? `Cuota #${r.numero_cuota}` : 'Abono / Pago'}

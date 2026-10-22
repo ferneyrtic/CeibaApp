@@ -2,9 +2,9 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   Receipt, Search, RefreshCw, Download, Eye, Check, Copy,
   FileText, Calendar, DollarSign, Filter, CheckCircle2,
-  AlertCircle, ArrowRight, ShieldCheck, Tag, X
+  AlertCircle, ArrowRight, ShieldCheck, Tag, X, Clock
 } from 'lucide-react';
-import { formatCOP, formatDate } from '../utils/helpers';
+import { formatCOP, formatDate, formatTime } from '../utils/helpers';
 import { obtenerTodosLosRecibos, obtenerSiguienteNumeroRecibo } from '../lib/api/recibosApi';
 import Pagination from './Pagination';
 
@@ -516,9 +516,25 @@ export default function RecibosListView({ onVerRecibo, onVerExtracto }) {
                         </span>
                       </td>
 
-                      {/* Fecha de Pago */}
-                      <td style={{ fontSize: 12, color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>
-                        {formatDate(r.fecha_pago)}
+                      {/* Fecha de Pago y Hora */}
+                      <td style={{ whiteSpace: 'nowrap' }}>
+                        <div style={{ fontSize: 12, fontWeight: 600, color: '#0f172a' }}>
+                          {formatDate(r.fecha_pago)}
+                        </div>
+                        {formatTime(r.hora || r.hora_pago || r.created_at || r.timestamp) && (
+                          <div style={{
+                            fontSize: 10.5,
+                            color: 'var(--text-muted)',
+                            marginTop: 2,
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 3.5,
+                            fontWeight: 500
+                          }}>
+                            <Clock size={11} style={{ opacity: 0.7 }} />
+                            <span>{formatTime(r.hora || r.hora_pago || r.created_at || r.timestamp)}</span>
+                          </div>
+                        )}
                       </td>
 
                       {/* ID Lote */}
