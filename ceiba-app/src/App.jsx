@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
   LayoutDashboard, Building2, HandCoins, Wallet, Users, BarChart3,
   Settings, TrendingUp, Bell, LogOut, Menu, X, Sun, Moon, Calculator,
-  BadgeDollarSign, HardHat
+  BadgeDollarSign, HardHat, Receipt
 } from 'lucide-react';
 import { useAuth } from './context/AuthContext';
 import Login from './pages/Login';
@@ -10,6 +10,7 @@ import Dashboard from './pages/Dashboard';
 import CierreMensual from './pages/CierreMensual';
 import Comisiones from './pages/Comisiones';
 import Gastos from './pages/Gastos';
+import Recibos from './pages/Recibos';
 import Lotes from './pages/Lotes';
 import Ventas from './pages/Ventas';
 import Cartera from './pages/Cartera';
@@ -19,20 +20,22 @@ import Configuracion from './pages/Configuracion';
 import './index.css';
 
 const NAV_ITEMS = [
-  { id: 'dashboard',  label: 'Dashboard',         icon: LayoutDashboard, section: 'PRINCIPAL' },
-  { id: 'cierre',     label: 'Cierre Mensual',     icon: Calculator,      section: 'FINANZAS' },
-  { id: 'comisiones', label: 'Nómina Comisiones',  icon: BadgeDollarSign, section: 'FINANZAS' },
-  { id: 'gastos',     label: 'Gastos de Obra',     icon: HardHat,         section: 'FINANZAS' },
-  { id: 'lotes',      label: 'Lotes',              icon: Building2,       section: 'GESTIÓN' },
-  { id: 'ventas',     label: 'Ventas',             icon: HandCoins,        section: 'GESTIÓN' },
-  { id: 'cartera',    label: 'Cartera',            icon: Wallet,           section: 'GESTIÓN', badge: true },
-  { id: 'clientes',   label: 'Clientes',           icon: Users,            section: 'GESTIÓN' },
-  { id: 'reportes',   label: 'Reportes',           icon: BarChart3,        section: 'REPORTES' },
-  { id: 'config',     label: 'Configuración',      icon: Settings,         section: 'SISTEMA' },
+  { id: 'dashboard',  label: 'Dashboard',             icon: LayoutDashboard, section: 'PRINCIPAL' },
+  { id: 'recibos',    label: 'Registro de Recibos',    icon: Receipt,         section: 'FINANZAS' },
+  { id: 'cierre',     label: 'Cierre Mensual',         icon: Calculator,      section: 'FINANZAS' },
+  { id: 'comisiones', label: 'Nómina Comisiones',      icon: BadgeDollarSign, section: 'FINANZAS' },
+  { id: 'gastos',     label: 'Gastos de Obra',         icon: HardHat,         section: 'FINANZAS' },
+  { id: 'lotes',      label: 'Lotes',                  icon: Building2,       section: 'GESTIÓN' },
+  { id: 'ventas',     label: 'Ventas',                 icon: HandCoins,        section: 'GESTIÓN' },
+  { id: 'cartera',    label: 'Cartera',                icon: Wallet,           section: 'GESTIÓN', badge: true },
+  { id: 'clientes',   label: 'Clientes',               icon: Users,            section: 'GESTIÓN' },
+  { id: 'reportes',   label: 'Reportes',               icon: BarChart3,        section: 'REPORTES' },
+  { id: 'config',     label: 'Configuración',          icon: Settings,         section: 'SISTEMA' },
 ];
 
 const PAGE_MAP = {
   dashboard:  Dashboard,
+  recibos:    Recibos,
   cierre:     CierreMensual,
   comisiones: Comisiones,
   gastos:     Gastos,
@@ -45,16 +48,17 @@ const PAGE_MAP = {
 };
 
 const PAGE_META = {
-  dashboard:  { title: 'Dashboard',                 sub: 'Resumen general del proyecto La Ceiba' },
-  cierre:     { title: 'Cierre de Cuentas Mensual', sub: 'Control de recaudo esperado, cumplimiento contable y proyección financiera' },
+  dashboard:  { title: 'Dashboard',                     sub: 'Resumen general del proyecto La Ceiba' },
+  recibos:    { title: 'Registro Oficial de Recibos',    sub: 'Historial, búsqueda y control de recibos de caja emitidos' },
+  cierre:     { title: 'Cierre de Cuentas Mensual',     sub: 'Control de recaudo esperado, cumplimiento contable y proyección financiera' },
   comisiones: { title: 'Nómina & Pagos de Comisionistas', sub: 'Control auditable de pagos de comisiones y registro de desembolsos a asesores' },
-  gastos:     { title: 'Gastos de Obra & Operación', sub: 'Control de materiales de construcción, maquinaria, mano de obra y costos de desarrollo' },
-  lotes:      { title: 'Gestión de Lotes',          sub: 'Inventario y estado de todos los lotes' },
-  ventas:     { title: 'Ventas',                    sub: 'Registro y seguimiento de ventas' },
-  cartera:    { title: 'Cartera & Pagos',           sub: 'Control de cuotas, pagos y mora' },
-  clientes:   { title: 'Clientes',                  sub: 'Información y gestión de compradores' },
-  reportes:   { title: 'Reportes',                  sub: 'Exportación y análisis de datos' },
-  config:     { title: 'Configuración',             sub: 'Personalización visual y parámetros del sistema' },
+  gastos:     { title: 'Gastos de Obra & Operación',     sub: 'Control de materiales de construcción, maquinaria, mano de obra y costos de desarrollo' },
+  lotes:      { title: 'Gestión de Lotes',              sub: 'Inventario y estado de todos los lotes' },
+  ventas:     { title: 'Ventas',                        sub: 'Registro y seguimiento de ventas' },
+  cartera:    { title: 'Cartera & Pagos',               sub: 'Control de cuotas, pagos y mora' },
+  clientes:   { title: 'Clientes',                      sub: 'Información y gestión de compradores' },
+  reportes:   { title: 'Reportes',                      sub: 'Exportación y análisis de datos' },
+  config:     { title: 'Configuración',                 sub: 'Personalización visual y parámetros del sistema' },
 };
 
 function Sidebar({ active, onNav, user, onSignOut, isOpen, onClose, permissions, roleInfo, role }) {
@@ -352,7 +356,11 @@ export default function App() {
           <img src="/logo.png" alt="" />
         </div>
         <main className="page-content fade-in" key={page}>
-          <PageComponent theme={theme} onToggleTheme={handleToggleTheme} />
+          <PageComponent
+            theme={theme}
+            onToggleTheme={handleToggleTheme}
+            onNavigateToCartera={() => setPage('cartera')}
+          />
         </main>
 
         <MobileBottomNav

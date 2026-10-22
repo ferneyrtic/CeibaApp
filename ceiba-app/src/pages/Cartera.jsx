@@ -66,6 +66,47 @@ class ModalDetalleErrorBoundary extends React.Component {
   }
 }
 
+class CarteraTabErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+  componentDidCatch(error, errorInfo) {
+    console.error('Error capturado en la pestaña de cartera:', error, errorInfo);
+  }
+  componentDidUpdate(prevProps) {
+    if (prevProps.vistaModo !== this.props.vistaModo && this.state.hasError) {
+      this.setState({ hasError: false, error: null });
+    }
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{ padding: 36, textAlign: 'center', background: '#fef2f2', borderRadius: 8, border: '1px solid #fecaca', margin: '16px 0' }}>
+          <AlertTriangle size={32} color="#dc2626" style={{ margin: '0 auto 10px' }} />
+          <div style={{ fontWeight: 700, color: '#991b1b', fontSize: 15, marginBottom: 6 }}>
+            Problema temporal al cargar esta vista
+          </div>
+          <div style={{ fontSize: 12, color: '#64748b', marginBottom: 16 }}>
+            {this.state.error?.message || 'Error de renderizado'}
+          </div>
+          <button
+            className="btn btn-primary"
+            style={{ fontSize: 12 }}
+            onClick={() => this.setState({ hasError: false, error: null })}
+          >
+            Reintentar vista
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 function getCasoEspecialTag(idLote, listaCasos = []) {
   if (!idLote || !Array.isArray(listaCasos)) return null;
   return obtenerBadgeCasoEspecial(idLote, listaCasos);
@@ -418,7 +459,8 @@ export default function Cartera() {
         </div>
       </div>
 
-      {vistaModo === 'general' && (
+      <CarteraTabErrorBoundary vistaModo={vistaModo}>
+        {vistaModo === 'general' && (
         <>
           {/* Barra de búsqueda y filtros generales */}
           <div className="search-bar" style={{ marginBottom: 16 }}>
@@ -972,7 +1014,7 @@ export default function Cartera() {
       )}
 
       {vistaModo === 'recibos' && (
-        <div style={{ marginTop: 8 }}>
+        <div style={{ marginTop: 8 }} key="vista-recibos">
           <RecibosListView
             onVerRecibo={(recibo) => setReciboParaVer(recibo)}
             onVerExtracto={(idLote, ventaId) => {
@@ -982,6 +1024,7 @@ export default function Cartera() {
           />
         </div>
       )}
+      </CarteraTabErrorBoundary>
 
 
       {/* ── Modal Detalle de Contrato ── */}
