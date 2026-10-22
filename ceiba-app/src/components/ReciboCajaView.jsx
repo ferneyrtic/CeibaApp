@@ -4,6 +4,7 @@ import { Printer, Download, X, Check, Copy, Loader2, AlertTriangle } from 'lucid
 import { formatCOP } from '../utils/helpers';
 import { numeroALetrasCOP } from '../utils/numeroALetras';
 import { LOGO_CEIBA_BASE64 } from '../assets/logoBase64';
+import { SELLO_CEIBA_BASE64 } from '../assets/selloCeibaBase64';
 
 // Error Boundary para evitar cualquier pantalla en blanco si falla el renderizado del recibo
 class ReciboErrorBoundary extends React.Component {
@@ -137,6 +138,7 @@ function ReciboCajaContent({ recibo, onClose, onPrint, autoDownload = false }) {
         const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a5' });
         try {
           doc.addImage(LOGO_CEIBA_BASE64, 'PNG', 12, 10, 20, 20);
+          doc.addImage(SELLO_CEIBA_BASE64, 'PNG', 160, 68, 26, 26);
         } catch (e) {}
         doc.setFontSize(15);
         doc.setTextColor(1, 107, 69);
@@ -708,56 +710,105 @@ function ReciboCajaContent({ recibo, onClose, onPrint, autoDownload = false }) {
                 </div>
               </div>
 
-              {/* Casillas C.C. / NIT / No. */}
+              {/* Bloque Derecho: Sello Validador Oficial + Casillas C.C. / NIT */}
               <div style={{
                 display: 'flex',
-                alignItems: 'center',
-                gap: 8,
-                fontSize: 11,
-                fontWeight: 700,
-                color: '#1e293b'
+                flexDirection: 'column',
+                alignItems: 'flex-end',
+                position: 'relative'
               }}>
-                <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                  <span style={{
-                    width: 14,
-                    height: 14,
-                    border: '1.5px solid #166534',
-                    borderRadius: 3,
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    background: '#166534',
-                    color: '#fff',
-                    fontSize: 10,
-                    fontWeight: 900
-                  }}>
-                    ✓
-                  </span>
-                  C.C.
-                </span>
-
-                <span style={{ display: 'flex', alignItems: 'center', gap: 4, color: '#94a3b8' }}>
-                  <span style={{
-                    width: 14,
-                    height: 14,
-                    border: '1.5px solid #cbd5e1',
-                    borderRadius: 3,
-                    display: 'inline-block'
-                  }} />
-                  NIT.
-                </span>
-
-                <span style={{
-                  borderBottom: '1.5px solid #475569',
-                  padding: '0 8px 2px 8px',
-                  fontFamily: 'monospace',
-                  fontSize: 12,
-                  fontWeight: 800,
-                  minWidth: 100,
-                  textAlign: 'center'
+                {/* Sello Validador Oficial La Ceiba "CANCELADO" */}
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  marginBottom: 6
                 }}>
-                  {recibo?.cliente_doc ? String(recibo.cliente_doc) : '—'}
-                </span>
+                  <div style={{ textAlign: 'right', lineHeight: 1.2 }}>
+                    <div style={{
+                      fontSize: 8.5,
+                      fontWeight: 900,
+                      color: '#15803d',
+                      letterSpacing: 0.8,
+                      textTransform: 'uppercase'
+                    }}>
+                      ✓ AUTENTICADO
+                    </div>
+                    <div style={{
+                      fontSize: 7.5,
+                      fontWeight: 700,
+                      color: '#64748b',
+                      textTransform: 'uppercase'
+                    }}>
+                      VALIDADOR OFICIAL CEIBA
+                    </div>
+                  </div>
+                  <img
+                    src={SELLO_CEIBA_BASE64}
+                    alt="Sello Validador La Ceiba Cancelado"
+                    style={{
+                      width: 82,
+                      height: 82,
+                      objectFit: 'contain',
+                      transform: 'rotate(-4deg)',
+                      filter: 'drop-shadow(0 2px 4px rgba(15, 23, 42, 0.12))',
+                      opacity: 0.95,
+                      display: 'block'
+                    }}
+                  />
+                </div>
+
+                {/* Casillas C.C. / NIT / No. */}
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  fontSize: 11,
+                  fontWeight: 700,
+                  color: '#1e293b'
+                }}>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <span style={{
+                      width: 14,
+                      height: 14,
+                      border: '1.5px solid #166534',
+                      borderRadius: 3,
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      background: '#166534',
+                      color: '#fff',
+                      fontSize: 10,
+                      fontWeight: 900
+                    }}>
+                      ✓
+                    </span>
+                    C.C.
+                  </span>
+
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 4, color: '#94a3b8' }}>
+                    <span style={{
+                      width: 14,
+                      height: 14,
+                      border: '1.5px solid #cbd5e1',
+                      borderRadius: 3,
+                      display: 'inline-block'
+                    }} />
+                    NIT.
+                  </span>
+
+                  <span style={{
+                    borderBottom: '1.5px solid #475569',
+                    padding: '0 8px 2px 8px',
+                    fontFamily: 'monospace',
+                    fontSize: 12,
+                    fontWeight: 800,
+                    minWidth: 100,
+                    textAlign: 'center'
+                  }}>
+                    {recibo?.cliente_doc ? String(recibo.cliente_doc) : '—'}
+                  </span>
+                </div>
               </div>
             </div>
 
