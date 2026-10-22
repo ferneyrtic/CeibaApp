@@ -298,7 +298,11 @@ export default function ModalRegistrarPagoRecibo({
         referenciaPago: referenciaPago.trim() || undefined,
         concepto: conceptoManual.trim() || conceptoSugerido,
         observaciones: observacionesManual.trim() || observacionesSugeridas,
-        registradoPor: user?.user_metadata?.nombre || (isSoporte || role === 'soporte' || user?.email?.toLowerCase().includes('diana') || user?.email?.toLowerCase().includes('soporte') ? 'Soporte Mora' : (isSecretaria ? 'Secretaría' : (user?.email || 'Secretaría'))),
+        registradoPor: isSoporte || role === 'soporte' || user?.email?.toLowerCase().includes('soporte') || user?.email?.toLowerCase().includes('diana')
+          ? 'Soporte Mora'
+          : (isSecretaria || role === 'secretaria' || /tatiana/i.test(user?.user_metadata?.nombre || '') || /secretaria/i.test(user?.email || '')
+            ? 'Secretaría'
+            : (user?.user_metadata?.nombre || 'Secretaría')),
         ciudad: 'Acacías',
         loteIdStr: rawLote,
         clienteNombre: cliNom,

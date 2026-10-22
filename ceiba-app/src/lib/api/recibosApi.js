@@ -14,6 +14,14 @@ export const clearRecibosCache = () => {
   recibosCacheTime = 0;
 };
 
+const sanitizarNombreSecretaria = (str) => {
+  if (!str) return 'Secretaría';
+  const s = String(str).trim();
+  if (/tatiana/i.test(s)) return 'Secretaría';
+  if (/diana/i.test(s)) return 'Soporte Mora';
+  return s;
+};
+
 /**
  * Lee los recibos guardados en el almacenamiento del navegador.
  */
@@ -22,6 +30,7 @@ const obtenerRecibosLocales = () => {
   try {
     const raw = window.localStorage.getItem(LOCAL_STORAGE_KEY);
     const list = raw ? JSON.parse(raw) : [];
+    let modificado = false;
     // Limpieza de seguridad: filtrar recibos de pruebas de desarrollo huérfanos o con lote TEST
     const filtrados = list.filter(r => {
       const num = Number(r.numero_recibo);
@@ -30,8 +39,20 @@ const obtenerRecibosLocales = () => {
       // Limpieza de prueba previa: si hay un 3412 guardado en local que no sea del lote real (LC2 - 32 - 7)
       if (num === 3412 && !String(r.lote_id_str || '').toUpperCase().includes('32')) return false;
       return true;
+    }).map(r => {
+      let rCop = r;
+      if (r.asesor && /tatiana/i.test(r.asesor)) {
+        rCop = { ...rCop, asesor: 'Secretaría' };
+        modificado = true;
+      }
+      if (r.registrado_por && /tatiana/i.test(r.registrado_por)) {
+        rCop = { ...rCop, registrado_por: 'Secretaría' };
+        modificado = true;
+      }
+      return rCop;
     });
-    if (filtrados.length !== list.length) {
+
+    if (filtrados.length !== list.length || modificado) {
       window.localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(filtrados));
     }
     return filtrados;
@@ -250,12 +271,14 @@ export const obtenerTodosLosRecibos = async (forceRefresh = false) => {
               referencia_bancaria: parsed.referencia_bancaria || parsed.referencia || existing?.referencia || '',
               concepto: parsed.concepto || existing?.concepto || (parsed.numero_cuota ? `Pago Cuota #${parsed.numero_cuota}` : 'Abono a contrato'),
               observaciones: parsed.observaciones || existing?.observaciones || '',
-              asesor: parsed.asesor || parsed.registrado_por || existing?.asesor || '',
-              registrado_por: parsed.registrado_por || parsed.asesor || existing?.asesor || '',
+              asesor: sanitizarNombreSecretaria(parsed.asesor || parsed.registrado_por || existing?.asesor),
+              registrado_por: sanitizarNombreSecretaria(parsed.registrado_por || parsed.asesor || existing?.asesor),
               excluido_cierre: Boolean(parsed.excluido_cierre),
               motivo_exclusion_cierre: parsed.motivo_exclusion_cierre || '',
               ...parsed,
               // aseguramos que los campos unificados sobreescriban cualquier divergencia
+              asesor: sanitizarNombreSecretaria(parsed.asesor || parsed.registrado_por || existing?.asesor),
+              registrado_por: sanitizarNombreSecretaria(parsed.registrado_por || parsed.asesor || existing?.asesor),
               valor: valNum,
               valor_pagado: valNum,
               cliente_doc: parsed.cliente_doc || parsed.cliente_cedula || existing?.cliente_doc || '',
@@ -399,7 +422,7 @@ export const registrarPagoConRecibo = async ({
         p_referencia: referenciaPago || '',
         p_concepto: concepto || (cuotaId ? `Abono a cuota` : 'Abono a contrato'),
         p_observaciones: observaciones || '',
-        p_registrado_por: registradoPor || 'Tatiana (Secretaría)',
+        p_registrado_por: sanitizarNombreSecretaria(registradoPor),
         p_ciudad: ciudad || 'Acacías',
         p_lote_id_str: loteIdStr || '',
         p_cliente_nombre: clienteNombre || '',

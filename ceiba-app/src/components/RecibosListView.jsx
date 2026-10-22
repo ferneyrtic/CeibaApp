@@ -8,6 +8,14 @@ import { formatCOP, formatDate } from '../utils/helpers';
 import { obtenerTodosLosRecibos, obtenerSiguienteNumeroRecibo } from '../lib/api/recibosApi';
 import Pagination from './Pagination';
 
+const sanitizarRegistradoPor = (str) => {
+  if (!str) return 'Secretaría';
+  const s = String(str).trim();
+  if (/tatiana/i.test(s)) return 'Secretaría';
+  if (/diana/i.test(s)) return 'Soporte Mora';
+  return s;
+};
+
 export default function RecibosListView({ onVerRecibo, onVerExtracto }) {
   const [recibos, setRecibos] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -128,7 +136,7 @@ export default function RecibosListView({ onVerRecibo, onVerExtracto }) {
         'Medio de Pago': r.medio_pago || 'TRANSFERENCIA',
         'Banco': r.banco || '',
         'Referencia': r.referencia || r.referencia_bancaria || '',
-        'Asesor / Registrado Por': r.asesor || r.registrado_por || '',
+        'Asesor / Registrado Por': sanitizarRegistradoPor(r.asesor || r.registrado_por),
         'Observaciones': r.observaciones || ''
       }));
 
@@ -151,7 +159,7 @@ export default function RecibosListView({ onVerRecibo, onVerExtracto }) {
       `💰 Valor: ${formatCOP(Number(r.valor || r.valor_pagado || 0))}\n` +
       `📋 Concepto: ${r.concepto || ''}\n` +
       `🏦 Medio: ${r.medio_pago || 'Transferencia'} ${r.banco ? `· ${r.banco}` : ''} ${r.referencia ? `(Ref: ${r.referencia})` : ''}\n` +
-      `✍️ Registrado por: ${r.asesor || r.registrado_por || 'Secretaría'}`;
+      `✍️ Registrado por: ${sanitizarRegistradoPor(r.asesor || r.registrado_por)}`;
 
     if (navigator?.clipboard?.writeText) {
       navigator.clipboard.writeText(texto).then(() => {
@@ -589,7 +597,7 @@ export default function RecibosListView({ onVerRecibo, onVerExtracto }) {
 
                       {/* Asesor / Registrado Por */}
                       <td style={{ fontSize: 11.5, color: 'var(--text-secondary)' }}>
-                        {r.asesor || r.registrado_por || 'Secretaría'}
+                        {sanitizarRegistradoPor(r.asesor || r.registrado_por)}
                       </td>
 
                       {/* Acciones */}

@@ -32,12 +32,12 @@ function getCurrentUserInfo() {
           const isSop = rawRole === 'soporte' || emailLower.startsWith('soporte') || emailLower.startsWith('diana');
 
           let defaultName = 'Usuario Operativo';
-          if (isSop) defaultName = 'Diana (Soporte)';
-          else if (isSec) defaultName = 'Tatiana (Secretaría)';
+          if (isSop) defaultName = 'Soporte Mora';
+          else if (isSec) defaultName = 'Secretaría';
           else if (user.email) defaultName = user.email.split('@')[0];
 
           return {
-            email: user.email || (isSop ? 'diana@ceiba.com' : 'secretaria@laceiba.com'),
+            email: user.email || (isSop ? 'soporte@ceiba.com' : 'secretaria@laceiba.com'),
             nombre: user.user_metadata?.nombre || defaultName,
             role: isSop ? 'soporte' : (user.user_metadata?.role || (isSec ? 'secretaria' : 'secretaria'))
           };
@@ -50,7 +50,7 @@ function getCurrentUserInfo() {
 
   return {
     email: 'secretaria@laceiba.com',
-    nombre: 'Tatiana (Secretaría)',
+    nombre: 'Secretaría',
     role: 'secretaria'
   };
 }

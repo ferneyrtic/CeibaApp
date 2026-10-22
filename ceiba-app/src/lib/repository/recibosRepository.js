@@ -62,7 +62,7 @@ export class RecibosRepository {
         p_referencia: validado.referenciaPago || '',
         p_concepto: validado.concepto || 'Abono a contrato',
         p_observaciones: validado.observaciones || '',
-        p_registrado_por: validado.registradoPor || 'Tatiana (Secretaría)',
+        p_registrado_por: validado.registradoPor || 'Secretaría',
         p_ciudad: validado.ciudad || 'Acacías',
         p_lote_id_str: validado.loteIdStr || '',
         p_cliente_nombre: validado.clienteNombre || '',
@@ -202,7 +202,7 @@ export class RecibosRepository {
         observaciones: validado.observaciones,
         es_pago_completo: esPagoCompleto,
         saldo_restante_cuota: saldoRestanteCuota,
-        registrado_por: validado.registradoPor || 'Tatiana (Secretaría)'
+        registrado_por: validado.registradoPor || 'Secretaría'
       });
 
       // 3.4 Auditoría
