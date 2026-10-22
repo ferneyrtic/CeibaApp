@@ -138,16 +138,16 @@ function ReciboCajaContent({ recibo, onClose, onPrint, autoDownload = false }) {
   const [descargado, setDescargado] = useState(false);
   const [generandoPdf, setGenerandoPdf] = useState(false);
 
-  if (!recibo) return null;
-
-  const numRecibo = recibo?.numero_recibo || 3412;
-  const valorNum = Math.round(Number(recibo?.valor) || 0);
-  const valorLetras = typeof recibo?.valor_letras === 'string' && recibo.valor_letras.trim()
-    ? recibo.valor_letras
-    : numeroALetrasCOP(valorNum);
-
+  // ── Todos los hooks ANTES de cualquier return condicional (Rules of Hooks) ──
   // Código Único de Verificación (CUV) para seguridad antifalsificación
   const cuvCode = useMemo(() => generarCUV(recibo), [recibo]);
+
+  // Valores derivados (no son hooks; se calculan de forma segura con recibo null)
+  const numRecibo = recibo?.numero_recibo || 3412;
+  const valorNum = Math.round(Number(recibo?.valor) || 0);
+  const valorLetras = typeof recibo?.valor_letras === 'string' && recibo?.valor_letras.trim()
+    ? recibo.valor_letras
+    : numeroALetrasCOP(valorNum);
 
   // Desglosar fecha de forma 100% segura (YYYY-MM-DD o variantes)
   let fAnio = '—', fMes = '—', fDia = '—';
@@ -253,13 +253,16 @@ function ReciboCajaContent({ recibo, onClose, onPrint, autoDownload = false }) {
     }
   };
 
+  // Early return DESPUÉS de todos los hooks
   useEffect(() => {
+    if (!recibo) return;
     if (autoDownload || recibo?.autoDownload) {
       const timer = setTimeout(() => {
         handleDownloadPDF();
       }, 450);
       return () => clearTimeout(timer);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoDownload, recibo?.autoDownload]);
 
   // Cerrar con tecla Escape
@@ -272,6 +275,8 @@ function ReciboCajaContent({ recibo, onClose, onPrint, autoDownload = false }) {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [onClose]);
+
+  if (!recibo) return null;
 
   return ReactDOM.createPortal(
     <div
