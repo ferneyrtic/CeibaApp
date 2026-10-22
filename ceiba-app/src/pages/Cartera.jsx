@@ -615,7 +615,34 @@ export default function Cartera() {
                                 </button>
                                 {(() => {
                                   const obs = buscarObservacionCobranza(v.id_lote || v.lotes?.id_lote, observacionesCobranza) || (v.observacion_cobranza ? { texto_resumen: v.observacion_cobranza } : null);
-                                  if (!obs) return null;
+                                  if (!obs) {
+                                    return (
+                                      <button
+                                        type="button"
+                                        className="btn btn-ghost"
+                                        style={{
+                                          fontSize: 10,
+                                          padding: '3px 6px',
+                                          gap: 3,
+                                          color: '#64748b',
+                                          borderColor: '#e2e8f0',
+                                          background: '#f8fafc',
+                                          fontWeight: 600,
+                                          display: 'inline-flex',
+                                          alignItems: 'center',
+                                          cursor: 'pointer'
+                                        }}
+                                        title="Agregar observación para este lote"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          openObservacionModal(v, null);
+                                        }}
+                                      >
+                                        <Plus size={10} /> Obs
+                                      </button>
+                                    );
+                                  }
+                                  const isNoNecesita = (obs.respuesta || '').toUpperCase().includes('NO NECESITA') || (obs.gestion || '').toUpperCase().includes('NO NECESITA');
                                   return (
                                     <button
                                       type="button"
@@ -624,24 +651,24 @@ export default function Cartera() {
                                         fontSize: 10.5,
                                         padding: '4px 8px',
                                         gap: 4,
-                                        color: '#92400e',
-                                        borderColor: '#fde68a',
-                                        background: '#fffbeb',
+                                        color: isNoNecesita ? '#047857' : '#92400e',
+                                        borderColor: isNoNecesita ? '#a7f3d0' : '#fde68a',
+                                        background: isNoNecesita ? '#ecfdf5' : '#fffbeb',
                                         fontWeight: 700,
                                         display: 'inline-flex',
                                         alignItems: 'center',
-                                        maxWidth: 170,
+                                        maxWidth: 200,
                                         cursor: 'pointer'
                                       }}
-                                      title={`Observación de Cobranza:\n${obs.texto_resumen || obs.respuesta || ''}\n(Clic para ver historial o registrar llamada)`}
+                                      title={`Observación de Cobranza:\n${obs.texto_resumen || obs.respuesta || ''}\n(Clic para actualizar o editar)`}
                                       onClick={(e) => {
                                         e.stopPropagation();
                                         openObservacionModal(v, obs);
                                       }}
                                     >
-                                      <ClipboardList size={11} color="#d97706" />
+                                      <ClipboardList size={11} color={isNoNecesita ? '#059669' : '#d97706'} />
                                       <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                        {obs.respuesta || obs.texto_resumen}
+                                        {obs.texto_resumen || obs.respuesta}
                                       </span>
                                     </button>
                                   );
@@ -934,7 +961,34 @@ export default function Cartera() {
                           {/* Casilla / Botón de Observación de Cobranza en lugar de WhatsApp */}
                           {(() => {
                             const obs = buscarObservacionCobranza(v.id_lote || v.lotes?.id_lote, observacionesCobranza) || (v.observacion_cobranza ? { texto_resumen: v.observacion_cobranza } : null);
-                            if (!obs) return null;
+                            if (!obs) {
+                              return (
+                                <button
+                                  type="button"
+                                  className="btn btn-ghost"
+                                  style={{
+                                    fontSize: 10.5,
+                                    padding: '4px 8px',
+                                    gap: 3,
+                                    color: '#64748b',
+                                    borderColor: '#cbd5e1',
+                                    background: '#f8fafc',
+                                    fontWeight: 600,
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    cursor: 'pointer'
+                                  }}
+                                  title="Registrar observación de cobranza o acuerdo para este lote"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    openObservacionModal(v, null);
+                                  }}
+                                >
+                                  <Plus size={11} /> + Observación
+                                </button>
+                              );
+                            }
+                            const isNoNecesita = (obs.respuesta || '').toUpperCase().includes('NO NECESITA') || (obs.gestion || '').toUpperCase().includes('NO NECESITA');
                             return (
                               <button
                                 type="button"
@@ -943,24 +997,24 @@ export default function Cartera() {
                                   fontSize: 11,
                                   padding: '4px 8px',
                                   gap: 4,
-                                  color: '#92400e',
-                                  borderColor: '#fde68a',
-                                  background: '#fffbeb',
+                                  color: isNoNecesita ? '#047857' : '#92400e',
+                                  borderColor: isNoNecesita ? '#a7f3d0' : '#fde68a',
+                                  background: isNoNecesita ? '#ecfdf5' : '#fffbeb',
                                   fontWeight: 700,
                                   display: 'inline-flex',
                                   alignItems: 'center',
-                                  maxWidth: 220,
+                                  maxWidth: 240,
                                   cursor: 'pointer'
                                 }}
-                                title={`Observación de Cobranza:\n${obs.texto_resumen || obs.respuesta || ''}\n(Clic para ver historial o registrar llamada)`}
+                                title={`Observación de Cobranza:\n${obs.texto_resumen || obs.respuesta || ''}\n(Clic para actualizar o editar)`}
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   openObservacionModal(v, obs);
                                 }}
                               >
-                                <ClipboardList size={12} color="#d97706" />
+                                <ClipboardList size={12} color={isNoNecesita ? '#059669' : '#d97706'} />
                                 <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                  {obs.respuesta || obs.texto_resumen}
+                                  {obs.texto_resumen || obs.respuesta}
                                 </span>
                               </button>
                             );
@@ -1130,13 +1184,49 @@ export default function Cartera() {
           {/* Tarjeta de Gestión de Cobranza Destacada */}
           {(() => {
             const obs = buscarObservacionCobranza(selected.id_lote || selected.lotes?.id_lote, observacionesCobranza) || (selected.observacion_cobranza ? { texto_resumen: selected.observacion_cobranza } : null);
-            if (!obs) return null;
+            if (!obs) {
+              return (
+                <div style={{
+                  margin: '10px 0 14px',
+                  padding: '10px 16px',
+                  background: '#f8fafc',
+                  border: '1px dashed #cbd5e1',
+                  borderRadius: 8,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: 12
+                }}>
+                  <div style={{ fontSize: 12, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <ClipboardList size={15} color="#94a3b8" />
+                    <span>Sin observación de cobranza registrada para este lote</span>
+                  </div>
+                  <button
+                    type="button"
+                    className="btn btn-ghost"
+                    style={{
+                      fontSize: 11,
+                      padding: '4px 10px',
+                      gap: 5,
+                      color: '#b45309',
+                      borderColor: '#fde68a',
+                      background: '#fffbeb',
+                      fontWeight: 700
+                    }}
+                    onClick={() => openObservacionModal(selected, null)}
+                  >
+                    <Plus size={12} /> + Registrar Observación
+                  </button>
+                </div>
+              );
+            }
+            const isNoNecesita = (obs.respuesta || '').toUpperCase().includes('NO NECESITA') || (obs.gestion || '').toUpperCase().includes('NO NECESITA');
             return (
               <div style={{
                 margin: '10px 0 14px',
                 padding: '12px 16px',
-                background: 'linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)',
-                border: '1px solid #fde68a',
+                background: isNoNecesita ? 'linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%)' : 'linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)',
+                border: `1px solid ${isNoNecesita ? '#a7f3d0' : '#fde68a'}`,
                 borderRadius: 8,
                 display: 'flex',
                 alignItems: 'center',
@@ -1147,28 +1237,42 @@ export default function Cartera() {
                 <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
                   <div style={{
                     width: 32, height: 32, borderRadius: 6,
-                    background: '#d97706', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    background: isNoNecesita ? '#059669' : '#d97706', display: 'flex', alignItems: 'center', justifyContent: 'center',
                     color: '#fff', flexShrink: 0, marginTop: 1
                   }}>
                     <ClipboardList size={18} />
                   </div>
                   <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <span style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px', color: '#92400e' }}>
-                        Historial Gestión de Cobranza
+                      <span style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px', color: isNoNecesita ? '#065f46' : '#92400e' }}>
+                        Observación de Cobranza Actual
                       </span>
                       {obs.fecha && (
-                        <span style={{ fontSize: 10.5, fontWeight: 700, color: '#b45309', background: '#fef3c7', padding: '1px 6px', borderRadius: 4, border: '1px solid #fde68a' }}>
+                        <span style={{ fontSize: 10.5, fontWeight: 700, color: isNoNecesita ? '#047857' : '#b45309', background: '#fff', padding: '1px 6px', borderRadius: 4, border: `1px solid ${isNoNecesita ? '#a7f3d0' : '#fde68a'}` }}>
                           📅 {obs.fecha}
                         </span>
                       )}
                     </div>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: '#78350f', marginTop: 2 }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: isNoNecesita ? '#064e3b' : '#78350f', marginTop: 2 }}>
                       {obs.respuesta || obs.texto_resumen}
                     </div>
+                    {(obs.nota || obs.observacion_adicional) && (
+                      <div style={{
+                        fontSize: 12.5,
+                        color: isNoNecesita ? '#064e3b' : '#451a03',
+                        fontWeight: 600,
+                        marginTop: 4,
+                        background: '#fff',
+                        padding: '6px 10px',
+                        borderRadius: 6,
+                        border: `1px solid ${isNoNecesita ? '#a7f3d0' : '#fde68a'}`
+                      }}>
+                        "{obs.nota || obs.observacion_adicional}"
+                      </div>
+                    )}
                     {obs.gestion && (
-                      <div style={{ fontSize: 11, color: '#92400e', marginTop: 1 }}>
-                        Canal previo: <strong>{obs.gestion}</strong>
+                      <div style={{ fontSize: 11, color: isNoNecesita ? '#065f46' : '#92400e', marginTop: 3 }}>
+                        Canal: <strong>{obs.gestion}</strong>
                       </div>
                     )}
                   </div>
@@ -1181,8 +1285,8 @@ export default function Cartera() {
                     padding: '5px 12px',
                     gap: 5,
                     background: '#fff',
-                    borderColor: '#fde68a',
-                    color: '#b45309',
+                    borderColor: isNoNecesita ? '#a7f3d0' : '#fde68a',
+                    color: isNoNecesita ? '#047857' : '#b45309',
                     fontWeight: 700,
                     whiteSpace: 'nowrap'
                   }}
@@ -1191,7 +1295,7 @@ export default function Cartera() {
                     openObservacionModal(selected, obs);
                   }}
                 >
-                  <Edit2 size={12} /> Gestionar / Nota
+                  <Edit2 size={12} /> Editar Observación
                 </button>
               </div>
             );

@@ -88,6 +88,7 @@ export async function guardarObservacionCobranza(datos, usuarioActual = 'Soporte
     lote_id,
     gestion,
     respuesta,
+    nota,
     fecha,
     observacion_adicional,
     texto_resumen
@@ -102,22 +103,18 @@ export async function guardarObservacionCobranza(datos, usuarioActual = 'Soporte
 
   const fechaActual = fecha || new Date().toISOString().slice(0, 10);
   const nuevaGestion = gestion || (existente ? existente.gestion : 'LLAMADA TELEFONICA');
-  const nuevaRespuesta = respuesta || (existente ? existente.respuesta : (observacion_adicional || 'SE CONTACTÓ AL CLIENTE'));
+  const nuevaRespuesta = respuesta || (existente ? existente.respuesta : 'OBSERVACIÓN REGISTRADA');
+  const notaFinal = (nota !== undefined ? nota : (observacion_adicional !== undefined ? observacion_adicional : (existente?.nota || existente?.observacion_adicional || '')))?.trim() || '';
 
-  // Construir texto resumen si no vino especificado
-  const resumenFinal = texto_resumen || `${nuevaRespuesta} (${fechaActual}${nuevaGestion ? `, ${nuevaGestion}` : ''})`;
-
-  const nuevaEntradaHistorial = {
-    fecha: fechaActual,
-    gestion: nuevaGestion,
-    respuesta: nuevaRespuesta,
-    nota: observacion_adicional || null,
-    autor: usuarioActual || 'Soporte Mora',
-    creado_el: new Date().toISOString()
-  };
-
-  const historialPrevio = (existente && Array.isArray(existente.historial)) ? existente.historial : [];
-  const nuevoHistorial = [nuevaEntradaHistorial, ...historialPrevio];
+  // Construir texto resumen directo y legible con fecha
+  let resumenFinal = texto_resumen;
+  if (!resumenFinal) {
+    if (notaFinal) {
+      resumenFinal = `${nuevaRespuesta}: ${notaFinal} (${fechaActual})`;
+    } else {
+      resumenFinal = `${nuevaRespuesta} (${fechaActual})`;
+    }
+  }
 
   const payloadObjeto = {
     id_lote,
@@ -125,9 +122,11 @@ export async function guardarObservacionCobranza(datos, usuarioActual = 'Soporte
     cliente: datos.cliente || existente?.cliente,
     gestion: nuevaGestion,
     respuesta: nuevaRespuesta,
+    nota: notaFinal || null,
+    observacion_adicional: notaFinal || null,
     fecha: fechaActual,
     texto_resumen: resumenFinal,
-    historial: nuevoHistorial,
+    autor: typeof usuarioActual === 'string' ? usuarioActual : (usuarioActual?.email || 'Soporte Mora'),
     updated_at: new Date().toISOString()
   };
 

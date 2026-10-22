@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { X, Phone, PhoneCall, Calendar, ClipboardList, Clock, CheckCircle2, User, AlertCircle, Plus, History } from 'lucide-react';
+import { X, Phone, PhoneCall, Calendar, ClipboardList, Clock, CheckCircle2, User, AlertCircle, Plus } from 'lucide-react';
 import Modal from './Modal';
 import { guardarObservacionCobranza } from '../lib/api/cobranzaApi';
 import { formatDate } from '../utils/helpers';
 
 const OPCIONES_RESPUESTA = [
+  'NO NECESITA',
   'SOLICITA PLAZO',
   'INDICA QUE EL SIGUIENTE PAGO REALIZA LOS PAGOS ATRASADOS',
   'NO RESPONDE',
@@ -21,7 +22,8 @@ const OPCIONES_GESTION = [
   'LLAMADA TELEFONICA',
   'MENSAJE POR WHATSAPP',
   'VISITA DIRECTA',
-  'CORREO ELECTRÓNICO'
+  'CORREO ELECTRÓNICO',
+  'NO NECESITA'
 ];
 
 export default function ModalObservacionCobranza({
@@ -41,17 +43,24 @@ export default function ModalObservacionCobranza({
   const cleanPhone = telefono ? String(telefono).replace(/\s+/g, '') : '';
 
   const [gestion, setGestion] = useState('LLAMADA TELEFONICA');
-  const [respuesta, setRespuesta] = useState(OPCIONES_RESPUESTA[0]);
+  const [respuesta, setRespuesta] = useState('SOLICITA PLAZO');
   const [respuestaCustom, setRespuestaCustom] = useState('');
   const [fecha, setFecha] = useState(() => new Date().toISOString().slice(0, 10));
   const [notaDetallada, setNotaDetallada] = useState('');
   const [guardando, setGuardando] = useState(false);
-  const [mostrarHistorial, setMostrarHistorial] = useState(true);
 
   // Inicializar o sincronizar cuando cambia
   useEffect(() => {
     if (observacionActual) {
-      if (observacionActual.gestion) setGestion(observacionActual.gestion);
+      if (observacionActual.gestion) {
+        setGestion(observacionActual.gestion);
+      }
+      if (observacionActual.fecha) {
+        setFecha(observacionActual.fecha);
+      }
+      const notaPrevia = observacionActual.nota || observacionActual.observacion_adicional || '';
+      setNotaDetallada(notaPrevia);
+
       if (observacionActual.respuesta) {
         if (OPCIONES_RESPUESTA.includes(observacionActual.respuesta)) {
           setRespuesta(observacionActual.respuesta);
@@ -60,8 +69,14 @@ export default function ModalObservacionCobranza({
           setRespuestaCustom(observacionActual.respuesta);
         }
       }
+    } else {
+      setGestion('LLAMADA TELEFONICA');
+      setRespuesta('SOLICITA PLAZO');
+      setRespuestaCustom('');
+      setNotaDetallada('');
+      setFecha(new Date().toISOString().slice(0, 10));
     }
-  }, [observacionActual]);
+  }, [observacionActual, isOpen]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -71,6 +86,8 @@ export default function ModalObservacionCobranza({
       ? (respuestaCustom.trim() || 'OBSERVACIÓN REGISTRADA')
       : respuesta;
 
+    const notaLimpia = notaDetallada.trim();
+
     try {
       const resultado = await guardarObservacionCobranza({
         id_lote: idLote,
@@ -78,8 +95,9 @@ export default function ModalObservacionCobranza({
         cliente: clienteNombre,
         gestion,
         respuesta: respuestaFinal,
-        fecha,
-        observacion_adicional: notaDetallada.trim() || null
+        nota: notaLimpia || null,
+        observacion_adicional: notaLimpia || null,
+        fecha
       }, usuarioActual || 'Soporte Mora');
 
       if (onGuardado) {
@@ -94,10 +112,10 @@ export default function ModalObservacionCobranza({
     }
   };
 
-  const historial = observacionActual?.historial || [];
+  const isNoNecesita = respuesta === 'NO NECESITA' || gestion === 'NO NECESITA';
 
   return (
-    <Modal onClose={onClose} maxWidth={580} zIndex={100010}>
+    <Modal onClose={onClose} maxWidth={560} zIndex={100010}>
       <div>
         {/* Header */}
         <div style={{
@@ -106,17 +124,17 @@ export default function ModalObservacionCobranza({
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <div style={{
-              width: 36, height: 36, borderRadius: 8,
+              width: 38, height: 38, borderRadius: 8,
               background: '#fef3c7', color: '#b45309',
               display: 'flex', alignItems: 'center', justifyContent: 'center'
             }}>
-              <ClipboardList size={20} />
+              <ClipboardList size={22} />
             </div>
             <div>
               <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: '#0f172a' }}>
-                Gestión de Cobranza & Llamada
+                Observación de Cobranza & Seguimiento
               </h3>
-              <div style={{ fontSize: 12, color: 'var(--text-muted)', display: 'flex', gap: 6, alignItems: 'center' }}>
+              <div style={{ fontSize: 12, color: 'var(--text-muted)', display: 'flex', gap: 6, alignItems: 'center', marginTop: 2 }}>
                 <span>Lote: <strong style={{ color: '#0f172a', fontFamily: 'monospace' }}>{idLote}</strong></span>
                 <span>·</span>
                 <span>Titular: <strong>{clienteNombre}</strong></span>
@@ -139,7 +157,7 @@ export default function ModalObservacionCobranza({
           background: '#f8fafc',
           border: '1px solid #e2e8f0',
           borderRadius: 8,
-          padding: '12px 16px',
+          padding: '10px 14px',
           marginBottom: 16,
           display: 'flex',
           alignItems: 'center',
@@ -148,12 +166,12 @@ export default function ModalObservacionCobranza({
           gap: 10
         }}>
           <div>
-            <div style={{ fontSize: 11, color: '#64748b', fontWeight: 600, textTransform: 'uppercase' }}>
+            <div style={{ fontSize: 10.5, color: '#64748b', fontWeight: 700, textTransform: 'uppercase' }}>
               Teléfono para Llamada Directa
             </div>
-            <div style={{ fontSize: 14, fontWeight: 700, color: '#0f172a', marginTop: 2, display: 'flex', alignItems: 'center', gap: 6 }}>
+            <div style={{ fontSize: 13.5, fontWeight: 700, color: '#0f172a', marginTop: 2, display: 'flex', alignItems: 'center', gap: 6 }}>
               <Phone size={14} color="#2563eb" />
-              {telefono ? telefono : <span style={{ color: '#94a3b8', fontStyle: 'italic' }}>Sin teléfono registrado</span>}
+              {telefono ? telefono : <span style={{ color: '#94a3b8', fontStyle: 'italic', fontWeight: 500 }}>Sin teléfono registrado</span>}
             </div>
           </div>
           {telefono && (
@@ -162,7 +180,7 @@ export default function ModalObservacionCobranza({
               className="btn btn-primary"
               style={{
                 fontSize: 12,
-                padding: '6px 12px',
+                padding: '5px 12px',
                 background: '#2563eb',
                 borderColor: '#2563eb',
                 gap: 6,
@@ -177,102 +195,57 @@ export default function ModalObservacionCobranza({
           )}
         </div>
 
-        {/* Observación Actual Destacada */}
-        {observacionActual && (observacionActual.respuesta || observacionActual.texto_resumen) && (
+        {/* Observación Actual Destacada si ya existe */}
+        {observacionActual && (observacionActual.respuesta || observacionActual.texto_resumen || observacionActual.nota) && (
           <div style={{
-            background: 'linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)',
-            border: '1px solid #fde68a',
+            background: isNoNecesita ? '#ecfdf5' : '#fffbeb',
+            border: `1px solid ${isNoNecesita ? '#a7f3d0' : '#fde68a'}`,
             borderRadius: 8,
             padding: '12px 14px',
             marginBottom: 16
           }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-              <span style={{ fontSize: 10.5, fontWeight: 800, textTransform: 'uppercase', color: '#92400e', letterSpacing: '0.5px' }}>
-                Última Gestión Registrada
+              <span style={{ fontSize: 10.5, fontWeight: 800, textTransform: 'uppercase', color: isNoNecesita ? '#065f46' : '#92400e', letterSpacing: '0.5px' }}>
+                Observación Actual en Sistema
               </span>
               {observacionActual.fecha && (
-                <span style={{ fontSize: 11, fontWeight: 700, color: '#b45309' }}>
+                <span style={{ fontSize: 11, fontWeight: 700, color: isNoNecesita ? '#047857' : '#b45309' }}>
                   📅 {observacionActual.fecha}
                 </span>
               )}
             </div>
-            <div style={{ fontSize: 13, fontWeight: 700, color: '#78350f' }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: isNoNecesita ? '#064e3b' : '#78350f' }}>
               {observacionActual.respuesta || observacionActual.texto_resumen}
             </div>
-            {observacionActual.gestion && (
-              <div style={{ fontSize: 11, color: '#92400e', marginTop: 3 }}>
-                Canal: <strong>{observacionActual.gestion}</strong>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Historial de Gestiones */}
-        {historial.length > 0 && (
-          <div style={{ marginBottom: 16 }}>
-            <div
-              style={{
-                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                fontSize: 12, fontWeight: 700, color: '#475569', marginBottom: 8, cursor: 'pointer'
-              }}
-              onClick={() => setMostrarHistorial(!mostrarHistorial)}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <History size={14} color="#64748b" />
-                Historial de Contacto ({historial.length})
-              </div>
-              <span style={{ fontSize: 11, color: '#3b82f6' }}>
-                {mostrarHistorial ? 'Ocultar' : 'Ver'}
-              </span>
-            </div>
-
-            {mostrarHistorial && (
+            {(observacionActual.nota || observacionActual.observacion_adicional) && (
               <div style={{
-                maxHeight: 140,
-                overflowY: 'auto',
-                border: '1px solid #e2e8f0',
+                fontSize: 12.5,
+                color: isNoNecesita ? '#064e3b' : '#451a03',
+                fontWeight: 600,
+                marginTop: 6,
+                background: '#fff',
+                padding: '6px 10px',
                 borderRadius: 6,
-                padding: '8px 12px',
-                background: '#f8fafc',
-                fontSize: 11.5
+                border: `1px solid ${isNoNecesita ? '#a7f3d0' : '#fde68a'}`
               }}>
-                {historial.map((h, idx) => (
-                  <div
-                    key={idx}
-                    style={{
-                      padding: '6px 0',
-                      borderBottom: idx < historial.length - 1 ? '1px solid #f1f5f9' : 'none',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: 2
-                    }}
-                  >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', color: '#64748b' }}>
-                      <strong>{h.fecha || 'Sin fecha'}</strong>
-                      <span>{h.gestion || 'Llamada'} · {h.autor || 'Cobranza'}</span>
-                    </div>
-                    <div style={{ color: '#0f172a', fontWeight: 600 }}>
-                      {h.respuesta}
-                    </div>
-                    {h.nota && (
-                      <div style={{ color: '#475569', fontStyle: 'italic' }}>
-                        "{h.nota}"
-                      </div>
-                    )}
-                  </div>
-                ))}
+                "{observacionActual.nota || observacionActual.observacion_adicional}"
+              </div>
+            )}
+            {observacionActual.gestion && (
+              <div style={{ fontSize: 11, color: isNoNecesita ? '#065f46' : '#92400e', marginTop: 4 }}>
+                Medio: <strong>{observacionActual.gestion}</strong>
               </div>
             )}
           </div>
         )}
 
-        {/* Formulario para Registrar Nueva Gestión */}
+        {/* Formulario para Registrar / Actualizar Observación */}
         <form onSubmit={handleSubmit}>
           <div style={{
             fontSize: 12, fontWeight: 700, color: '#0f172a',
             borderBottom: '1px solid #e2e8f0', paddingBottom: 6, marginBottom: 12
           }}>
-            Registrar o Actualizar Gestión de Hoy
+            Actualizar Observación y Acuerdo
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
@@ -294,7 +267,7 @@ export default function ModalObservacionCobranza({
 
             <div>
               <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#475569', marginBottom: 4 }}>
-                Fecha de Gestión
+                Fecha Realizada
               </label>
               <input
                 type="date"
@@ -302,6 +275,7 @@ export default function ModalObservacionCobranza({
                 style={{ width: '100%', fontSize: 12 }}
                 value={fecha}
                 onChange={e => setFecha(e.target.value)}
+                required
               />
             </div>
           </div>
@@ -325,7 +299,7 @@ export default function ModalObservacionCobranza({
           {respuesta === 'OTRO' && (
             <div style={{ marginBottom: 12 }}>
               <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#475569', marginBottom: 4 }}>
-                Detalla la respuesta del cliente
+                Escribe la respuesta del cliente
               </label>
               <input
                 type="text"
@@ -340,17 +314,20 @@ export default function ModalObservacionCobranza({
           )}
 
           <div style={{ marginBottom: 18 }}>
-            <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#475569', marginBottom: 4 }}>
-              Observaciones / Acuerdos Específicos (Opcional)
+            <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#0f172a', marginBottom: 4 }}>
+              Observación Específica / Nota del Acuerdo (Lo que dijo el cliente)
             </label>
             <textarea
               className="input"
-              rows={2}
+              rows={3}
               style={{ width: '100%', fontSize: 12, resize: 'vertical' }}
-              placeholder="Ej: Cliente informa que consignará $1.000.000 el 30 de octubre directamente a la cuenta..."
+              placeholder="Ej: Cliente informa que consignará $4.000.000 el viernes 30 porque vendió un ganado. No volver a llamar antes del 30..."
               value={notaDetallada}
               onChange={e => setNotaDetallada(e.target.value)}
             />
+            <div style={{ fontSize: 10.5, color: 'var(--text-muted)', marginTop: 4 }}>
+              Esta nota se guardará y será visible para Diana y para cualquiera que revise el lote después.
+            </div>
           </div>
 
           {/* Botones de acción */}
