@@ -170,13 +170,21 @@ export async function guardarObservacionCobranza(datos, usuarioActual = 'Soporte
     }
 
     // Registrar acción de auditoría
+    const autorStr = typeof usuarioActual === 'string' ? usuarioActual : (usuarioActual?.nombre || usuarioActual?.email || 'Diana (Soporte)');
+    const isSop = /diana|soporte/i.test(autorStr);
     await registrarAccion({
-      accion: 'OBSERVACION_COBRANZA_ACTUALIZADA',
-      tabla_afectada: 'lotes',
-      registro_id: lote_id || id_lote,
+      modulo: 'CARTERA',
+      accion: 'OBSERVACION_COBRANZA',
+      lote_id_str: id_lote,
+      lote_id: lote_id || existente?.lote_id,
+      cliente_nombre: payloadObjeto.cliente || '—',
       descripcion: `Observación de cobranza registrada para lote ${id_lote}: "${resumenFinal}"`,
       detalles: payloadObjeto,
-      usuario_email: typeof usuarioActual === 'string' ? usuarioActual : usuarioActual?.email
+      usuario: {
+        nombre: isSop ? 'Diana (Soporte)' : autorStr,
+        email: isSop ? 'diana@ceiba.com' : 'secretaria@laceiba.com',
+        role: isSop ? 'soporte' : 'secretaria'
+      }
     });
 
   } catch (err) {

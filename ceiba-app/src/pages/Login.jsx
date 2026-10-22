@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { Eye, EyeOff, LogIn, UserPlus, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Eye, EyeOff, LogIn, UserPlus, AlertCircle, CheckCircle2, KeyRound } from 'lucide-react';
 
 export default function Login() {
   const { signIn, signUp } = useAuth();
@@ -304,24 +304,54 @@ export default function Login() {
         </form>
 
         {!isRegister && (
-          <div style={{ marginTop: 24, paddingTop: 18, borderTop: '1px solid #e2e8f0' }}>
+          <div style={{ marginTop: 22, paddingTop: 16, borderTop: '1px solid #e2e8f0' }}>
+            {/* Aviso de Contraseña General Temporal */}
+            <div style={{
+              background: '#f0fdf4',
+              border: '1.5px dashed #86efac',
+              borderRadius: 10,
+              padding: '10px 12px',
+              marginBottom: 14,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 10
+            }}>
+              <div style={{
+                width: 32,
+                height: 32,
+                borderRadius: 8,
+                background: '#dcfce7',
+                color: '#16a34a',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0
+              }}>
+                <KeyRound size={17} />
+              </div>
+              <div style={{ fontSize: 12, color: '#166534', lineHeight: 1.4 }}>
+                <div>Contraseña general temporal: <strong style={{ fontFamily: 'monospace', fontSize: 13, color: '#14532d', background: '#dcfce7', padding: '1px 6px', borderRadius: 4 }}>ceiba123</strong></div>
+                <div style={{ fontSize: 11, color: '#15803d', marginTop: 2 }}>Al ingresar, el sistema te solicitará crear tu contraseña personal.</div>
+              </div>
+            </div>
+
             <div style={{ fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 10, textAlign: 'center' }}>
               Acceso Rápido por Rol
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
               {[
-                { label: '👑 Admin', email: 'admin@ceiba.com', pw: 'admin123', color: '#7c3aed', bg: '#f5f3ff', border: '#ddd6fe' },
-                { label: '🏛️ Propietario', email: 'propietario@ceiba.com', pw: 'propietario123', color: '#b45309', bg: '#fffbeb', border: '#fde68a' },
-                { label: '📊 Contadora', email: 'contadora@ceiba.com', pw: 'contadora123', color: '#1d4ed8', bg: '#eff6ff', border: '#bfdbfe' },
-                { label: '💼 Secretaría', email: 'secretaria@ceiba.com', pw: 'secretaria123', color: '#059669', bg: '#ecfdf5', border: '#a7f3d0' },
-                { label: '🎧 Soporte Mora', email: 'soportemora@ceiba.com', pw: 'soporte123', color: '#0284c7', bg: '#f0f9ff', border: '#bae6fd', span: 2 }
+                { label: '👑 Admin', email: 'admin@ceiba.com', color: '#7c3aed', bg: '#f5f3ff', border: '#ddd6fe' },
+                { label: '🏛️ Propietario', email: 'propietario@ceiba.com', color: '#b45309', bg: '#fffbeb', border: '#fde68a' },
+                { label: '📊 Contadora', email: 'contadora@ceiba.com', color: '#1d4ed8', bg: '#eff6ff', border: '#bfdbfe' },
+                { label: '💼 Secretaría', email: 'secretaria@ceiba.com', color: '#059669', bg: '#ecfdf5', border: '#a7f3d0' },
+                { label: '🎧 Soporte (Diana)', email: 'diana@ceiba.com', color: '#0284c7', bg: '#f0f9ff', border: '#bae6fd', span: 2 }
               ].map(r => (
                 <button
                   key={r.email}
                   type="button"
                   onClick={() => {
                     setEmail(r.email);
-                    setPassword(r.pw);
+                    setPassword('');
                     setError('');
                   }}
                   style={{
@@ -340,7 +370,7 @@ export default function Login() {
                     gap: 4,
                     transition: 'all 0.15s ease'
                   }}
-                  title={`Cargar credenciales de ${r.label}`}
+                  title={`Cargar correo de ${r.label}`}
                 >
                   {r.label}
                 </button>

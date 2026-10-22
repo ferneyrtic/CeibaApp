@@ -7,11 +7,17 @@ import {
 import Modal from './Modal';
 import { getHistorialAcciones, exportarHistorialExcel } from '../lib/api/auditApi';
 
-const MODULOS = ['Todos', 'ABONOS_EXTRAORDINARIOS', 'CASOS_ESPECIALES', 'CARTERA', 'LOTES', 'CUOTAS'];
+const MODULOS = ['Todos', 'RECIBOS_CAJA', 'CARTERA', 'ABONOS_EXTRAORDINARIOS', 'CASOS_ESPECIALES', 'LOTES', 'CUOTAS'];
 
 function getActionBadge(accion) {
   if (!accion) return { label: 'Acción', bg: '#f1f5f9', color: '#475569' };
   const a = accion.toUpperCase();
+  if (a.includes('RECIBO_PAGO') || a.includes('EMISION_RECIBO')) {
+    return { label: '🧾 Recibo Oficial', bg: '#ecfdf5', color: '#059669' };
+  }
+  if (a.includes('SIN_RECIBO')) {
+    return { label: '💰 Abono Contable', bg: '#fef3c7', color: '#b45309' };
+  }
   if (a.includes('AMORTIZACION')) {
     return { label: 'Amortización Extraordinaria', bg: '#dcfce7', color: '#15803d' };
   }
@@ -22,7 +28,7 @@ function getActionBadge(accion) {
     return { label: 'Cambio de Estado', bg: '#fef3c7', color: '#b45309' };
   }
   if (a.includes('OBSERVACION')) {
-    return { label: 'Observación', bg: '#e0f2fe', color: '#0369a1' };
+    return { label: '📞 Cobranza & Seguimiento', bg: '#e0f2fe', color: '#0284c7' };
   }
   return { label: accion, bg: '#f1f5f9', color: '#475569' };
 }

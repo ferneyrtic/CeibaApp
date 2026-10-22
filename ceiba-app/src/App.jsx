@@ -18,6 +18,7 @@ import Cartera from './pages/Cartera';
 import Clientes from './pages/Clientes';
 import Reportes from './pages/Reportes';
 import Configuracion from './pages/Configuracion';
+import ModalCambiarPasswordObligatorio from './components/ModalCambiarPasswordObligatorio';
 import './index.css';
 
 const NAV_ITEMS = [
@@ -295,6 +296,15 @@ export default function App() {
   const [page, setPage] = useState('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [theme, setTheme] = useState(() => localStorage.getItem('ceiba_theme') || 'light');
+  const [mustChangePw, setMustChangePw] = useState(false);
+
+  useEffect(() => {
+    if (user?.user_metadata?.must_change_password) {
+      setMustChangePw(true);
+    } else {
+      setMustChangePw(false);
+    }
+  }, [user]);
 
   // Redirección si se intenta acceder a una sección restringida para el rol
   useEffect(() => {
@@ -333,6 +343,17 @@ export default function App() {
   }
 
   if (!user) return <Login />;
+
+  if (mustChangePw) {
+    return (
+      <ModalCambiarPasswordObligatorio
+        user={user}
+        onSuccess={() => {
+          setMustChangePw(false);
+        }}
+      />
+    );
+  }
 
   const PageComponent = PAGE_MAP[page] || Dashboard;
 

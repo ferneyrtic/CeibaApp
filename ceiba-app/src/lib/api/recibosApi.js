@@ -728,13 +728,31 @@ export const registrarPagoConRecibo = async ({
 
   // 6. Auditoría
   try {
+    const isSop = /diana|soporte/i.test(registradoPor || '');
     await registrarAccion({
       modulo: generarRecibo ? 'RECIBOS_CAJA' : 'CARTERA',
       accion: generarRecibo ? 'EMISION_RECIBO_PAGO' : 'PAGO_REGISTRADO_SIN_RECIBO',
       lote_id_str: loteIdStr || `Venta #${ventaId}`,
+      cliente_nombre: clienteNombre || '—',
       descripcion: generarRecibo
-        ? `Emisión de Recibo de Caja #${numero_recibo} por $${montoNum.toLocaleString('es-CO')} (${conceptoFinal}) a nombre de ${clienteNombre || 'Cliente'}`
-        : `Registro de pago y actualización de cuota(s) sin emisión de recibo oficial por $${montoNum.toLocaleString('es-CO')} (${conceptoFinal}) a nombre de ${clienteNombre || 'Cliente'}`
+        ? `Emisión de Recibo Oficial #${numero_recibo} por $${montoNum.toLocaleString('es-CO')} (${conceptoFinal}) a nombre de ${clienteNombre || 'Cliente'}`
+        : `Registro de abono contable sin recibo oficial por $${montoNum.toLocaleString('es-CO')} (${conceptoFinal}) a nombre de ${clienteNombre || 'Cliente'}`,
+      detalles: {
+        numero_recibo: generarRecibo ? numero_recibo : null,
+        monto: montoNum,
+        medio_pago: medioPago,
+        banco: banco || undefined,
+        referencia_pago: referenciaPago || undefined,
+        fecha_pago: fechaPago,
+        concepto: conceptoFinal,
+        observaciones: obsFinal,
+        sin_recibo: !generarRecibo
+      },
+      usuario: {
+        nombre: registradoPor || (isSop ? 'Diana (Soporte)' : 'Secretaría'),
+        email: isSop ? 'diana@ceiba.com' : 'secretaria@laceiba.com',
+        role: isSop ? 'soporte' : 'secretaria'
+      }
     });
   } catch (errLog) {
     console.warn('Aviso registrando auditoría de recibo:', errLog);
