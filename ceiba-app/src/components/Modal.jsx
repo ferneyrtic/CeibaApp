@@ -25,6 +25,7 @@ export default function Modal({ onClose, children, maxWidth = 600 }) {
   return ReactDOM.createPortal(
     <div
       onClick={onClose}
+      className="modal-portal-overlay"
       style={{
         position:        'fixed',
         top:             0,
@@ -44,6 +45,7 @@ export default function Modal({ onClose, children, maxWidth = 600 }) {
     >
       <div
         onClick={e => e.stopPropagation()}
+        className="modal-portal-content modal"
         style={{
           background:    'var(--bg-card)',
           border:        '1px solid var(--border-light)',

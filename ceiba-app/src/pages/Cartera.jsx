@@ -282,7 +282,7 @@ export default function Cartera() {
       </div>
 
       {/* KPIs de cuotas detalladas */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 12, marginBottom: 20 }}>
+      <div className="cartera-kpi-subgrid">
         {[
           { label: 'Cuotas Al Día / Futuras', val: stats?.cuotasAlDia,     color: '#16a34a', bg: 'rgba(22,163,74,0.08)' },
           { label: 'Cuotas Pagadas',          val: stats?.cuotasPagadas,   color: '#0284c7', bg: 'rgba(2,132,199,0.08)' },
@@ -299,7 +299,7 @@ export default function Cartera() {
 
       {/* ── Selector de Modo de Vista ── */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, borderBottom: '2px solid var(--border)', paddingBottom: 12, flexWrap: 'wrap', gap: 10 }}>
-        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+        <div className="cartera-tabs-selector">
           <button
             className={`btn ${vistaModo === 'general' ? 'btn-primary' : 'btn-ghost'}`}
             style={{ fontSize: 13, gap: 8, padding: '8px 16px', fontWeight: 700 }}
@@ -604,7 +604,7 @@ export default function Cartera() {
           {/* Tarjetas de Diagnóstico de Verificación */}
           <div style={{ padding: '16px 20px', background: '#f8fafc', borderBottom: '1px solid var(--border)' }}>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 16 }}>
+            <div className="cartera-diagnostico-grid">
               <div
                 style={{
                   background: '#fff',
@@ -672,7 +672,7 @@ export default function Cartera() {
             </div>
 
             {/* Píldoras de Filtro y Buscador */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+            <div className="cartera-filtros-bar" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                 {[
                   { id: 'Todos', label: `Todos (${allCartera.filter(v => v.estado === 'VENDIDO').length})` },
@@ -697,7 +697,7 @@ export default function Cartera() {
                 ))}
               </div>
 
-              <div style={{ position: 'relative', width: 280 }}>
+              <div className="cartera-search-wrapper" style={{ position: 'relative', width: 280 }}>
                 <Search size={14} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
                 <input
                   className="search-input"
@@ -952,7 +952,7 @@ export default function Cartera() {
       {selected && (
         <Modal onClose={() => { setSelected(null); setCuotasVenta([]); }} maxWidth={activeTab === 'matriz' ? 980 : 760}>
           <ModalDetalleErrorBoundary>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
+            <div className="modal-header-responsive">
             <div>
               <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 8 }}>
                 {selected.id_lote || selected.lotes?.id_lote} — {selected.cliente_nombre || selected.clientes?.nombre}
@@ -993,7 +993,7 @@ export default function Cartera() {
                 )}
               </div>
             </div>
-            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <div className="modal-header-actions">
               {selected.clientes?.celular && (
                 <a
                   href={getWhatsAppLink(selected.clientes.celular) || '#'}
@@ -1044,7 +1044,7 @@ export default function Cartera() {
           </div>
 
           {/* Selector de pestañas */}
-          <div style={{ display: 'flex', gap: 8, borderBottom: '1px solid var(--border)', marginBottom: 16 }}>
+          <div className="modal-tabs-scrollable">
             {[
               { id: 'resumen', label: 'Resumen Financiero', icon: <FileText size={14} /> },
               { id: 'matriz',  label: 'Estado de Cuenta (Matriz)', icon: <Table size={14} /> },
@@ -1072,7 +1072,7 @@ export default function Cartera() {
           {/* TAB 1: RESUMEN */}
           {activeTab === 'resumen' && (
             <div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 16 }}>
+              <div className="modal-summary-grid">
                 {[
                   { label: 'Precio Total', val: formatCOP(selected.precio_venta), color: '#374151' },
                   { label: 'Cuota Inicial', val: formatCOP(selected.valor_cuota_inicial), color: '#374151' },
@@ -1103,7 +1103,7 @@ export default function Cartera() {
                 </div>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8, fontSize: 12, color: 'var(--text-secondary)' }}>
+              <div className="grid-responsive-2" style={{ gap: 8, fontSize: 12, color: 'var(--text-secondary)' }}>
                 <div><strong>Vendedor:</strong> {selected.vendedor_nombre || '—'}</div>
                 <div><strong>Día de Pago:</strong> {selected.dias_pago || '—'}</div>
                 <div><strong>Medio de Pago:</strong> {selected.medio_pago || '—'}</div>
@@ -1112,7 +1112,7 @@ export default function Cartera() {
                 <div><strong>Área del Lote:</strong> {selected.lotes?.area_m2 ? `${selected.lotes.area_m2} m²` : '—'}</div>
               </div>
 
-              <div style={{ display: 'flex', gap: 10, marginTop: 20, paddingTop: 16, borderTop: '1px solid var(--border)' }}>
+              <div style={{ display: 'flex', gap: 10, marginTop: 20, paddingTop: 16, borderTop: '1px solid var(--border)', flexWrap: 'wrap' }}>
                 <button
                   className="btn btn-ghost"
                   style={{ flex: 1, fontSize: 12, gap: 6 }}

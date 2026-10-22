@@ -152,7 +152,7 @@ export default function Dashboard() {
 
       {/* Progress bars */}
       <div className="card" style={{ marginBottom: 24 }}>
-        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:24 }}>
+        <div className="dashboard-progress-grid">
           <div>
             <div className="progress-label">
               <span>Lotes vendidos</span>
@@ -274,7 +274,7 @@ export default function Dashboard() {
       {/* Estado lotes summary */}
       <div className="card">
         <div style={{ fontWeight:700, fontSize:14, marginBottom:16, color:'var(--text-primary)' }}>Inventario de Lotes</div>
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(5,1fr)', gap:12 }}>
+        <div className="dashboard-lotes-grid">
           {[
             { label:'Vendidos',       val: kpis.lotesVendidos,    color:'#22c55e', bg:'rgba(34,197,94,0.1)' },
             { label:'Disponibles',    val: kpis.lotesDisponibles,  color:'#3b82f6', bg:'rgba(59,130,246,0.1)' },

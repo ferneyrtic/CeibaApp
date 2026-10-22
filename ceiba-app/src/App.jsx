@@ -227,7 +227,7 @@ function Topbar({ page, onToggleSidebar, theme, onToggleTheme, roleInfo }) {
           <span className="notif-dot" style={{ position: 'absolute', top: 6, right: 6 }} />
         </button>
 
-        <div style={{
+        <div className="topbar-activo-pill" style={{
           display: 'flex', alignItems: 'center', gap: 6, padding: '5px 12px',
           background: 'var(--accent-soft)', borderRadius: 'var(--radius-sm)',
           border: '1px solid var(--border-light)',

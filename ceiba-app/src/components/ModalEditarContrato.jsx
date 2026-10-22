@@ -172,7 +172,7 @@ export default function ModalEditarContrato({ venta, onClose, onSuccess }) {
           <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 8 }}>
             👤 Datos del Titular / Cliente
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 10, marginBottom: 8 }}>
+          <div className="grid-responsive-2" style={{ gap: 10, marginBottom: 8 }}>
             <div>
               <label style={{ fontSize: 11, fontWeight: 600, display: 'block', marginBottom: 3 }}>
                 Cédula / Documento:
@@ -202,7 +202,7 @@ export default function ModalEditarContrato({ venta, onClose, onSuccess }) {
             </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
+          <div className="grid-responsive-3" style={{ gap: 10 }}>
             <div>
               <label style={{ fontSize: 11, color: 'var(--text-muted)', display: 'block', marginBottom: 3 }}>Celular:</label>
               <input
@@ -242,7 +242,7 @@ export default function ModalEditarContrato({ venta, onClose, onSuccess }) {
             💰 Condiciones Financieras del Contrato
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, marginBottom: 8 }}>
+          <div className="grid-responsive-3" style={{ gap: 10, marginBottom: 8 }}>
             <div>
               <label style={{ fontSize: 11, fontWeight: 600, display: 'block', marginBottom: 3 }}>Precio Venta ($):</label>
               <input
@@ -279,7 +279,7 @@ export default function ModalEditarContrato({ venta, onClose, onSuccess }) {
             </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, marginBottom: 8 }}>
+          <div className="grid-responsive-3" style={{ gap: 10, marginBottom: 8 }}>
             <div>
               <label style={{ fontSize: 11, fontWeight: 600, display: 'block', marginBottom: 3 }}>Plazo (# cuotas):</label>
               <input
@@ -315,7 +315,7 @@ export default function ModalEditarContrato({ venta, onClose, onSuccess }) {
             </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
+          <div className="grid-responsive-3" style={{ gap: 10 }}>
             <div>
               <label style={{ fontSize: 11, color: 'var(--text-muted)', display: 'block', marginBottom: 3 }}>Fecha Venta:</label>
               <input
@@ -348,7 +348,7 @@ export default function ModalEditarContrato({ venta, onClose, onSuccess }) {
             </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 10 }}>
+          <div className="grid-responsive-2" style={{ gap: 10, marginTop: 10 }}>
             <div>
               <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-primary)', display: 'block', marginBottom: 3 }}>
                 Estado del Lote / Contrato:

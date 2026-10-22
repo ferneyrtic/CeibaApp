@@ -21,7 +21,18 @@ const obtenerRecibosLocales = () => {
   if (typeof window === 'undefined' || !window.localStorage) return [];
   try {
     const raw = window.localStorage.getItem(LOCAL_STORAGE_KEY);
-    return raw ? JSON.parse(raw) : [];
+    const list = raw ? JSON.parse(raw) : [];
+    // Limpieza de seguridad: filtrar recibos de pruebas de desarrollo o >= 3412 que se hayan guardado localmente
+    const filtrados = list.filter(r => {
+      const num = Number(r.numero_recibo);
+      if (num >= 3412) return false;
+      if (String(r.lote_id_str || '').toUpperCase().includes('TEST')) return false;
+      return true;
+    });
+    if (filtrados.length !== list.length) {
+      window.localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(filtrados));
+    }
+    return filtrados;
   } catch (e) {
     return [];
   }

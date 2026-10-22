@@ -199,7 +199,7 @@ export default function ModalNuevoLote({
             📍 Ubicación y Nomenclatura
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 12 }}>
+          <div className="grid-responsive-3" style={{ gap: 10, marginBottom: 12 }}>
             <div>
               <label style={{ fontSize: 11, fontWeight: 600, color: '#475569', display: 'block', marginBottom: 4 }}>
                 Etapa *
@@ -365,7 +365,7 @@ export default function ModalNuevoLote({
         </div>
 
         {/* Estado Inicial y Observación */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 10 }}>
+        <div className="grid-responsive-2" style={{ gap: 10 }}>
           <div>
             <label style={{ fontSize: 11, fontWeight: 600, color: '#475569', display: 'block', marginBottom: 4 }}>
               Estado Comercial Inicial

@@ -494,7 +494,7 @@ export default function ModalRegistrarPagoRecibo({
         )}
 
         {/* 3. Monto a Pagar y Fecha */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 12, marginBottom: 14 }}>
+        <div className="grid-responsive-2" style={{ marginBottom: 14 }}>
           <div>
             <label style={{ fontSize: 12, fontWeight: 700, display: 'block', marginBottom: 4, color: 'var(--text-primary)' }}>
               Monto a Pagar ($ COP):
@@ -626,7 +626,7 @@ export default function ModalRegistrarPagoRecibo({
 
           {/* Opciones de TRANSFERENCIA (Cuentas Bancolombia, Davivienda, Nequi) */}
           {medioPago === 'TRANSFERENCIA' && (
-            <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1.5fr', gap: 10 }}>
+            <div className="grid-responsive-2" style={{ gap: 10 }}>
               <div>
                 <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: 4 }}>
                   Cuenta Receptora:
@@ -684,7 +684,7 @@ export default function ModalRegistrarPagoRecibo({
               </div>
 
               {subTipoEfectivo === 'CONSIGNACION' && (
-                <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1.5fr', gap: 10 }}>
+                <div className="grid-responsive-2" style={{ gap: 10 }}>
                   <div>
                     <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: 4 }}>
                       Banco Consignado:
