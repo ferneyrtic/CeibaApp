@@ -27,6 +27,8 @@ const obtenerRecibosLocales = () => {
       const num = Number(r.numero_recibo);
       if (num === 3413) return false;
       if (String(r.lote_id_str || '').toUpperCase().includes('TEST')) return false;
+      // Limpieza de prueba previa: si hay un 3412 guardado en local que no sea del lote real (LC2 - 32 - 7)
+      if (num === 3412 && !String(r.lote_id_str || '').toUpperCase().includes('32')) return false;
       return true;
     });
     if (filtrados.length !== list.length) {
