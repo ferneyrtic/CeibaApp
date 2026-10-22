@@ -57,13 +57,16 @@ export default function ModalEditarContrato({ venta, onClose, onSuccess }) {
       // 1. Actualizar o crear Cliente si tiene documento o nombre
       if (nombreCliente) {
         if (clienteId) {
-          await updateCliente(clienteId, {
+          const updated = await updateCliente(clienteId, {
             doc_cliente: docCliente ? String(docCliente).trim() : null,
             nombre: nombreCliente.trim(),
             celular: celular ? String(celular).trim() : null,
             ciudad: ciudad ? ciudad.trim() : null,
             direccion: direccion ? direccion.trim() : null,
           });
+          if (updated && updated.id) {
+            clienteId = updated.id;
+          }
         } else if (docCliente) {
           // Si no tenía cliente_id pero ahora se le asignó cédula
           const { data: cliExistente } = await supabase

@@ -34,7 +34,11 @@ export default function ModalEditarCliente({ cliente, onClose, onSuccess }) {
       onClose();
     } catch (err) {
       console.error(err);
-      setError(err.message || 'Error actualizando cliente');
+      if (err.message?.includes('clientes_doc_cliente_key') || err.message?.includes('duplicate key value')) {
+        setError(`La cédula "${docCliente}" ya se encuentra asignada a otro registro.`);
+      } else {
+        setError(err.message || 'Error actualizando cliente');
+      }
     } finally {
       setSaving(false);
     }
