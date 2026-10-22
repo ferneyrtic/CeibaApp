@@ -4,6 +4,23 @@ const CACHE_KEY = 'ceiba_audit_logs_cache';
 let inMemoryLogs = [];
 
 /**
+ * Detecta si un log pertenece exclusivamente a los casos de prueba de Juan Pérez o María Rodríguez.
+ */
+export function isTestAuditLog(log) {
+  if (!log) return false;
+  const s = `${log.cliente_nombre || ''} ${log.lote_id_str || ''} ${log.descripcion || ''} ${JSON.stringify(log.detalles || '')}`.toLowerCase();
+  return (
+    s.includes('juan perez (prueba)') ||
+    s.includes('maria rodriguez (prueba)') ||
+    s.includes('test - 01') ||
+    s.includes('test - 02') ||
+    s.includes('test - 03') ||
+    s.includes('1111222333') ||
+    s.includes('4444555666')
+  );
+}
+
+/**
  * Obtiene el usuario activo actual desde Supabase auth o del localStorage.
  */
 function getCurrentUserInfo() {
@@ -97,6 +114,11 @@ export async function registrarAccion({
     detalles: detalles || {}
   };
 
+  // No registrar logs para casos de prueba
+  if (isTestAuditLog(record)) {
+    return null;
+  }
+
   // 1. Guardar en memoria
   inMemoryLogs.unshift(record);
 
@@ -164,26 +186,39 @@ export async function getHistorialAcciones({ limit = 150, modulo, lote, search }
     console.warn('Error leyendo logs de Supabase, usando caché local:', e);
   }
 
-  // 2. Si Supabase viene vacío o falló, mezclar con caché local o memoria
+  // 2. Si Supabase viene vacío o falló, mezclar con caché local o memoria (depurando casos de prueba)
   const fallbackList = [];
   if (typeof window !== 'undefined' && window.localStorage) {
     try {
       const local = JSON.parse(window.localStorage.getItem(CACHE_KEY) || '[]');
-      fallbackList.push(...local);
+      if (Array.isArray(local)) {
+        // Eliminar permanentemente logs de prueba de la caché del navegador
+        const cleaned = local.filter(l => !isTestAuditLog(l));
+        if (cleaned.length !== local.length) {
+          window.localStorage.setItem(CACHE_KEY, JSON.stringify(cleaned));
+        }
+        fallbackList.push(...cleaned);
+      }
     } catch {
       // ignore
     }
   }
+
+  // Depurar logs de prueba en memoria
+  inMemoryLogs = inMemoryLogs.filter(l => !isTestAuditLog(l));
   fallbackList.push(...inMemoryLogs);
 
   if (fallbackList.length > 0) {
     const existingIds = new Set(logs.map(l => l.id));
     for (const item of fallbackList) {
-      if (!existingIds.has(item.id)) {
+      if (!existingIds.has(item.id) && !isTestAuditLog(item)) {
         logs.push(item);
       }
     }
   }
+
+  // Filtrar de forma estricta cualquier log residual de prueba
+  logs = logs.filter(l => !isTestAuditLog(l));
 
   // Ordenar por fecha descendente
   logs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
