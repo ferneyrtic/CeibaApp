@@ -376,52 +376,56 @@ export const registrarPagoConRecibo = async ({
   ciudad = 'Acacías',
   loteIdStr = '',
   clienteNombre = '',
-  clienteDoc = ''
+  clienteDoc = '',
+  generarRecibo = true
 }) => {
   const montoNum = Math.round(Number(monto) || 0);
   if (montoNum <= 0) {
     throw new Error('El monto a pagar debe ser mayor a cero.');
   }
 
-  // 0. Intentar ejecución atómica en PostgreSQL (Función RPC con Transacción ACID nativa)
-  try {
-    const valorLetras = numeroALetrasCOP(montoNum);
-    const { data: rpcRes, error: rpcErr } = await supabase.rpc('procesar_pago_con_recibo', {
-      p_venta_id: ventaId || null,
-      p_cuota_id: cuotaId || null,
-      p_afectaciones: afectaciones ? JSON.parse(JSON.stringify(afectaciones)) : null,
-      p_monto: montoNum,
-      p_fecha_pago: fechaPago,
-      p_medio_pago: medioPago,
-      p_banco: banco || '',
-      p_referencia: referenciaPago || '',
-      p_concepto: concepto || (cuotaId ? `Abono a cuota` : 'Abono a contrato'),
-      p_observaciones: observaciones || '',
-      p_registrado_por: registradoPor || 'Tatiana (Secretaría)',
-      p_ciudad: ciudad || 'Acacías',
-      p_lote_id_str: loteIdStr || '',
-      p_cliente_nombre: clienteNombre || '',
-      p_cliente_doc: clienteDoc || '',
-      p_valor_letras: valorLetras
-    });
+  // 0. Intentar ejecución atómica en PostgreSQL (solo si se va a emitir recibo oficial)
+  if (generarRecibo) {
+    try {
+      const valorLetras = numeroALetrasCOP(montoNum);
+      const { data: rpcRes, error: rpcErr } = await supabase.rpc('procesar_pago_con_recibo', {
+        p_venta_id: ventaId || null,
+        p_cuota_id: cuotaId || null,
+        p_afectaciones: afectaciones ? JSON.parse(JSON.stringify(afectaciones)) : null,
+        p_monto: montoNum,
+        p_fecha_pago: fechaPago,
+        p_medio_pago: medioPago,
+        p_banco: banco || '',
+        p_referencia: referenciaPago || '',
+        p_concepto: concepto || (cuotaId ? `Abono a cuota` : 'Abono a contrato'),
+        p_observaciones: observaciones || '',
+        p_registrado_por: registradoPor || 'Tatiana (Secretaría)',
+        p_ciudad: ciudad || 'Acacías',
+        p_lote_id_str: loteIdStr || '',
+        p_cliente_nombre: clienteNombre || '',
+        p_cliente_doc: clienteDoc || '',
+        p_valor_letras: valorLetras
+      });
 
-    if (!rpcErr && rpcRes) {
-      const reciboEmitido = typeof rpcRes === 'string' ? JSON.parse(rpcRes) : rpcRes;
-      guardarReciboLocal(reciboEmitido);
-      clearRecibosCache();
-      return {
-        recibo: reciboEmitido,
-        cuotaActualizada: null,
-        cuotasActualizadas: [],
-        transaccionalBackend: true
-      };
+      if (!rpcErr && rpcRes) {
+        const reciboEmitido = typeof rpcRes === 'string' ? JSON.parse(rpcRes) : rpcRes;
+        guardarReciboLocal(reciboEmitido);
+        clearRecibosCache();
+        return {
+          recibo: reciboEmitido,
+          sinRecibo: false,
+          cuotaActualizada: null,
+          cuotasActualizadas: [],
+          transaccionalBackend: true
+        };
+      }
+    } catch (rpcEx) {
+      // Si la función RPC aún no está creada en Supabase, continúa con el rollback compensatorio
     }
-  } catch (rpcEx) {
-    // Si la función RPC aún no está creada en Supabase, continúa con el rollback compensatorio
   }
 
-  // 1. Obtener siguiente número de recibo consecutivo
-  const numero_recibo = await obtenerSiguienteNumeroRecibo();
+  // 1. Obtener siguiente número de recibo consecutivo (solo si se genera recibo oficial)
+  const numero_recibo = generarRecibo ? await obtenerSiguienteNumeroRecibo() : null;
 
   let cuotasActualizadas = [];
   let esPagoCompleto = false;
@@ -468,7 +472,10 @@ export const registrarPagoConRecibo = async ({
           fechaPagoActualizar = fechaPago;
           estadoCuotaActualizar = (a.completo || valPagadoActualizar >= (Number(cuota.valor_cuota) || 0)) ? 'PAGA' : (cuota.estado_cuota === 'VENCIDA' ? 'VENCIDA' : 'AL DÍA');
 
-          const notaRecibo = `Recibo #${numero_recibo} ($${(esAbonoMultiples ? montoNum : a.valor_abono).toLocaleString('es-CO')}) el ${fechaPago}`;
+          const montoFormateado = (esAbonoMultiples ? montoNum : a.valor_abono).toLocaleString('es-CO');
+          const notaRecibo = generarRecibo
+            ? `Recibo #${numero_recibo} ($${montoFormateado}) el ${fechaPago}`
+            : `Abono contable ($${montoFormateado}) el ${fechaPago} (Sin recibo oficial)`;
           const notaCubiertas = esAbonoMultiples
             ? `Abono de $${montoNum.toLocaleString('es-CO')} cubre ${afectaciones.length} cuotas (cuotas ${numerosCuotas[0]} a ${numerosCuotas[numerosCuotas.length - 1]})`
             : '';
@@ -490,8 +497,7 @@ export const registrarPagoConRecibo = async ({
           } catch (e) {}
         }
         if (i === 0) {
-          hist.push({
-            numero_recibo,
+          const entradaHist = {
             fecha_pago: fechaPago,
             valor: montoNum,
             medio_pago: medioPago,
@@ -500,7 +506,6 @@ export const registrarPagoConRecibo = async ({
             es_pago_completo: true,
             concepto: conceptoFinal,
             observaciones: obsFinal,
-            valor_letras: numeroALetrasCOP(montoNum),
             ciudad: 'Acacías',
             pagado_a: 'PROYECTO CAMPESTRE LA CEIBA',
             lote_id_str: loteIdStr,
@@ -510,7 +515,15 @@ export const registrarPagoConRecibo = async ({
             cuota_id: a.id,
             numero_cuota: a.numero_cuota,
             created_at: new Date().toISOString()
-          });
+          };
+          if (generarRecibo) {
+            entradaHist.numero_recibo = numero_recibo;
+            entradaHist.valor_letras = numeroALetrasCOP(montoNum);
+          } else {
+            entradaHist.sin_recibo = true;
+            entradaHist.tipo = 'PAGO_DIRECTO_SIN_RECIBO';
+          }
+          hist.push(entradaHist);
         }
 
         const { data: updated } = await supabase
@@ -562,7 +575,10 @@ export const registrarPagoConRecibo = async ({
       nuevoEstado = cuota.estado_cuota === 'VENCIDA' ? 'VENCIDA' : 'AL DÍA';
     }
 
-    const notaRecibo = `Recibo #${numero_recibo} ($${montoNum.toLocaleString('es-CO')}) el ${fechaPago}`;
+    const montoFormateado = montoNum.toLocaleString('es-CO');
+    const notaRecibo = generarRecibo
+      ? `Recibo #${numero_recibo} ($${montoFormateado}) el ${fechaPago}`
+      : `Abono contable ($${montoFormateado}) el ${fechaPago} (Sin recibo oficial)`;
     const obsCuota = cuota.observacion
       ? `${cuota.observacion} | ${notaRecibo}`.trim()
       : notaRecibo;
@@ -575,8 +591,7 @@ export const registrarPagoConRecibo = async ({
         else if (parsed && typeof parsed === 'object') historialRecibos = [parsed];
       } catch (e) {}
     }
-    historialRecibos.push({
-      numero_recibo,
+    const entradaHistorialCuota = {
       fecha_pago: fechaPago,
       valor: montoNum,
       medio_pago: medioPago,
@@ -585,7 +600,6 @@ export const registrarPagoConRecibo = async ({
       es_pago_completo: esPagoCompleto,
       concepto: conceptoFinal,
       observaciones: obsFinal,
-      valor_letras: numeroALetrasCOP(montoNum),
       ciudad: 'Acacías',
       pagado_a: 'PROYECTO CAMPESTRE LA CEIBA',
       lote_id_str: loteIdStr,
@@ -595,7 +609,15 @@ export const registrarPagoConRecibo = async ({
       cuota_id: cuotaId,
       numero_cuota: numeroCuota,
       created_at: new Date().toISOString()
-    });
+    };
+    if (generarRecibo) {
+      entradaHistorialCuota.numero_recibo = numero_recibo;
+      entradaHistorialCuota.valor_letras = numeroALetrasCOP(montoNum);
+    } else {
+      entradaHistorialCuota.sin_recibo = true;
+      entradaHistorialCuota.tipo = 'PAGO_DIRECTO_SIN_RECIBO';
+    }
+    historialRecibos.push(entradaHistorialCuota);
 
     const { data: cUpdated, error: uErr } = await supabase
       .from('cuotas')
@@ -653,38 +675,43 @@ export const registrarPagoConRecibo = async ({
     }
   }
 
-  // 5. Crear el recibo oficial
-  const reciboEmitido = await crearReciboCaja({
-    numero_recibo,
-    pagado_a: 'PROYECTO CAMPESTRE LA CEIBA',
-    ciudad: 'Acacías',
-    venta_id: ventaId,
-    cuota_id: cuotaId,
-    numero_cuota: numeroCuota,
-    afectaciones: afectaciones || undefined,
-    lote_id_str: loteIdStr,
-    cliente_nombre: clienteNombre,
-    cliente_doc: clienteDoc,
-    fecha_pago: fechaPago,
-    valor: montoNum,
-    valor_letras: numeroALetrasCOP(montoNum),
-    concepto: conceptoFinal,
-    medio_pago: medioPago,
-    banco: banco || undefined,
-    referencia_pago: referenciaPago || undefined,
-    observaciones: obsFinal,
-    es_pago_completo: esPagoCompleto,
-    saldo_restante_cuota: saldoRestanteCuota,
-    registrado_por: registradoPor
-  });
+  // 5. Crear el recibo oficial (solo si generarRecibo es true)
+  let reciboEmitido = null;
+  if (generarRecibo) {
+    reciboEmitido = await crearReciboCaja({
+      numero_recibo,
+      pagado_a: 'PROYECTO CAMPESTRE LA CEIBA',
+      ciudad: 'Acacías',
+      venta_id: ventaId,
+      cuota_id: cuotaId,
+      numero_cuota: numeroCuota,
+      afectaciones: afectaciones || undefined,
+      lote_id_str: loteIdStr,
+      cliente_nombre: clienteNombre,
+      cliente_doc: clienteDoc,
+      fecha_pago: fechaPago,
+      valor: montoNum,
+      valor_letras: numeroALetrasCOP(montoNum),
+      concepto: conceptoFinal,
+      medio_pago: medioPago,
+      banco: banco || undefined,
+      referencia_pago: referenciaPago || undefined,
+      observaciones: obsFinal,
+      es_pago_completo: esPagoCompleto,
+      saldo_restante_cuota: saldoRestanteCuota,
+      registrado_por: registradoPor
+    });
+  }
 
   // 6. Auditoría
   try {
     await registrarAccion({
-      modulo: 'RECIBOS_CAJA',
-      accion: 'EMISION_RECIBO_PAGO',
+      modulo: generarRecibo ? 'RECIBOS_CAJA' : 'CARTERA',
+      accion: generarRecibo ? 'EMISION_RECIBO_PAGO' : 'PAGO_REGISTRADO_SIN_RECIBO',
       lote_id_str: loteIdStr || `Venta #${ventaId}`,
-      descripcion: `Emisión de Recibo de Caja #${numero_recibo} por $${montoNum.toLocaleString('es-CO')} (${conceptoFinal}) a nombre de ${clienteNombre || 'Cliente'}`
+      descripcion: generarRecibo
+        ? `Emisión de Recibo de Caja #${numero_recibo} por $${montoNum.toLocaleString('es-CO')} (${conceptoFinal}) a nombre de ${clienteNombre || 'Cliente'}`
+        : `Registro de pago y actualización de cuota(s) sin emisión de recibo oficial por $${montoNum.toLocaleString('es-CO')} (${conceptoFinal}) a nombre de ${clienteNombre || 'Cliente'}`
     });
   } catch (errLog) {
     console.warn('Aviso registrando auditoría de recibo:', errLog);
@@ -692,6 +719,7 @@ export const registrarPagoConRecibo = async ({
 
   return {
     recibo: reciboEmitido,
+    sinRecibo: !generarRecibo,
     cuotaActualizada: cuotasActualizadas[0] || null,
     cuotasActualizadas
   };

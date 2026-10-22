@@ -55,6 +55,10 @@ export default function ModalRegistrarPagoRecibo({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
 
+  // Modo sin recibo oficial (para cargar pagos no imputados sin generar recibo de caja)
+  const [sinRecibo, setSinRecibo] = useState(false);
+  const [pagoSinReciboExitoso, setPagoSinReciboExitoso] = useState(null);
+
   // Recibo recién emitido para auto-descarga y previsualización
   const [reciboGenerado, setReciboGenerado] = useState(null);
 
@@ -298,23 +302,103 @@ export default function ModalRegistrarPagoRecibo({
         ciudad: 'Acacías',
         loteIdStr: rawLote,
         clienteNombre: cliNom,
-        clienteDoc: cliDoc
+        clienteDoc: cliDoc,
+        generarRecibo: !sinRecibo
       });
 
-      // Abrir recibo generado en pantalla con auto-descarga inmediata del PDF
-      setReciboGenerado({
-        ...res.recibo,
-        autoDownload: true
-      });
-
-      if (onSuccess) onSuccess();
+      if (sinRecibo) {
+        setPagoSinReciboExitoso({
+          monto: montoNum,
+          lote: rawLote,
+          cliente: cliNom,
+          cuotasAfectadas: res.cuotasActualizadas || []
+        });
+        if (onSuccess) onSuccess();
+      } else {
+        // Abrir recibo generado en pantalla con auto-descarga inmediata del PDF
+        setReciboGenerado({
+          ...res.recibo,
+          autoDownload: true
+        });
+        if (onSuccess) onSuccess();
+      }
     } catch (err) {
       console.error('Error registrando pago:', err);
-      setError(err.message || 'Error registrando el abono y emitiendo el recibo');
+      setError(err.message || 'Error registrando el abono y actualizando la cuota');
     } finally {
       setSaving(false);
     }
   };
+
+  // Si se aplicó el pago en modo sin recibo, mostrar confirmación de cuota actualizada
+  if (pagoSinReciboExitoso) {
+    return (
+      <Modal onClose={onClose} maxWidth={500}>
+        <div style={{ textAlign: 'center', padding: '16px 12px' }}>
+          <div style={{
+            width: 56, height: 56, borderRadius: '50%',
+            background: '#dcfce7', color: '#16a34a',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            margin: '0 auto 14px'
+          }}>
+            <CheckCircle2 size={32} />
+          </div>
+
+          <h3 style={{ fontSize: 18, fontWeight: 800, color: '#14532d', marginBottom: 6 }}>
+            ¡Cuota Actualizada con Éxito!
+          </h3>
+          <p style={{ fontSize: 12.5, color: 'var(--text-secondary)', marginBottom: 18 }}>
+            El abono fue cargado e imputado a la cartera sin emitir recibo de caja oficial.
+          </p>
+
+          <div style={{
+            background: 'var(--bg-card2)',
+            border: '1.5px solid #86efac',
+            borderRadius: 8,
+            padding: '12px 16px',
+            textAlign: 'left',
+            marginBottom: 20,
+            fontSize: 12.5
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+              <span style={{ color: 'var(--text-muted)' }}>Monto Aplicado:</span>
+              <strong style={{ color: '#16a34a', fontSize: 14 }}>{formatCOP(pagoSinReciboExitoso.monto)}</strong>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+              <span style={{ color: 'var(--text-muted)' }}>Lote / Contrato:</span>
+              <strong style={{ fontFamily: 'monospace' }}>{pagoSinReciboExitoso.lote}</strong>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+              <span style={{ color: 'var(--text-muted)' }}>Titular:</span>
+              <strong>{pagoSinReciboExitoso.cliente}</strong>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+              <span style={{ color: 'var(--text-muted)' }}>Fecha de Pago:</span>
+              <strong>{formatDate(fechaPago)}</strong>
+            </div>
+            <div style={{
+              marginTop: 10, paddingTop: 10, borderTop: '1px solid var(--border)',
+              fontSize: 11.5, color: '#15803d', fontWeight: 600
+            }}>
+              ✓ El consecutivo oficial de recibos se mantiene intacto. El próximo recibo continuará siendo el <strong>Nº {proximoReciboNum}</strong>.
+            </div>
+          </div>
+
+          <button
+            type="button"
+            className="btn btn-primary"
+            style={{ width: '100%', padding: '9px 0', fontSize: 13.5, fontWeight: 700, background: '#16a34a', borderColor: '#16a34a' }}
+            onClick={() => {
+              setPagoSinReciboExitoso(null);
+              onClose();
+            }}
+          >
+            Aceptar y Continuar
+          </button>
+        </div>
+      </Modal>
+    );
+  }
 
   // Si ya se generó el recibo, mostrar vista de recibo oficial con auto-descarga
   if (reciboGenerado) {
@@ -334,12 +418,16 @@ export default function ModalRegistrarPagoRecibo({
     <Modal onClose={onClose} maxWidth={680}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
         <div>
-          <div style={{ fontSize: 18, fontWeight: 800, color: '#166534', display: 'flex', alignItems: 'center', gap: 8 }}>
-            <Receipt size={22} color="#16a34a" />
-            Registrar Abono / Pago y Emitir Recibo de Caja
+          <div style={{ fontSize: 18, fontWeight: 800, color: sinRecibo ? '#15803d' : '#166534', display: 'flex', alignItems: 'center', gap: 8 }}>
+            {sinRecibo ? <CreditCard size={22} color="#15803d" /> : <Receipt size={22} color="#16a34a" />}
+            {sinRecibo ? 'Registrar Abono / Pago (Cuota Actualizada)' : 'Registrar Abono / Pago y Emitir Recibo de Caja'}
           </div>
           <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>
-            Aplica a cuotas con imputación contable y emite el comprobante oficial <strong>Nº {proximoReciboNum}</strong> (Acacías).
+            {sinRecibo ? (
+              <span>Aplica a cuotas y actualiza el saldo contable directamente <strong>(Sin emitir recibo oficial · Consecutivo reservado)</strong>.</span>
+            ) : (
+              <span>Aplica a cuotas con imputación contable y emite el comprobante oficial <strong>Nº {proximoReciboNum}</strong> (Acacías).</span>
+            )}
           </div>
         </div>
         <button className="btn btn-ghost" onClick={onClose} style={{ padding: 6 }}>
@@ -418,6 +506,55 @@ export default function ModalRegistrarPagoRecibo({
             </div>
           </div>
         )}
+
+        {/* Casilla: Cargar Pago Sin Generar Recibo */}
+        <div
+          onClick={() => setSinRecibo(!sinRecibo)}
+          style={{
+            background: sinRecibo ? '#f0fdf4' : 'var(--bg-card2)',
+            border: sinRecibo ? '2px solid #16a34a' : '1.5px solid var(--border)',
+            borderRadius: 10,
+            padding: '12px 16px',
+            marginBottom: 16,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            cursor: 'pointer',
+            transition: 'all 0.15s ease',
+            boxShadow: sinRecibo ? '0 2px 8px rgba(22, 163, 74, 0.12)' : 'none'
+          }}
+        >
+          <label style={{ display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer', margin: 0 }}>
+            <input
+              type="checkbox"
+              checked={sinRecibo}
+              onChange={e => setSinRecibo(e.target.checked)}
+              onClick={e => e.stopPropagation()}
+              style={{ width: 18, height: 18, accentColor: '#16a34a', cursor: 'pointer' }}
+            />
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 800, color: sinRecibo ? '#15803d' : 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 6 }}>
+                {sinRecibo ? '✓ Modo Carga Directa: NO generar recibo oficial' : 'Cargar pago sin generar recibo oficial'}
+              </div>
+              <div style={{ fontSize: 11.5, color: 'var(--text-muted)', marginTop: 2 }}>
+                {sinRecibo
+                  ? `Se actualizará la cuota y saldo contable sin emitir recibo. El próximo recibo oficial seguirá siendo el Nº ${proximoReciboNum}.`
+                  : 'Marca esta casilla para cargar pagos sin imputar o históricos sin alterar el consecutivo de recibos.'}
+              </div>
+            </div>
+          </label>
+          <span className="badge" style={{
+            background: sinRecibo ? '#dcfce7' : 'var(--bg-secondary)',
+            color: sinRecibo ? '#15803d' : 'var(--text-muted)',
+            border: sinRecibo ? '1px solid #86efac' : '1px solid var(--border)',
+            fontWeight: 800,
+            fontSize: 11,
+            padding: '3px 9px',
+            borderRadius: 6
+          }}>
+            {sinRecibo ? 'Cuota Actualizada' : `Recibo Nº ${proximoReciboNum}`}
+          </span>
+        </div>
 
         {/* 2. Selector de Modo: Cascada Automática vs Cuota Específica */}
         <div style={{ marginBottom: 14 }}>
@@ -552,7 +689,7 @@ export default function ModalRegistrarPagoRecibo({
           }}>
             <div style={{ fontSize: 11.5, fontWeight: 800, color: '#22c55e', marginBottom: 6, display: 'flex', alignItems: 'center', gap: 6 }}>
               <CheckCircle2 size={14} color="#22c55e" />
-              Imputación Contable del Recibo Nº {proximoReciboNum}:
+              {sinRecibo ? '⚡ Imputación Contable (Cuota Actualizada):' : `Imputación Contable del Recibo Nº ${proximoReciboNum}:`}
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
               {simulacion.afectaciones.filter(Boolean).map((a, aIdx) => (
@@ -732,7 +869,7 @@ export default function ModalRegistrarPagoRecibo({
         <div style={{ marginBottom: 12 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
             <label style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--text-primary)' }}>
-              Concepto del Recibo (Oficial):
+              {sinRecibo ? 'Concepto del Pago / Actualización:' : 'Concepto del Recibo (Oficial):'}
             </label>
             <span style={{ fontSize: 10.5, color: 'var(--text-muted)' }}>
               Incluye cuotas cubiertas, lote oficial y nombre del cliente
@@ -755,7 +892,7 @@ export default function ModalRegistrarPagoRecibo({
         <div style={{ marginBottom: 16 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
             <label style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--text-primary)' }}>
-              Observaciones del Recibo:
+              {sinRecibo ? 'Observaciones / Justificación Contable:' : 'Observaciones del Recibo:'}
             </label>
             <span style={{ fontSize: 10.5, color: 'var(--text-muted)' }}>
               Referencia y canal bancario de recepción
@@ -787,18 +924,22 @@ export default function ModalRegistrarPagoRecibo({
             type="submit"
             className="btn btn-primary"
             style={{
-              background: '#16a34a',
-              borderColor: '#16a34a',
+              background: sinRecibo ? '#059669' : '#16a34a',
+              borderColor: sinRecibo ? '#059669' : '#16a34a',
               fontWeight: 800,
               fontSize: 13.5,
               padding: '9px 22px',
               gap: 8,
-              boxShadow: '0 4px 6px -1px rgba(22, 163, 74, 0.3)'
+              boxShadow: sinRecibo ? '0 4px 6px -1px rgba(5, 150, 105, 0.3)' : '0 4px 6px -1px rgba(22, 163, 74, 0.3)'
             }}
             disabled={saving || !selectedVenta || montoNum <= 0}
           >
             {saving ? (
               'Procesando...'
+            ) : sinRecibo ? (
+              <>
+                <CheckCircle2 size={17} /> Confirmar Pago y Actualizar Cuota (Sin Recibo)
+              </>
             ) : (
               <>
                 <Receipt size={17} /> Confirmar Abono y Descargar Recibo Nº {proximoReciboNum}
