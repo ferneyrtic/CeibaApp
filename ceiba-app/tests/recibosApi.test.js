@@ -18,6 +18,7 @@ import {
   obtenerSiguienteNumeroRecibo,
   crearReciboCaja,
   registrarPagoConRecibo,
+  obtenerTodosLosRecibos,
   clearRecibosCache
 } from '../src/lib/api/recibosApi.js';
 
@@ -206,5 +207,60 @@ describe('recibosApi - Gestión de Recibos de Caja Menor', () => {
     expect(res).toBeDefined();
     expect(res.numero_recibo).toBe(3398);
     expect(res.valor_letras).toBe('TRESCIENTOS MIL PESOS M/CTE');
+  });
+
+  it('obtenerTodosLosRecibos extrae y normaliza recibos unificando campos y excluyendo pruebas', async () => {
+    supabase.from.mockImplementation((table) => {
+      if (table === 'datos_maestros') {
+        return {
+          select: () => ({
+            eq: () => ({
+              order: async () => ({
+                data: [
+                  {
+                    id: 'dm-3411',
+                    orden: 3411,
+                    valor: JSON.stringify({
+                      recibo_numero: 3411,
+                      lote_id_str: 'LC2 - 42 - 5',
+                      cliente_nombre: 'JOSE ISBELIO RAMIREZ',
+                      cliente_cedula: '17386102',
+                      valor_pagado: 1000000,
+                      fecha_pago: '2026-10-21',
+                      concepto: 'Pago Cuota #4'
+                    })
+                  },
+                  {
+                    id: 'dm-test',
+                    orden: 9999,
+                    valor: JSON.stringify({
+                      recibo_numero: 9999,
+                      lote_id_str: 'TEST - 01',
+                      cliente_nombre: 'PRUEBA TEST',
+                      valor_pagado: 500000
+                    })
+                  }
+                ],
+                error: null
+              })
+            })
+          })
+        };
+      }
+      return {
+        select: () => ({ not: async () => ({ data: [], error: null }) })
+      };
+    });
+
+    const lista = await obtenerTodosLosRecibos(true);
+    expect(lista).toBeInstanceOf(Array);
+    // Debe excluir el lote de TEST
+    expect(lista.some(r => r.lote_id_str === 'TEST - 01')).toBe(false);
+    // Debe contener el recibo normalizado 3411
+    const r3411 = lista.find(r => r.numero_recibo === 3411);
+    expect(r3411).toBeDefined();
+    expect(r3411.valor).toBe(1000000);
+    expect(r3411.cliente_doc).toBe('17386102');
+    expect(r3411.lote_id_str).toBe('LC2 - 42 - 5');
   });
 });

@@ -13,6 +13,7 @@ import { exportEstadoCuentaMatrizPDF, exportEstadoCuentaInformePDF, exportEstado
 import EstadoCuentaMatrizView from '../components/EstadoCuentaMatrizView';
 import AbonosExtraordinariosView from '../components/AbonosExtraordinariosView';
 import CasosEspecialesView from '../components/CasosEspecialesView';
+import RecibosListView from '../components/RecibosListView';
 import ModalHistorialAcciones from '../components/ModalHistorialAcciones';
 import { obtenerBadgeCasoEspecial } from '../lib/api/casosEspecialesApi';
 import Modal from '../components/Modal';
@@ -358,6 +359,20 @@ export default function Cartera() {
                 {casosEspecialesActivosCount}
               </span>
             )}
+          </button>
+
+          <button
+            className={`btn ${vistaModo === 'recibos' ? 'btn-primary' : 'btn-ghost'}`}
+            style={{
+              fontSize: 13, gap: 8, padding: '8px 16px', fontWeight: 700,
+              background: vistaModo === 'recibos' ? '#047857' : undefined,
+              borderColor: vistaModo === 'recibos' ? '#065f46' : undefined,
+              color: vistaModo === 'recibos' ? '#fff' : undefined
+            }}
+            onClick={() => setVistaModo('recibos')}
+          >
+            <Receipt size={16} />
+            🧾 Registro de Recibos
           </button>
         </div>
 
@@ -943,6 +958,18 @@ export default function Cartera() {
               if (venta) openDetalle(venta);
             }}
             usuarioActual={user}
+          />
+        </div>
+      )}
+
+      {vistaModo === 'recibos' && (
+        <div style={{ marginTop: 8 }}>
+          <RecibosListView
+            onVerRecibo={(recibo) => setReciboParaVer(recibo)}
+            onVerExtracto={(idLote, ventaId) => {
+              const venta = allCartera.find(v => (ventaId && (v.id === ventaId || v.venta_id === ventaId)) || (idLote && (v.id_lote === idLote || v.lotes?.id_lote === idLote)));
+              if (venta) openDetalle(venta);
+            }}
           />
         </div>
       )}

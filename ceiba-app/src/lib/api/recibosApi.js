@@ -22,10 +22,10 @@ const obtenerRecibosLocales = () => {
   try {
     const raw = window.localStorage.getItem(LOCAL_STORAGE_KEY);
     const list = raw ? JSON.parse(raw) : [];
-    // Limpieza de seguridad: filtrar recibos de pruebas de desarrollo o >= 3412 que se hayan guardado localmente
+    // Limpieza de seguridad: filtrar recibos de pruebas de desarrollo huérfanos o con lote TEST
     const filtrados = list.filter(r => {
       const num = Number(r.numero_recibo);
-      if (num >= 3412) return false;
+      if (num === 3413) return false;
       if (String(r.lote_id_str || '').toUpperCase().includes('TEST')) return false;
       return true;
     });
@@ -220,14 +220,46 @@ export const obtenerTodosLosRecibos = async (forceRefresh = false) => {
       data.forEach(item => {
         try {
           const parsed = typeof item.valor === 'string' ? JSON.parse(item.valor) : item.valor;
-          const nr = item.orden || parsed.numero_recibo;
+          const nr = Number(item.orden || parsed.numero_recibo || parsed.recibo_numero);
           if (nr) {
-            mapaRecibos.set(Number(nr), {
+            const existing = mapaRecibos.get(nr);
+            const valNum = Number(parsed.valor ?? parsed.valor_pagado ?? existing?.valor ?? 0);
+            const fullRecibo = {
               db_id: item.id,
               numero_recibo: nr,
+              recibo_numero: nr,
+              pagado_a: parsed.pagado_a || existing?.pagado_a || 'PROYECTO CAMPESTRE LA CEIBA',
+              ciudad: parsed.ciudad || existing?.ciudad || 'Acacías',
+              lote_id_str: parsed.lote_id_str || existing?.lote_id_str || '',
+              cliente_nombre: parsed.cliente_nombre || existing?.cliente_nombre || '',
+              cliente_doc: parsed.cliente_doc || parsed.cliente_cedula || existing?.cliente_doc || '',
+              cliente_cedula: parsed.cliente_cedula || parsed.cliente_doc || existing?.cliente_doc || '',
+              venta_id: parsed.venta_id || existing?.venta_id || null,
+              cuota_id: parsed.cuota_id || existing?.cuota_id || null,
+              numero_cuota: parsed.numero_cuota || existing?.numero_cuota || null,
+              fecha_pago: parsed.fecha_pago || existing?.fecha_pago || (item.created_at ? item.created_at.slice(0, 10) : ''),
+              valor: valNum,
+              valor_pagado: valNum,
+              valor_letras: parsed.valor_letras || existing?.valor_letras || numeroALetrasCOP(valNum),
+              medio_pago: parsed.medio_pago || existing?.medio_pago || 'TRANSFERENCIA',
+              banco: parsed.banco || existing?.banco || 'Bancolombia',
+              referencia: parsed.referencia || parsed.referencia_bancaria || existing?.referencia || '',
+              referencia_bancaria: parsed.referencia_bancaria || parsed.referencia || existing?.referencia || '',
+              concepto: parsed.concepto || existing?.concepto || (parsed.numero_cuota ? `Pago Cuota #${parsed.numero_cuota}` : 'Abono a contrato'),
+              observaciones: parsed.observaciones || existing?.observaciones || '',
+              asesor: parsed.asesor || parsed.registrado_por || existing?.asesor || '',
+              registrado_por: parsed.registrado_por || parsed.asesor || existing?.asesor || '',
+              excluido_cierre: Boolean(parsed.excluido_cierre),
+              motivo_exclusion_cierre: parsed.motivo_exclusion_cierre || '',
               ...parsed,
-              created_at: parsed.created_at || item.created_at
-            });
+              // aseguramos que los campos unificados sobreescriban cualquier divergencia
+              valor: valNum,
+              valor_pagado: valNum,
+              cliente_doc: parsed.cliente_doc || parsed.cliente_cedula || existing?.cliente_doc || '',
+              referencia: parsed.referencia || parsed.referencia_bancaria || existing?.referencia || '',
+              created_at: parsed.created_at || existing?.created_at || item.created_at
+            };
+            mapaRecibos.set(nr, fullRecibo);
           }
         } catch (e) {}
       });
@@ -236,9 +268,14 @@ export const obtenerTodosLosRecibos = async (forceRefresh = false) => {
     // Silencioso
   }
 
-  const recibos = Array.from(mapaRecibos.values()).sort(
-    (a, b) => (Number(b.numero_recibo) || 0) - (Number(a.numero_recibo) || 0)
-  );
+  const recibos = Array.from(mapaRecibos.values())
+    .filter(r => {
+      // Filtrar recibos huérfanos de lotes de prueba
+      if (String(r.lote_id_str || '').toUpperCase().includes('TEST')) return false;
+      if (Number(r.numero_recibo) === 3413) return false;
+      return true;
+    })
+    .sort((a, b) => (Number(b.numero_recibo) || 0) - (Number(a.numero_recibo) || 0));
 
   recibosCache = recibos;
   recibosCacheTime = now;
