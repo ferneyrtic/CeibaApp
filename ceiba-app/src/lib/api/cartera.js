@@ -35,7 +35,7 @@ export const getCartera = async ({ search, filtroEstado, forceRefresh = false, r
         .select(`
           id, dias_pago, medio_pago, fecha_pago_cuota_inicial,
           abonos, descuentos, comision_vendedor,
-          lotes (id_lote, manzana, lote, etapa, area_m2),
+          lotes (id, id_lote, manzana, lote, etapa, area_m2, observacion),
           clientes (id, nombre, doc_cliente, celular, ciudad, direccion)
         `),
       supabase
@@ -98,6 +98,7 @@ export const getCartera = async ({ search, filtroEstado, forceRefresh = false, r
         abonos: detalle.abonos,
         descuentos: detalle.descuentos,
         lotes: detalle.lotes || { id_lote: item.id_lote },
+        observacion_cobranza: detalle.lotes?.observacion || null,
         clientes: detalle.clientes || { nombre: item.cliente_nombre },
       };
     });

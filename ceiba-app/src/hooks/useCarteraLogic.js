@@ -1,6 +1,7 @@
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { getCartera, getCarteraStats, clearCarteraCache } from '../lib/api/cartera';
 import { getCasosEspeciales, obtenerBadgeCasoEspecial } from '../lib/api/casosEspecialesApi';
+import { getObservacionesCobranza } from '../lib/api/cobranzaApi';
 import { formatDate } from '../utils/helpers';
 
 export const FILTROS_CARTERA = [
@@ -23,6 +24,7 @@ export function useCarteraLogic() {
   const [search, setSearch] = useState('');
   const [filtro, setFiltro] = useState('Todos');
   const [casosEspeciales, setCasosEspeciales] = useState([]);
+  const [observacionesCobranza, setObservacionesCobranza] = useState([]);
 
   // Paginación principal
   const [page, setPage] = useState(1);
@@ -38,10 +40,11 @@ export function useCarteraLogic() {
     setLoading(true);
     try {
       if (force) clearCarteraCache();
-      const [carteraRes, statsRes, casosRes] = await Promise.allSettled([
+      const [carteraRes, statsRes, casosRes, cobranzaRes] = await Promise.allSettled([
         getCartera({ forceRefresh: force }),
         getCarteraStats(force),
-        getCasosEspeciales()
+        getCasosEspeciales(),
+        getObservacionesCobranza(force)
       ]);
 
       if (carteraRes.status === 'fulfilled') {
@@ -60,6 +63,12 @@ export function useCarteraLogic() {
         setCasosEspeciales(casosRes.value || []);
       } else {
         console.error('Error cargando casos especiales:', casosRes.reason);
+      }
+
+      if (cobranzaRes.status === 'fulfilled') {
+        setObservacionesCobranza(cobranzaRes.value || []);
+      } else {
+        console.error('Error cargando observaciones de cobranza:', cobranzaRes.reason);
       }
     } catch (err) {
       console.error('Error cargando cartera en useCarteraLogic:', err);
@@ -214,6 +223,8 @@ export function useCarteraLogic() {
     handleFiltroChange,
     casosEspeciales,
     casosEspecialesActivosCount,
+    observacionesCobranza,
+    setObservacionesCobranza,
     page,
     setPage,
     pageSize,

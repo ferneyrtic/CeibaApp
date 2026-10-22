@@ -3,12 +3,12 @@ import {
   AlertTriangle, Clock, CheckCircle2, Search,
   RefreshCw, DollarSign, TrendingUp, Users, FileText, X,
   Plus, Edit2, Download, Table, Calendar, ArrowRight, ShieldAlert, Zap,
-  ShieldCheck, Tag, Receipt, Eye, Phone
+  ShieldCheck, Tag, Receipt, Eye, Phone, PhoneCall, ClipboardList
 } from 'lucide-react';
 
 import { useAuth } from '../context/AuthContext';
 import { getCuotasByVenta } from '../lib/api/cartera';
-import { formatCOP, formatDate, getWhatsAppLink, formatWhatsAppNumber } from '../utils/helpers';
+import { formatCOP, formatDate } from '../utils/helpers';
 import { exportEstadoCuentaMatrizPDF, exportEstadoCuentaInformePDF, exportEstadoCuentaPDF } from '../utils/exportEstadoCuenta';
 import EstadoCuentaMatrizView from '../components/EstadoCuentaMatrizView';
 import AbonosExtraordinariosView from '../components/AbonosExtraordinariosView';
@@ -24,6 +24,8 @@ import ReciboCajaView from '../components/ReciboCajaView';
 import { obtenerRecibosPorVenta, anularRecibo } from '../lib/api/recibosApi';
 import Pagination from '../components/Pagination';
 import { useCarteraLogic } from '../hooks/useCarteraLogic';
+import ModalObservacionCobranza from '../components/ModalObservacionCobranza';
+import { buscarObservacionCobranza, normLote } from '../lib/api/cobranzaApi';
 
 
 const FILTROS = ['Todos', 'Con Saldo', 'En Mora', 'Pagado', 'Sin Gestión', '🚨 Casos Críticos (>180 días)', '📌 Casos Especiales'];
@@ -129,8 +131,20 @@ export default function Cartera() {
     paginatedVerif,
     totalSaldoVisible,
     exportarVerificacionExcel,
+    observacionesCobranza,
+    setObservacionesCobranza,
     loadData: load
   } = useCarteraLogic();
+
+  // Gestión de Cobranza & Historial de Llamadas
+  const [obsLoteSeleccionado, setObsLoteSeleccionado] = useState(null);
+  const [showModalObsCobranza, setShowModalObsCobranza] = useState(false);
+
+  const openObservacionModal = (v, obs = null) => {
+    const targetObs = obs || buscarObservacionCobranza(v?.id_lote || v?.lotes?.id_lote, observacionesCobranza) || (v?.observacion_cobranza ? { texto_resumen: v.observacion_cobranza } : null);
+    setObsLoteSeleccionado({ venta: v, obs: targetObs });
+    setShowModalObsCobranza(true);
+  };
 
   // Auditoría y Registros
   const [showModalLogs, setShowModalLogs]     = useState(false);
@@ -549,41 +563,39 @@ export default function Cartera() {
                                 >
                                   <FileText size={12} /> Ver
                                 </button>
-                                {v.cuotas_vencidas > 0 && (
-                                  <a
-                                    href={getWhatsAppLink(v.clientes?.celular || v.celular) || '#'}
-                                    target={getWhatsAppLink(v.clientes?.celular || v.celular) ? "_blank" : undefined}
-                                    rel="noopener noreferrer"
-                                    className="btn btn-ghost"
-                                    style={{
-                                      fontSize: 11,
-                                      padding: '4px 8px',
-                                      gap: 4,
-                                      color: '#15803d',
-                                      borderColor: '#86efac',
-                                      background: '#f0fdf4',
-                                      fontWeight: 700,
-                                      textDecoration: 'none',
-                                      display: 'inline-flex',
-                                      alignItems: 'center'
-                                    }}
-                                    title={getWhatsAppLink(v.clientes?.celular || v.celular) ? `Escribir por WhatsApp a ${v.cliente_nombre || 'Cliente'}` : 'Sin teléfono registrado. Clic para ingresar número y abrir WhatsApp'}
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      const link = getWhatsAppLink(v.clientes?.celular || v.celular);
-                                      if (!link) {
-                                        e.preventDefault();
-                                        const input = window.prompt(`El cliente ${v.cliente_nombre || v.clientes?.nombre || ''} no tiene teléfono celular registrado.\nIngresa el número celular para WhatsApp:`);
-                                        if (input) {
-                                          const num = formatWhatsAppNumber(input);
-                                          if (num) window.open(`https://wa.me/${num}`, '_blank');
-                                        }
-                                      }
-                                    }}
-                                  >
-                                    <Phone size={12} color="#16a34a" /> WhatsApp
-                                  </a>
-                                )}
+                                {(() => {
+                                  const obs = buscarObservacionCobranza(v.id_lote || v.lotes?.id_lote, observacionesCobranza) || (v.observacion_cobranza ? { texto_resumen: v.observacion_cobranza } : null);
+                                  if (!obs) return null;
+                                  return (
+                                    <button
+                                      type="button"
+                                      className="btn btn-ghost"
+                                      style={{
+                                        fontSize: 10.5,
+                                        padding: '4px 8px',
+                                        gap: 4,
+                                        color: '#92400e',
+                                        borderColor: '#fde68a',
+                                        background: '#fffbeb',
+                                        fontWeight: 700,
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        maxWidth: 170,
+                                        cursor: 'pointer'
+                                      }}
+                                      title={`Observación de Cobranza:\n${obs.texto_resumen || obs.respuesta || ''}\n(Clic para ver historial o registrar llamada)`}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        openObservacionModal(v, obs);
+                                      }}
+                                    >
+                                      <ClipboardList size={11} color="#d97706" />
+                                      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                        {obs.respuesta || obs.texto_resumen}
+                                      </span>
+                                    </button>
+                                  );
+                                })()}
                               </div>
                             </td>
                           </tr>
@@ -749,7 +761,6 @@ export default function Cartera() {
                   const isMora = (v.cuotas_vencidas || 0) > 0;
                   const montoMoraEstimado = (v.cuotas_vencidas || 0) * (v.valor_cuota || 0);
                   const rawPhone = v.clientes?.celular || v.celular || '';
-                  const waLink = getWhatsAppLink(rawPhone);
 
                   return (
                     <tr key={v.id} style={{ cursor: 'pointer' }} onClick={() => openDetalle(v)}>
@@ -784,14 +795,12 @@ export default function Cartera() {
                           {v.clientes?.doc_cliente && <span>CC {v.clientes.doc_cliente}</span>}
                           {rawPhone && (
                             <a
-                              href={waLink || '#'}
-                              target={waLink ? "_blank" : undefined}
-                              rel={waLink ? "noopener noreferrer" : undefined}
+                              href={`tel:${rawPhone.replace(/\s+/g, '')}`}
                               onClick={e => e.stopPropagation()}
-                              style={{ color: '#15803d', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 3, fontWeight: 600 }}
-                              title={`Abrir WhatsApp: ${waLink || rawPhone}`}
+                              style={{ color: '#1e40af', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 3, fontWeight: 600 }}
+                              title={`Llamar al cliente: ${rawPhone}`}
                             >
-                              <Phone size={10} /> {rawPhone}
+                              <PhoneCall size={10} color="#2563eb" /> {rawPhone}
                             </a>
                           )}
                         </div>
@@ -872,41 +881,40 @@ export default function Cartera() {
                           >
                             <FileText size={12} /> Extracto
                           </button>
-                          {/* Ícono de Teléfono / WhatsApp a la derecha de Extracto para los que deben cuotas */}
-                          {isMora && (
-                            <a
-                              href={waLink || '#'}
-                              target={waLink ? "_blank" : undefined}
-                              rel={waLink ? "noopener noreferrer" : undefined}
-                              className="btn btn-ghost"
-                              style={{
-                                fontSize: 11,
-                                padding: '4px 8px',
-                                gap: 4,
-                                color: '#15803d',
-                                borderColor: '#86efac',
-                                background: '#f0fdf4',
-                                fontWeight: 700,
-                                textDecoration: 'none',
-                                display: 'inline-flex',
-                                alignItems: 'center'
-                              }}
-                              title={waLink ? `Escribir por WhatsApp a ${v.cliente_nombre || 'Cliente'}: ${waLink}` : 'Sin teléfono registrado. Clic para ingresar número y abrir WhatsApp'}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                if (!waLink) {
-                                  e.preventDefault();
-                                  const input = window.prompt(`El cliente ${v.cliente_nombre || v.clientes?.nombre || ''} no tiene teléfono celular registrado.\nIngresa el número celular para WhatsApp:`);
-                                  if (input) {
-                                    const num = formatWhatsAppNumber(input);
-                                    if (num) window.open(`https://wa.me/${num}`, '_blank');
-                                  }
-                                }
-                              }}
-                            >
-                              <Phone size={12} color="#16a34a" /> WhatsApp
-                            </a>
-                          )}
+                          {/* Casilla / Botón de Observación de Cobranza en lugar de WhatsApp */}
+                          {(() => {
+                            const obs = buscarObservacionCobranza(v.id_lote || v.lotes?.id_lote, observacionesCobranza) || (v.observacion_cobranza ? { texto_resumen: v.observacion_cobranza } : null);
+                            if (!obs) return null;
+                            return (
+                              <button
+                                type="button"
+                                className="btn btn-ghost"
+                                style={{
+                                  fontSize: 11,
+                                  padding: '4px 8px',
+                                  gap: 4,
+                                  color: '#92400e',
+                                  borderColor: '#fde68a',
+                                  background: '#fffbeb',
+                                  fontWeight: 700,
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  maxWidth: 220,
+                                  cursor: 'pointer'
+                                }}
+                                title={`Observación de Cobranza:\n${obs.texto_resumen || obs.respuesta || ''}\n(Clic para ver historial o registrar llamada)`}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  openObservacionModal(v, obs);
+                                }}
+                              >
+                                <ClipboardList size={12} color="#d97706" />
+                                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                  {obs.respuesta || obs.texto_resumen}
+                                </span>
+                              </button>
+                            );
+                          })()}
                         </div>
                       </td>
 
@@ -998,53 +1006,47 @@ export default function Cartera() {
                 {selected.clientes?.doc_cliente && ` · Cédula: ${selected.clientes.doc_cliente}`}
                 {selected.clientes?.celular && (
                   <a
-                    href={getWhatsAppLink(selected.clientes.celular) || '#'}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                    href={`tel:${String(selected.clientes.celular).replace(/\s+/g, '')}`}
                     style={{
                       display: 'inline-flex',
                       alignItems: 'center',
                       gap: 4,
                       fontSize: 11,
-                      color: '#15803d',
-                      background: '#f0fdf4',
-                      border: '1px solid #86efac',
+                      color: '#1d4ed8',
+                      background: '#eff6ff',
+                      border: '1px solid #bfdbfe',
                       borderRadius: 4,
                       padding: '2px 8px',
                       textDecoration: 'none',
                       fontWeight: 700
                     }}
-                    title={`Escribir por WhatsApp a ${selected.clientes.celular}`}
+                    title={`Llamar por teléfono a ${selected.clientes.celular}`}
                   >
-                    <Phone size={11} color="#16a34a" /> WhatsApp: {selected.clientes.celular}
+                    <PhoneCall size={11} color="#2563eb" /> Llamar: {selected.clientes.celular}
                   </a>
                 )}
               </div>
             </div>
             <div className="modal-header-actions">
-              {selected.clientes?.celular && (
-                <a
-                  href={getWhatsAppLink(selected.clientes.celular) || '#'}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="btn btn-ghost"
-                  style={{
-                    fontSize: 12,
-                    padding: '6px 12px',
-                    gap: 6,
-                    color: '#15803d',
-                    borderColor: '#86efac',
-                    background: '#f0fdf4',
-                    fontWeight: 700,
-                    textDecoration: 'none',
-                    display: 'inline-flex',
-                    alignItems: 'center'
-                  }}
-                  title={`Abrir chat de WhatsApp con ${selected.cliente_nombre || selected.clientes?.nombre || 'Cliente'}`}
-                >
-                  <Phone size={13} color="#16a34a" /> WhatsApp
-                </a>
-              )}
+              <button
+                type="button"
+                className="btn btn-ghost"
+                style={{
+                  fontSize: 12,
+                  padding: '6px 12px',
+                  gap: 6,
+                  color: '#92400e',
+                  borderColor: '#fde68a',
+                  background: '#fffbeb',
+                  fontWeight: 700,
+                  display: 'inline-flex',
+                  alignItems: 'center'
+                }}
+                onClick={() => openObservacionModal(selected)}
+                title="Ver o registrar gestión de cobranza y llamadas"
+              >
+                <ClipboardList size={13} color="#d97706" /> Observación Cobranza
+              </button>
               <button
                 className="btn btn-primary"
                 style={{ fontSize: 12, padding: '6px 14px', background: '#16a34a', borderColor: '#16a34a', gap: 6, fontWeight: 700 }}
@@ -1070,6 +1072,73 @@ export default function Cartera() {
                 onClick={() => { setSelected(null); setCuotasVenta([]); setRecibosVenta([]); }}>✕</button>
             </div>
           </div>
+
+          {/* Tarjeta de Gestión de Cobranza Destacada */}
+          {(() => {
+            const obs = buscarObservacionCobranza(selected.id_lote || selected.lotes?.id_lote, observacionesCobranza) || (selected.observacion_cobranza ? { texto_resumen: selected.observacion_cobranza } : null);
+            if (!obs) return null;
+            return (
+              <div style={{
+                margin: '10px 0 14px',
+                padding: '12px 16px',
+                background: 'linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)',
+                border: '1px solid #fde68a',
+                borderRadius: 8,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: 12,
+                boxShadow: '0 1px 3px rgba(0,0,0,0.04)'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                  <div style={{
+                    width: 32, height: 32, borderRadius: 6,
+                    background: '#d97706', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    color: '#fff', flexShrink: 0, marginTop: 1
+                  }}>
+                    <ClipboardList size={18} />
+                  </div>
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px', color: '#92400e' }}>
+                        Historial Gestión de Cobranza
+                      </span>
+                      {obs.fecha && (
+                        <span style={{ fontSize: 10.5, fontWeight: 700, color: '#b45309', background: '#fef3c7', padding: '1px 6px', borderRadius: 4, border: '1px solid #fde68a' }}>
+                          📅 {obs.fecha}
+                        </span>
+                      )}
+                    </div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: '#78350f', marginTop: 2 }}>
+                      {obs.respuesta || obs.texto_resumen}
+                    </div>
+                    {obs.gestion && (
+                      <div style={{ fontSize: 11, color: '#92400e', marginTop: 1 }}>
+                        Canal previo: <strong>{obs.gestion}</strong>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  className="btn btn-ghost"
+                  style={{
+                    fontSize: 11,
+                    padding: '5px 12px',
+                    gap: 5,
+                    background: '#fff',
+                    borderColor: '#fde68a',
+                    color: '#b45309',
+                    fontWeight: 700,
+                    whiteSpace: 'nowrap'
+                  }}
+                  onClick={() => openObservacionModal(selected, obs)}
+                >
+                  <Edit2 size={12} /> Gestionar / Nota
+                </button>
+              </div>
+            );
+          })()}
 
           {/* Selector de pestañas */}
           <div className="modal-tabs-scrollable">
@@ -1483,6 +1552,30 @@ export default function Cartera() {
           onClose={() => setReciboParaVer(null)}
         />
       )}
+
+      {/* Modal Gestión de Cobranza & Historial de Llamadas */}
+      <ModalObservacionCobranza
+        isOpen={showModalObsCobranza}
+        onClose={() => {
+          setShowModalObsCobranza(false);
+          setObsLoteSeleccionado(null);
+        }}
+        venta={obsLoteSeleccionado?.venta}
+        observacionActual={obsLoteSeleccionado?.obs}
+        usuarioActual={user?.user_metadata?.nombre || user?.email || 'Soporte Mora'}
+        onGuardado={(resultado) => {
+          setObservacionesCobranza(prev => {
+            const filtrados = (prev || []).filter(o => normLote(o.id_lote) !== normLote(resultado.id_lote));
+            return [resultado, ...filtrados];
+          });
+          if (selected && normLote(selected.id_lote || selected.lotes?.id_lote) === normLote(resultado.id_lote)) {
+            setSelected(prev => ({
+              ...prev,
+              observacion_cobranza: resultado.texto_resumen
+            }));
+          }
+        }}
+      />
     </div>
   );
 }
