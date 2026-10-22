@@ -81,13 +81,27 @@ body.dark-mode {
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
+html {
+  overflow-y: auto;
+}
+
 body {
   font-family: 'Inter', sans-serif;
   background: var(--bg-base);
   color: var(--text-primary);
   min-height: 100vh;
   overflow-x: hidden;
+  overflow-y: auto;
   transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+/* Blindaje CSS: Si no hay modales montados en el DOM, forzar scroll vertical libre de forma infalible */
+body:not(:has(.modal-portal-overlay)):not(:has([data-modal-portal="true"])) {
+  overflow-y: auto !important;
+}
+
+html:not(:has(.modal-portal-overlay)):not(:has([data-modal-portal="true"])) {
+  overflow-y: auto !important;
 }
 
 /* Dark Mode component overrides */

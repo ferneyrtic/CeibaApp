@@ -5,6 +5,7 @@ import {
   BadgeDollarSign, HardHat, Receipt
 } from 'lucide-react';
 import { useAuth } from './context/AuthContext';
+import { ensureScrollUnlocked } from './utils/scrollLockManager';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import CierreMensual from './pages/CierreMensual';
@@ -304,6 +305,9 @@ export default function App() {
     if (page === 'gastos' && !permissions?.canViewGastos) {
       setPage('dashboard');
     }
+    // Garantizar que al navegar entre páginas el scroll esté 100% liberado y en el tope
+    ensureScrollUnlocked();
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
   }, [page, permissions]);
 
   useEffect(() => {

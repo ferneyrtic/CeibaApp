@@ -1,6 +1,7 @@
 import React, { useRef, useState, useEffect, useMemo } from 'react';
 import ReactDOM from 'react-dom';
 import { Printer, Download, X, Check, Copy, Loader2, AlertTriangle, ShieldCheck } from 'lucide-react';
+import { lockBodyScroll, unlockBodyScroll, ensureScrollUnlocked } from '../utils/scrollLockManager';
 import { formatCOP } from '../utils/helpers';
 import { numeroALetrasCOP } from '../utils/numeroALetras';
 import { LOGO_CEIBA_BASE64 } from '../assets/logoBase64';
@@ -265,22 +266,32 @@ function ReciboCajaContent({ recibo, onClose, onPrint, autoDownload = false }) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoDownload, recibo?.autoDownload]);
 
-  // Cerrar con tecla Escape
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
+
+  // Cerrar con tecla Escape y gestión infalible de scroll
   useEffect(() => {
+    lockBodyScroll();
     const handleKeyDown = (e) => {
-      if (e.key === 'Escape' && onClose) {
-        onClose();
+      if (e.key === 'Escape' && onCloseRef.current) {
+        onCloseRef.current();
       }
     };
     window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [onClose]);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      unlockBodyScroll();
+      setTimeout(ensureScrollUnlocked, 10);
+    };
+  }, []);
 
   if (!recibo) return null;
 
   return ReactDOM.createPortal(
     <div
       onClick={onClose}
+      className="modal-portal-overlay"
+      data-modal-portal="true"
       style={{
         position: 'fixed',
         top: 0,

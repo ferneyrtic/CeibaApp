@@ -1,5 +1,6 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import ReactDOM from 'react-dom';
+import { lockBodyScroll, unlockBodyScroll, ensureScrollUnlocked } from '../utils/scrollLockManager';
 
 /**
  * Modal renderizado via React Portal directamente en document.body.
@@ -7,25 +8,34 @@ import ReactDOM from 'react-dom';
  * sin importar el scroll ni el CSS del árbol padre.
  */
 export default function Modal({ onClose, children, maxWidth = 600, zIndex = 99999 }) {
-  // Bloquear scroll del body mientras el modal está abierto
-  useEffect(() => {
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
 
-    // Cerrar con ESC
-    const onKey = (e) => { if (e.key === 'Escape') onClose(); };
+  // Gestión robusta del scroll: conteo de referencias y prevención de trancas
+  useEffect(() => {
+    lockBodyScroll();
+
+    // Cerrar con ESC con referencia estable
+    const onKey = (e) => {
+      if (e.key === 'Escape' && onCloseRef.current) {
+        onCloseRef.current();
+      }
+    };
     window.addEventListener('keydown', onKey);
 
     return () => {
-      document.body.style.overflow = prev;
       window.removeEventListener('keydown', onKey);
+      unlockBodyScroll();
+      // Verificación de seguridad inmediata para evitar scroll congelado
+      setTimeout(ensureScrollUnlocked, 10);
     };
-  }, [onClose]);
+  }, []);
 
   return ReactDOM.createPortal(
     <div
       onClick={onClose}
       className="modal-portal-overlay"
+      data-modal-portal="true"
       style={{
         position:        'fixed',
         top:             0,

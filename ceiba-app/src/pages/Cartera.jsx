@@ -26,6 +26,7 @@ import Pagination from '../components/Pagination';
 import { useCarteraLogic } from '../hooks/useCarteraLogic';
 import ModalObservacionCobranza from '../components/ModalObservacionCobranza';
 import { buscarObservacionCobranza, normLote } from '../lib/api/cobranzaApi';
+import { ensureScrollUnlocked } from '../utils/scrollLockManager';
 
 
 const FILTROS = ['Todos', 'Con Saldo', 'En Mora', 'Pagado', 'Sin Gestión', '🚨 Casos Críticos (>180 días)', '📌 Casos Especiales'];
@@ -206,6 +207,13 @@ export default function Cartera() {
   const [pagoReciboVenta, setPagoReciboVenta] = useState(null);
   const [pagoReciboCuota, setPagoReciboCuota] = useState(null);
   const [reciboParaVer, setReciboParaVer] = useState(null);
+
+  // Garantizar que si no hay modales abiertos en Cartera, el scroll nunca se bloquee
+  useEffect(() => {
+    if (!selected && !reciboParaVer && !showModalPagoRecibo && !showModalObsCobranza && !showModalLogs && !editingCuota && !editingContrato) {
+      ensureScrollUnlocked();
+    }
+  }, [selected, reciboParaVer, showModalPagoRecibo, showModalObsCobranza, showModalLogs, editingCuota, editingContrato, vistaModo]);
 
   const handleAnularRecibo = async (recibo) => {
     if (!permissions?.canDeleteRecibos) {
