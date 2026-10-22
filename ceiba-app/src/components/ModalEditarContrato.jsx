@@ -148,7 +148,7 @@ export default function ModalEditarContrato({ venta, onClose, onSuccess }) {
   };
 
   return (
-    <Modal onClose={onClose} maxWidth={640}>
+    <Modal onClose={onClose} maxWidth={640} zIndex={100010}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
         <div style={{ fontSize: 17, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 8 }}>
           <UserCheck size={18} color="var(--accent)" />

@@ -1042,7 +1042,10 @@ export default function Cartera() {
                   display: 'inline-flex',
                   alignItems: 'center'
                 }}
-                onClick={() => openObservacionModal(selected)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  openObservacionModal(selected);
+                }}
                 title="Ver o registrar gestión de cobranza y llamadas"
               >
                 <ClipboardList size={13} color="#d97706" /> Observación Cobranza
@@ -1132,7 +1135,10 @@ export default function Cartera() {
                     fontWeight: 700,
                     whiteSpace: 'nowrap'
                   }}
-                  onClick={() => openObservacionModal(selected, obs)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    openObservacionModal(selected, obs);
+                  }}
                 >
                   <Edit2 size={12} /> Gestionar / Nota
                 </button>

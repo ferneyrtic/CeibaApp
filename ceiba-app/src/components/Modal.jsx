@@ -6,7 +6,7 @@ import ReactDOM from 'react-dom';
  * Garantiza que el modal siempre aparezca centrado en el viewport,
  * sin importar el scroll ni el CSS del árbol padre.
  */
-export default function Modal({ onClose, children, maxWidth = 600 }) {
+export default function Modal({ onClose, children, maxWidth = 600, zIndex = 99999 }) {
   // Bloquear scroll del body mientras el modal está abierto
   useEffect(() => {
     const prev = document.body.style.overflow;
@@ -35,7 +35,7 @@ export default function Modal({ onClose, children, maxWidth = 600 }) {
         background:      'rgba(0,0,0,0.45)',
         backdropFilter:  'blur(4px)',
         WebkitBackdropFilter: 'blur(4px)',
-        zIndex:          99999,
+        zIndex:          zIndex,
         display:         'flex',
         alignItems:      'flex-start',
         justifyContent:  'center',

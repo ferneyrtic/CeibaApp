@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, Phone, PhoneCall, Calendar, ClipboardList, Clock, CheckCircle2, User, AlertCircle, Plus, History } from 'lucide-react';
+import Modal from './Modal';
 import { guardarObservacionCobranza } from '../lib/api/cobranzaApi';
 import { formatDate } from '../utils/helpers';
 
@@ -96,8 +97,8 @@ export default function ModalObservacionCobranza({
   const historial = observacionActual?.historial || [];
 
   return (
-    <div className="modal-backdrop" style={{ zIndex: 1100 }}>
-      <div className="modal-content" style={{ maxWidth: 580, width: '92%', maxHeight: '90vh', overflowY: 'auto' }}>
+    <Modal onClose={onClose} maxWidth={580} zIndex={100010}>
+      <div>
         {/* Header */}
         <div style={{
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
@@ -373,6 +374,6 @@ export default function ModalObservacionCobranza({
           </div>
         </form>
       </div>
-    </div>
+    </Modal>
   );
 }

@@ -333,7 +333,7 @@ export default function ModalRegistrarPagoRecibo({
   // Si se aplicó el pago en modo sin recibo, mostrar confirmación de cuota actualizada
   if (pagoSinReciboExitoso) {
     return (
-      <Modal onClose={onClose} maxWidth={500}>
+      <Modal onClose={onClose} maxWidth={500} zIndex={100010}>
         <div style={{ textAlign: 'center', padding: '16px 12px' }}>
           <div style={{
             width: 56, height: 56, borderRadius: '50%',
@@ -415,7 +415,7 @@ export default function ModalRegistrarPagoRecibo({
   }
 
   return (
-    <Modal onClose={onClose} maxWidth={680}>
+    <Modal onClose={onClose} maxWidth={680} zIndex={100010}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
         <div>
           <div style={{ fontSize: 18, fontWeight: 800, color: sinRecibo ? '#15803d' : '#166534', display: 'flex', alignItems: 'center', gap: 8 }}>
