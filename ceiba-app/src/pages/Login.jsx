@@ -259,7 +259,9 @@ export default function Login() {
                   outline: 'none',
                 }}
               >
+                <option value="soporte">Soporte Operativo (Diana)</option>
                 <option value="contadora">Contadora / Financiero</option>
+                <option value="secretaria">Secretaría / Recepción</option>
                 <option value="cartera">Gestión de Cartera / Cobranzas</option>
                 <option value="asesor">Asesor Comercial</option>
                 <option value="propietario">Propietario / Gerencia</option>
@@ -311,7 +313,8 @@ export default function Login() {
                 { label: '👑 Admin', email: 'admin@ceiba.com', pw: 'admin123', color: '#7c3aed', bg: '#f5f3ff', border: '#ddd6fe' },
                 { label: '🏛️ Propietario', email: 'propietario@ceiba.com', pw: 'propietario123', color: '#b45309', bg: '#fffbeb', border: '#fde68a' },
                 { label: '📊 Contadora', email: 'contadora@ceiba.com', pw: 'contadora123', color: '#1d4ed8', bg: '#eff6ff', border: '#bfdbfe' },
-                { label: '💼 Tatiana (Secretaría)', email: 'secretaria@ceiba.com', pw: 'secretaria123', color: '#059669', bg: '#ecfdf5', border: '#a7f3d0' }
+                { label: '💼 Tatiana (Secretaría)', email: 'secretaria@ceiba.com', pw: 'secretaria123', color: '#059669', bg: '#ecfdf5', border: '#a7f3d0' },
+                { label: '🎧 Diana (Soporte)', email: 'diana@ceiba.com', pw: 'soporte123', color: '#0284c7', bg: '#f0f9ff', border: '#bae6fd', span: 2 }
               ].map(r => (
                 <button
                   key={r.email}
@@ -322,6 +325,7 @@ export default function Login() {
                     setError('');
                   }}
                   style={{
+                    gridColumn: r.span ? `span ${r.span}` : undefined,
                     padding: '8px 10px',
                     borderRadius: 8,
                     border: `1px solid ${r.border}`,

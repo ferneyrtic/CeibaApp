@@ -75,3 +75,40 @@ export const diasDesdeHoy = (fecha) => {
   const d    = new Date(fecha + 'T12:00:00');
   return Math.round((d - hoy) / (1000 * 60 * 60 * 24));
 };
+
+/**
+ * Limpia y normaliza un número de celular a formato internacional para WhatsApp (ej: 573132213086).
+ */
+export const formatWhatsAppNumber = (phone) => {
+  if (!phone) return null;
+  const firstPart = String(phone).split(/[/;]/)[0].trim();
+  const digits = firstPart.replace(/\D/g, '');
+  if (!digits || digits.length < 7) return null;
+
+  // Si ya tiene prefijo 57 y al menos 12 dígitos
+  if (digits.startsWith('57') && digits.length >= 12) {
+    return digits;
+  }
+  // Número celular colombiano estándar (10 dígitos, empieza por 3)
+  if (digits.length === 10) {
+    return `57${digits}`;
+  }
+  // Si empieza por 57
+  if (digits.startsWith('57')) {
+    return digits;
+  }
+  // Teléfonos internacionales de más de 10 dígitos
+  if (digits.length > 10) {
+    return digits;
+  }
+  // Fallback agregando código país Colombia (57)
+  return `57${digits}`;
+};
+
+/**
+ * Genera el enlace directo wa.me para WhatsApp a partir de un número de teléfono.
+ */
+export const getWhatsAppLink = (phone) => {
+  const num = formatWhatsAppNumber(phone);
+  return num ? `https://wa.me/${num}` : null;
+};

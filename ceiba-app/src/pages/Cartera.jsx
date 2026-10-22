@@ -3,12 +3,12 @@ import {
   AlertTriangle, Clock, CheckCircle2, Search,
   RefreshCw, DollarSign, TrendingUp, Users, FileText, X,
   Plus, Edit2, Download, Table, Calendar, ArrowRight, ShieldAlert, Zap,
-  ShieldCheck, Tag, Receipt, Eye
+  ShieldCheck, Tag, Receipt, Eye, Phone
 } from 'lucide-react';
 
 import { useAuth } from '../context/AuthContext';
 import { getCuotasByVenta } from '../lib/api/cartera';
-import { formatCOP, formatDate } from '../utils/helpers';
+import { formatCOP, formatDate, getWhatsAppLink, formatWhatsAppNumber } from '../utils/helpers';
 import { exportEstadoCuentaMatrizPDF, exportEstadoCuentaInformePDF, exportEstadoCuentaPDF } from '../utils/exportEstadoCuenta';
 import EstadoCuentaMatrizView from '../components/EstadoCuentaMatrizView';
 import AbonosExtraordinariosView from '../components/AbonosExtraordinariosView';
@@ -513,7 +513,7 @@ export default function Cartera() {
                               )}
                             </td>
                             <td onClick={e => e.stopPropagation()} style={{ textAlign: 'center' }}>
-                              <div style={{ display: 'flex', gap: 6, justifyContent: 'center' }}>
+                              <div style={{ display: 'flex', gap: 6, justifyContent: 'center', alignItems: 'center' }}>
                                 <button
                                   className="btn btn-ghost"
                                   style={{ fontSize: 11, padding: '4px 8px', color: '#16a34a', borderColor: '#bbf7d0', background: '#f0fdf4', fontWeight: 700 }}
@@ -533,6 +533,41 @@ export default function Cartera() {
                                 >
                                   <FileText size={12} /> Ver
                                 </button>
+                                {v.cuotas_vencidas > 0 && (
+                                  <a
+                                    href={getWhatsAppLink(v.clientes?.celular || v.celular) || '#'}
+                                    target={getWhatsAppLink(v.clientes?.celular || v.celular) ? "_blank" : undefined}
+                                    rel="noopener noreferrer"
+                                    className="btn btn-ghost"
+                                    style={{
+                                      fontSize: 11,
+                                      padding: '4px 8px',
+                                      gap: 4,
+                                      color: '#15803d',
+                                      borderColor: '#86efac',
+                                      background: '#f0fdf4',
+                                      fontWeight: 700,
+                                      textDecoration: 'none',
+                                      display: 'inline-flex',
+                                      alignItems: 'center'
+                                    }}
+                                    title={getWhatsAppLink(v.clientes?.celular || v.celular) ? `Escribir por WhatsApp a ${v.cliente_nombre || 'Cliente'}` : 'Sin teléfono registrado. Clic para ingresar número y abrir WhatsApp'}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      const link = getWhatsAppLink(v.clientes?.celular || v.celular);
+                                      if (!link) {
+                                        e.preventDefault();
+                                        const input = window.prompt(`El cliente ${v.cliente_nombre || v.clientes?.nombre || ''} no tiene teléfono celular registrado.\nIngresa el número celular para WhatsApp:`);
+                                        if (input) {
+                                          const num = formatWhatsAppNumber(input);
+                                          if (num) window.open(`https://wa.me/${num}`, '_blank');
+                                        }
+                                      }
+                                    }}
+                                  >
+                                    <Phone size={12} color="#16a34a" /> WhatsApp
+                                  </a>
+                                )}
                               </div>
                             </td>
                           </tr>
@@ -570,22 +605,66 @@ export default function Cartera() {
           <div style={{ padding: '16px 20px', background: '#f8fafc', borderBottom: '1px solid var(--border)' }}>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 16 }}>
-              <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 8, padding: '10px 14px' }}>
+              <div
+                style={{
+                  background: '#fff',
+                  border: filtroVerif === 'Todos' ? '2px solid #0f766e' : '1px solid #e2e8f0',
+                  borderRadius: 8,
+                  padding: '10px 14px',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease'
+                }}
+                title="Clic para ver todos los contratos auditados"
+                onClick={() => { setFiltroVerif('Todos'); setPageVerif(1); }}
+              >
                 <div style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600 }}>CONTRATOS AUDITADOS</div>
                 <div style={{ fontSize: 20, fontWeight: 800, color: '#334155', marginTop: 2 }}>{allCartera.filter(v => v.estado === 'VENDIDO').length}</div>
                 <div style={{ fontSize: 10, color: '#64748b', marginTop: 2 }}>Lotes con contrato activo</div>
               </div>
-              <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 8, padding: '10px 14px' }}>
+              <div
+                style={{
+                  background: '#f0fdf4',
+                  border: filtroVerif === 'Al Día' ? '2px solid #16a34a' : '1px solid #bbf7d0',
+                  borderRadius: 8,
+                  padding: '10px 14px',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease'
+                }}
+                title="Clic para filtrar solo contratos al día"
+                onClick={() => { setFiltroVerif('Al Día'); setPageVerif(1); }}
+              >
                 <div style={{ fontSize: 11, color: '#16a34a', fontWeight: 600 }}>🟢 CLIENTES AL DÍA</div>
                 <div style={{ fontSize: 20, fontWeight: 800, color: '#15803d', marginTop: 2 }}>{alDiaCount}</div>
                 <div style={{ fontSize: 10, color: '#16a34a', marginTop: 2 }}>Al corriente (0 cuotas vencidas)</div>
               </div>
-              <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 8, padding: '10px 14px' }}>
+              <div
+                style={{
+                  background: '#fef2f2',
+                  border: filtroVerif === 'En Mora' ? '2px solid #dc2626' : '1px solid #fecaca',
+                  borderRadius: 8,
+                  padding: '10px 14px',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease'
+                }}
+                title="Clic para filtrar contratos que deben cuotas (En Mora)"
+                onClick={() => { setFiltroVerif('En Mora'); setPageVerif(1); }}
+              >
                 <div style={{ fontSize: 11, color: '#dc2626', fontWeight: 600 }}>🔴 CLIENTES EN MORA</div>
                 <div style={{ fontSize: 20, fontWeight: 800, color: '#b91c1c', marginTop: 2 }}>{moraCount}</div>
                 <div style={{ fontSize: 10, color: '#dc2626', marginTop: 2 }}>Deben 1 o más cuotas</div>
               </div>
-              <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 8, padding: '10px 14px' }}>
+              <div
+                style={{
+                  background: '#eff6ff',
+                  border: filtroVerif === 'Saldados' ? '2px solid #2563eb' : '1px solid #bfdbfe',
+                  borderRadius: 8,
+                  padding: '10px 14px',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease'
+                }}
+                title="Clic para filtrar contratos 100% saldados"
+                onClick={() => { setFiltroVerif('Saldados'); setPageVerif(1); }}
+              >
                 <div style={{ fontSize: 11, color: '#2563eb', fontWeight: 600 }}>⚪ SALDADOS / PAZ Y SALVO</div>
                 <div style={{ fontSize: 20, fontWeight: 800, color: '#1d4ed8', marginTop: 2 }}>{saldadosCount}</div>
                 <div style={{ fontSize: 10, color: '#2563eb', marginTop: 2 }}>100% pagados</div>
@@ -643,7 +722,7 @@ export default function Cartera() {
                   <th>Progreso Cuotas</th>
                   <th>Saldo Restante</th>
                   <th>Asesor</th>
-                  <th style={{ textAlign: 'center' }}>Auditar</th>
+                  <th style={{ textAlign: 'center' }}>Acciones</th>
                 </tr>
               </thead>
               <tbody>
@@ -653,6 +732,8 @@ export default function Cartera() {
                   const isSaldado = (v.saldo || 0) <= 0;
                   const isMora = (v.cuotas_vencidas || 0) > 0;
                   const montoMoraEstimado = (v.cuotas_vencidas || 0) * (v.valor_cuota || 0);
+                  const rawPhone = v.clientes?.celular || v.celular || '';
+                  const waLink = getWhatsAppLink(rawPhone);
 
                   return (
                     <tr key={v.id} style={{ cursor: 'pointer' }} onClick={() => openDetalle(v)}>
@@ -683,9 +764,20 @@ export default function Cartera() {
                       </td>
                       <td>
                         <div style={{ fontSize: 12, fontWeight: 700, color: '#0f172a' }}>{v.cliente_nombre || v.clientes?.nombre || '—'}</div>
-                        <div style={{ fontSize: 11, color: 'var(--text-muted)', display: 'flex', gap: 8, marginTop: 2 }}>
+                        <div style={{ fontSize: 11, color: 'var(--text-muted)', display: 'flex', gap: 8, alignItems: 'center', marginTop: 2, flexWrap: 'wrap' }}>
                           {v.clientes?.doc_cliente && <span>CC {v.clientes.doc_cliente}</span>}
-                          {v.clientes?.celular && <span>· Tel: {v.clientes.celular}</span>}
+                          {rawPhone && (
+                            <a
+                              href={waLink || '#'}
+                              target={waLink ? "_blank" : undefined}
+                              rel={waLink ? "noopener noreferrer" : undefined}
+                              onClick={e => e.stopPropagation()}
+                              style={{ color: '#15803d', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 3, fontWeight: 600 }}
+                              title={`Abrir WhatsApp: ${waLink || rawPhone}`}
+                            >
+                              <Phone size={10} /> {rawPhone}
+                            </a>
+                          )}
                         </div>
                       </td>
                       <td>
@@ -698,7 +790,16 @@ export default function Cartera() {
                           </div>
                         ) : isMora ? (
                           <div>
-                            <span className="badge" style={{ background: '#fef2f2', color: '#b91c1c', border: '1px solid #fecaca', padding: '3px 8px', borderRadius: 12, fontWeight: 700 }}>
+                            <span
+                              className="badge"
+                              style={{ background: '#fef2f2', color: '#b91c1c', border: '1px solid #fecaca', padding: '3px 8px', borderRadius: 12, fontWeight: 700, cursor: 'pointer' }}
+                              title="Cliente en mora. Clic para filtrar solo Debe Cuotas"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setFiltroVerif('En Mora');
+                                setPageVerif(1);
+                              }}
+                            >
                               <AlertTriangle size={11} style={{ marginRight: 4 }} /> DEBE {v.cuotas_vencidas} CUOTA{v.cuotas_vencidas > 1 ? 'S' : ''}
                             </span>
                             <div style={{ fontSize: 11, color: '#dc2626', marginTop: 2, fontWeight: 700 }}>
@@ -734,7 +835,7 @@ export default function Cartera() {
                         {v.vendedor_nombre || '—'}
                       </td>
                       <td onClick={e => e.stopPropagation()} style={{ textAlign: 'center' }}>
-                        <div style={{ display: 'flex', gap: 6, justifyContent: 'center' }}>
+                        <div style={{ display: 'flex', gap: 6, justifyContent: 'center', alignItems: 'center' }}>
                           <button
                             className="btn btn-primary"
                             style={{ fontSize: 11, padding: '4px 8px', gap: 4, background: '#16a34a', borderColor: '#15803d', fontWeight: 700 }}
@@ -755,6 +856,41 @@ export default function Cartera() {
                           >
                             <FileText size={12} /> Extracto
                           </button>
+                          {/* Ícono de Teléfono / WhatsApp a la derecha de Extracto para los que deben cuotas */}
+                          {isMora && (
+                            <a
+                              href={waLink || '#'}
+                              target={waLink ? "_blank" : undefined}
+                              rel={waLink ? "noopener noreferrer" : undefined}
+                              className="btn btn-ghost"
+                              style={{
+                                fontSize: 11,
+                                padding: '4px 8px',
+                                gap: 4,
+                                color: '#15803d',
+                                borderColor: '#86efac',
+                                background: '#f0fdf4',
+                                fontWeight: 700,
+                                textDecoration: 'none',
+                                display: 'inline-flex',
+                                alignItems: 'center'
+                              }}
+                              title={waLink ? `Escribir por WhatsApp a ${v.cliente_nombre || 'Cliente'}: ${waLink}` : 'Sin teléfono registrado. Clic para ingresar número y abrir WhatsApp'}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (!waLink) {
+                                  e.preventDefault();
+                                  const input = window.prompt(`El cliente ${v.cliente_nombre || v.clientes?.nombre || ''} no tiene teléfono celular registrado.\nIngresa el número celular para WhatsApp:`);
+                                  if (input) {
+                                    const num = formatWhatsAppNumber(input);
+                                    if (num) window.open(`https://wa.me/${num}`, '_blank');
+                                  }
+                                }
+                              }}
+                            >
+                              <Phone size={12} color="#16a34a" /> WhatsApp
+                            </a>
+                          )}
                         </div>
                       </td>
 
@@ -828,13 +964,59 @@ export default function Cartera() {
                   </span>
                 )}
               </div>
-              <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4 }}>
+              <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                 {selected.fecha_venta ? `Venta: ${formatDate(selected.fecha_venta)}` : '⚠ Sin fecha de venta'}
                 {cuotasVenta.length > 0 && ` · ${cuotasVenta.length} cuotas registradas`}
                 {selected.clientes?.doc_cliente && ` · Cédula: ${selected.clientes.doc_cliente}`}
+                {selected.clientes?.celular && (
+                  <a
+                    href={getWhatsAppLink(selected.clientes.celular) || '#'}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 4,
+                      fontSize: 11,
+                      color: '#15803d',
+                      background: '#f0fdf4',
+                      border: '1px solid #86efac',
+                      borderRadius: 4,
+                      padding: '2px 8px',
+                      textDecoration: 'none',
+                      fontWeight: 700
+                    }}
+                    title={`Escribir por WhatsApp a ${selected.clientes.celular}`}
+                  >
+                    <Phone size={11} color="#16a34a" /> WhatsApp: {selected.clientes.celular}
+                  </a>
+                )}
               </div>
             </div>
-            <div style={{ display: 'flex', gap: 8 }}>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              {selected.clientes?.celular && (
+                <a
+                  href={getWhatsAppLink(selected.clientes.celular) || '#'}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn btn-ghost"
+                  style={{
+                    fontSize: 12,
+                    padding: '6px 12px',
+                    gap: 6,
+                    color: '#15803d',
+                    borderColor: '#86efac',
+                    background: '#f0fdf4',
+                    fontWeight: 700,
+                    textDecoration: 'none',
+                    display: 'inline-flex',
+                    alignItems: 'center'
+                  }}
+                  title={`Abrir chat de WhatsApp con ${selected.cliente_nombre || selected.clientes?.nombre || 'Cliente'}`}
+                >
+                  <Phone size={13} color="#16a34a" /> WhatsApp
+                </a>
+              )}
               <button
                 className="btn btn-primary"
                 style={{ fontSize: 12, padding: '6px 14px', background: '#16a34a', borderColor: '#16a34a', gap: 6, fontWeight: 700 }}

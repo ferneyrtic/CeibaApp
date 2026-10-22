@@ -77,6 +77,25 @@ export const ROLE_PERMISSIONS = {
     badgeBg: '#ecfdf5',
     badgeBorder: '#a7f3d0',
     description: 'Operación diaria, recaudo de pagos, recibos y desembolso de comisiones (Tatiana)'
+  },
+  soporte: {
+    canViewCierre: false,
+    canViewConfig: false,
+    canViewComisiones: true,
+    canDisburseCommissions: false,
+    canViewGastos: false,
+    canManageGastos: false,
+    canManageRecibos: true,
+    canDeleteRecibos: false,
+    canEditContrato: false,
+    canDeleteCasosEspeciales: false,
+    canManageUsers: false,
+    canViewHistorialAcciones: true,
+    label: 'Soporte (Diana)',
+    badgeColor: '#0284c7',
+    badgeBg: '#f0f9ff',
+    badgeBorder: '#bae6fd',
+    description: 'Gestión y atención de soporte operativo, recaudo y cartera (Diana)'
   }
 };
 
@@ -86,12 +105,14 @@ export function getNormalizedRole(user) {
   if (['admin', 'administrador'].includes(rawRole)) return 'admin';
   if (['propietario', 'gerencia', 'owner'].includes(rawRole)) return 'propietario';
   if (['contadora', 'contador', 'financiero'].includes(rawRole)) return 'contadora';
+  if (['soporte', 'support', 'diana'].includes(rawRole)) return 'soporte';
   if (['secretaria', 'secretario', 'asistente', 'cajero', 'cartera', 'asesor', 'tatiana'].includes(rawRole)) return 'secretaria';
 
   const email = (user.email || '').toLowerCase();
   if (email.startsWith('admin')) return 'admin';
   if (email.startsWith('propietario')) return 'propietario';
   if (email.startsWith('contadora')) return 'contadora';
+  if (email.startsWith('soporte') || email.startsWith('diana')) return 'soporte';
   if (email.startsWith('secretaria') || email.startsWith('tatiana')) return 'secretaria';
 
   return 'contadora';
@@ -152,6 +173,7 @@ export function AuthProvider({ children }) {
   const isPropietario = role === 'propietario';
   const isContadora = role === 'contadora';
   const isSecretaria = role === 'secretaria';
+  const isSoporte = role === 'soporte';
   const isOwner = isPropietario || isAdmin;
 
   return (
@@ -168,6 +190,7 @@ export function AuthProvider({ children }) {
       isPropietario,
       isContadora,
       isSecretaria,
+      isSoporte,
       isOwner
     }}>
       {children}

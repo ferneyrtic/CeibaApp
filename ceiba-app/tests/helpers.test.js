@@ -5,7 +5,9 @@ import {
   formatDate,
   getEstadoBadge,
   getEstadoCuotaBadge,
-  diasDesdeHoy
+  diasDesdeHoy,
+  formatWhatsAppNumber,
+  getWhatsAppLink
 } from '../src/utils/helpers.js';
 
 describe('helpers - formatCOP', () => {
@@ -123,5 +125,29 @@ describe('helpers - diasDesdeHoy', () => {
     const diffFutura = diasDesdeHoy(toLocalDateStr(futura));
     expect(diffFutura).toBeGreaterThanOrEqual(14);
     expect(diffFutura).toBeLessThanOrEqual(16);
+  });
+});
+
+describe('helpers - WhatsApp Links (wa.me)', () => {
+  it('debe devolver null para teléfonos vacíos o sin dígitos válidos', () => {
+    expect(formatWhatsAppNumber(null)).toBeNull();
+    expect(formatWhatsAppNumber('')).toBeNull();
+    expect(formatWhatsAppNumber('   ')).toBeNull();
+    expect(getWhatsAppLink(null)).toBeNull();
+  });
+
+  it('debe formatear números celulares colombianos con prefijo 57', () => {
+    expect(formatWhatsAppNumber('313 2213086')).toBe('573132213086');
+    expect(getWhatsAppLink('313 2213086')).toBe('https://wa.me/573132213086');
+    expect(getWhatsAppLink('314-304-3270')).toBe('https://wa.me/573143043270');
+  });
+
+  it('debe respetar números que ya tienen código 57', () => {
+    expect(formatWhatsAppNumber('573133043714')).toBe('573133043714');
+    expect(getWhatsAppLink('+57 310 1234567')).toBe('https://wa.me/573101234567');
+  });
+
+  it('debe tomar el primer teléfono si hay múltiples separados por slash', () => {
+    expect(getWhatsAppLink('310 1234567 / 311 9876543')).toBe('https://wa.me/573101234567');
   });
 });

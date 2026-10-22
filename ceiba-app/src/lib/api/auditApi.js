@@ -9,16 +9,37 @@ let inMemoryLogs = [];
 function getCurrentUserInfo() {
   try {
     if (typeof window !== 'undefined' && window.localStorage) {
-      const sessionStr = window.localStorage.getItem('sb-qatfoxmarddsocnwycgy-auth-token');
+      // Intentar cualquier clave auth de supabase en localStorage
+      let sessionStr = null;
+      for (let i = 0; i < window.localStorage.length; i++) {
+        const key = window.localStorage.key(i);
+        if (key && key.startsWith('sb-') && key.endsWith('-auth-token')) {
+          sessionStr = window.localStorage.getItem(key);
+          break;
+        }
+      }
+      if (!sessionStr) {
+        sessionStr = window.localStorage.getItem('sb-qatfoxmarddsocnwycgy-auth-token');
+      }
+
       if (sessionStr) {
         const parsed = JSON.parse(sessionStr);
         const user = parsed?.user;
         if (user) {
-          const isSec = (user.user_metadata?.role || '').toLowerCase() === 'secretaria' || (user.email || '').toLowerCase().startsWith('secretaria') || (user.email || '').toLowerCase().startsWith('tatiana');
+          const rawRole = (user.user_metadata?.role || '').toLowerCase().trim();
+          const emailLower = (user.email || '').toLowerCase().trim();
+          const isSec = rawRole === 'secretaria' || emailLower.startsWith('secretaria') || emailLower.startsWith('tatiana');
+          const isSop = rawRole === 'soporte' || emailLower.startsWith('soporte') || emailLower.startsWith('diana');
+
+          let defaultName = 'Usuario Operativo';
+          if (isSop) defaultName = 'Diana (Soporte)';
+          else if (isSec) defaultName = 'Tatiana (Secretaría)';
+          else if (user.email) defaultName = user.email.split('@')[0];
+
           return {
-            email: user.email || 'tatiana@laceiba.com',
-            nombre: user.user_metadata?.nombre || (isSec ? 'Tatiana (Secretaría)' : user.email?.split('@')[0]) || 'Usuario Operativo',
-            role: user.user_metadata?.role || (isSec ? 'secretaria' : 'secretaria')
+            email: user.email || (isSop ? 'diana@ceiba.com' : 'secretaria@laceiba.com'),
+            nombre: user.user_metadata?.nombre || defaultName,
+            role: isSop ? 'soporte' : (user.user_metadata?.role || (isSec ? 'secretaria' : 'secretaria'))
           };
         }
       }

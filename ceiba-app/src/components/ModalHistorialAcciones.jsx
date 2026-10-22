@@ -118,7 +118,7 @@ export default function ModalHistorialAcciones({ onClose, loteFiltroInicial = ''
               type="text"
               className="search-input"
               style={{ paddingLeft: 34, width: '100%', fontSize: 12 }}
-              placeholder="Buscar por lote, Tatiana / secretaría, cliente o acción..."
+              placeholder="Buscar por lote, Diana (Soporte), Tatiana, cliente o acción..."
               value={search}
               onChange={e => setSearch(e.target.value)}
             />

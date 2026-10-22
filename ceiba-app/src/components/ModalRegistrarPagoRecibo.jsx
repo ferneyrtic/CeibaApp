@@ -25,7 +25,7 @@ export default function ModalRegistrarPagoRecibo({
   onClose,
   onSuccess
 }) {
-  const { user, isSecretaria } = useAuth();
+  const { user, isSecretaria, isSoporte, role } = useAuth();
   const [selectedVenta, setSelectedVenta] = useState(venta);
   const [cuotas, setCuotas] = useState([]);
   const [recibosPrevios, setRecibosPrevios] = useState([]);
@@ -285,7 +285,7 @@ export default function ModalRegistrarPagoRecibo({
         referenciaPago: referenciaPago.trim() || undefined,
         concepto: conceptoManual.trim() || conceptoSugerido,
         observaciones: observacionesManual.trim() || observacionesSugeridas,
-        registradoPor: user?.user_metadata?.nombre || (isSecretaria ? 'Tatiana (Secretaría)' : (user?.email || 'Tatiana (Secretaría)')),
+        registradoPor: user?.user_metadata?.nombre || (isSoporte || role === 'soporte' || user?.email?.toLowerCase().includes('diana') ? 'Diana (Soporte)' : (isSecretaria ? 'Tatiana (Secretaría)' : (user?.email || 'Diana (Soporte)'))),
         ciudad: 'Acacías',
         loteIdStr: rawLote,
         clienteNombre: cliNom,
