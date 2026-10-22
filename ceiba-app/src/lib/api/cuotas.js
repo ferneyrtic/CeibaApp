@@ -41,11 +41,12 @@ export const getCuotas = async ({ estado, idLote, search } = {}) => {
 /**
  * Simulación previa de imputación en cascada de un abono
  */
-export const simularAbonoCascada = (cuotas, montoTotal) => {
+export const simularAbonoCascada = (cuotas = [], montoTotal = 0) => {
   let montoRestante = Math.max(0, Number(montoTotal) || 0);
-  const pendientes = [...cuotas]
-    .filter(c => c.estado_cuota !== 'PAGA' || (c.valor_pagado || 0) < (c.valor_cuota || 0))
-    .sort((a, b) => a.numero_cuota - b.numero_cuota);
+  const lista = Array.isArray(cuotas) ? cuotas : [];
+  const pendientes = lista
+    .filter(c => c && (c.estado_cuota !== 'PAGA' || (Number(c.valor_pagado) || 0) < (Number(c.valor_cuota) || 0)))
+    .sort((a, b) => (Number(a?.numero_cuota) || 0) - (Number(b?.numero_cuota) || 0));
 
   const afectaciones = [];
 

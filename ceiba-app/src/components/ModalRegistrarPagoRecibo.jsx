@@ -140,98 +140,111 @@ export default function ModalRegistrarPagoRecibo({
     }
   }, [modoImputacion, saldoPendienteCuota]);
 
-  const montoNum = Math.round(Number(monto) || 0);
+  const montoNum = Math.max(0, Math.round(Number(monto) || 0));
 
   // Simulación en tiempo real (Modo Cascada o Modo Cuota)
   const simulacion = useMemo(() => {
-    if (montoNum <= 0 || cuotas.length === 0) return null;
+    if (montoNum <= 0 || !Array.isArray(cuotas) || cuotas.length === 0) return null;
 
-    if (modoImputacion === 'cascada') {
-      return simularAbonoCascada(cuotas, montoNum);
-    } else {
-      // Simulación enfocada en la cuota seleccionada
-      if (!currentCuota) return null;
-      const valCuota = Number(currentCuota.valor_cuota) || 0;
-      const yaPag = Number(currentCuota.valor_pagado) || 0;
-      const porPagar = Math.max(0, valCuota - yaPag);
-      const abonoAEsta = Math.min(montoNum, porPagar);
-      const completo = abonoAEsta >= porPagar;
+    try {
+      if (modoImputacion === 'cascada') {
+        return simularAbonoCascada(cuotas, montoNum);
+      } else {
+        // Simulación enfocada en la cuota seleccionada
+        if (!currentCuota) return null;
+        const valCuota = Number(currentCuota.valor_cuota) || 0;
+        const yaPag = Number(currentCuota.valor_pagado) || 0;
+        const porPagar = Math.max(0, valCuota - yaPag);
+        const abonoAEsta = Math.min(montoNum, porPagar);
+        const completo = abonoAEsta >= porPagar;
 
-      const afectaciones = [{
-        id: currentCuota.id,
-        numero_cuota: currentCuota.numero_cuota,
-        fecha_vencimiento: currentCuota.fecha_vencimiento,
-        valor_cuota: valCuota,
-        valor_anterior: yaPag,
-        valor_abono: abonoAEsta,
-        nuevo_pagado: yaPag + abonoAEsta,
-        nuevo_estado: completo ? 'PAGA' : 'AL DÍA',
-        completo
-      }];
+        const afectaciones = [{
+          id: currentCuota.id || 'cuota-sel',
+          numero_cuota: currentCuota.numero_cuota || 1,
+          fecha_vencimiento: currentCuota.fecha_vencimiento,
+          valor_cuota: valCuota,
+          valor_anterior: yaPag,
+          valor_abono: abonoAEsta,
+          nuevo_pagado: yaPag + abonoAEsta,
+          nuevo_estado: completo ? 'PAGA' : 'AL DÍA',
+          completo
+        }];
 
-      return {
-        afectaciones,
-        montoAplicado: abonoAEsta,
-        montoSobrante: Math.max(0, montoNum - abonoAEsta)
-      };
+        return {
+          afectaciones,
+          montoAplicado: abonoAEsta,
+          montoSobrante: Math.max(0, montoNum - abonoAEsta)
+        };
+      }
+    } catch (err) {
+      console.warn('Aviso en simulación de abono:', err);
+      return null;
     }
   }, [cuotas, montoNum, modoImputacion, currentCuota]);
 
   // Generación dinámica del texto oficial de Concepto (conciso: solo cuota/abono)
   const conceptoSugerido = useMemo(() => {
-    if (!simulacion || simulacion.afectaciones.length === 0) {
+    if (!simulacion || !Array.isArray(simulacion.afectaciones) || simulacion.afectaciones.length === 0) {
       return 'Abono a contrato';
     }
 
-    const afs = simulacion.afectaciones;
-    let cuotasTexto = '';
+    try {
+      const afs = simulacion.afectaciones;
+      let cuotasTexto = '';
 
-    if (afs.length === 1) {
-      const a = afs[0];
-      cuotasTexto = a.completo
-        ? `Pago Cuota ${a.numero_cuota} (Totalidad)`
-        : `Abono Cuota ${a.numero_cuota}`;
-    } else {
-      const completas = afs.filter(a => a.completo).map(a => a.numero_cuota);
-      const parciales = afs.filter(a => !a.completo).map(a => a.numero_cuota);
-
-      if (completas.length > 0 && parciales.length === 0) {
-        cuotasTexto = `Pago Cuotas ${completas.join(', ')}`;
-      } else if (completas.length > 0 && parciales.length > 0) {
-        cuotasTexto = `Pago Cuota${completas.length > 1 ? 's' : ''} ${completas.join(', ')} y Abono Cuota ${parciales.join(', ')}`;
+      if (afs.length === 1) {
+        const a = afs[0];
+        cuotasTexto = a?.completo
+          ? `Pago Cuota ${a?.numero_cuota || ''} (Totalidad)`
+          : `Abono Cuota ${a?.numero_cuota || ''}`;
       } else {
-        cuotasTexto = `Abono Cuota ${parciales.join(', ')}`;
-      }
-    }
+        const completas = afs.filter(a => a && a.completo).map(a => a.numero_cuota);
+        const parciales = afs.filter(a => a && !a.completo).map(a => a.numero_cuota);
 
-    return cuotasTexto || 'Abono a contrato';
+        if (completas.length > 0 && parciales.length === 0) {
+          cuotasTexto = `Pago Cuotas ${completas.join(', ')}`;
+        } else if (completas.length > 0 && parciales.length > 0) {
+          cuotasTexto = `Pago Cuota${completas.length > 1 ? 's' : ''} ${completas.join(', ')} y Abono Cuota ${parciales.join(', ')}`;
+        } else {
+          cuotasTexto = `Abono Cuota ${parciales.join(', ')}`;
+        }
+      }
+
+      return cuotasTexto || 'Abono a contrato';
+    } catch (e) {
+      return 'Abono a contrato';
+    }
   }, [selectedVenta, simulacion]);
 
   // Generación dinámica del texto oficial de Observaciones
   const observacionesSugeridas = useMemo(() => {
-    let base = '';
-    const refStr = referenciaPago.trim() ? ` · Ref: ${referenciaPago.trim()}` : '';
+    try {
+      let base = '';
+      const refStr = (referenciaPago || '').trim() ? ` · Ref: ${(referenciaPago || '').trim()}` : '';
 
-    if (medioPago === 'TRANSFERENCIA') {
-      base = `Transferencia a cuenta ${banco}${refStr}`;
-    } else {
-      if (subTipoEfectivo === 'CONSIGNACION') {
-        base = `Efectivo consignado a cuenta ${banco}${refStr}`;
+      if (medioPago === 'TRANSFERENCIA') {
+        base = `Transferencia a cuenta ${banco}${refStr}`;
       } else {
-        base = `Efectivo recibido en oficina${refStr}`;
+        if (subTipoEfectivo === 'CONSIGNACION') {
+          base = `Efectivo consignado a cuenta ${banco}${refStr}`;
+        } else {
+          base = `Efectivo recibido en oficina${refStr}`;
+        }
       }
-    }
 
-    // Agregar nota de saldo restante si hubo cuota parcial
-    if (simulacion) {
-      const parcial = simulacion.afectaciones.find(a => !a.completo);
-      if (parcial) {
-        const saldoResta = Math.max(0, (Number(parcial.valor_cuota) || 0) - (Number(parcial.nuevo_pagado) || 0));
-        base += ` · Saldo restante Cuota ${parcial.numero_cuota}: ${formatCOP(saldoResta)}`;
+      // Agregar nota de saldo restante si hubo cuota parcial
+      if (simulacion && Array.isArray(simulacion.afectaciones)) {
+        const parcial = simulacion.afectaciones.find(a => a && !a.completo);
+        if (parcial) {
+          const saldoResta = Math.max(0, (Number(parcial.valor_cuota) || 0) - (Number(parcial.nuevo_pagado) || 0));
+          base += ` · Saldo restante Cuota ${parcial.numero_cuota}: ${formatCOP(saldoResta)}`;
+        }
       }
-    }
 
-    return base;
+      return base;
+    } catch (e) {
+      return '';
+    }
   }, [medioPago, banco, subTipoEfectivo, referenciaPago, simulacion]);
 
   // Actualizar automáticamente concepto y observaciones si el usuario no los ha editado manualmente
@@ -529,7 +542,7 @@ export default function ModalRegistrarPagoRecibo({
         </div>
 
         {/* Simulación en vivo de las cuotas afectadas */}
-        {simulacion && simulacion.afectaciones.length > 0 && (
+        {simulacion && Array.isArray(simulacion.afectaciones) && simulacion.afectaciones.length > 0 && (
           <div style={{
             background: 'rgba(34, 197, 94, 0.12)',
             border: '1.5px solid rgba(34, 197, 94, 0.35)',
@@ -542,10 +555,10 @@ export default function ModalRegistrarPagoRecibo({
               Imputación Contable del Recibo Nº {proximoReciboNum}:
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-              {simulacion.afectaciones.map(a => (
-                <div key={a.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--text-primary)' }}>
+              {simulacion.afectaciones.filter(Boolean).map((a, aIdx) => (
+                <div key={a.id || aIdx} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--text-primary)' }}>
                   <span>
-                    <strong>Cuota #{a.numero_cuota}</strong> (Vence: {formatDate(a.fecha_vencimiento)})
+                    <strong>Cuota #{a.numero_cuota || (aIdx + 1)}</strong> (Vence: {formatDate(a.fecha_vencimiento)})
                   </span>
                   <span>
                     <strong style={{ color: '#22c55e' }}>+{formatCOP(a.valor_abono)}</strong>
@@ -553,7 +566,7 @@ export default function ModalRegistrarPagoRecibo({
                       <span style={{ marginLeft: 6, color: '#22c55e', fontWeight: 700 }}>✓ Total</span>
                     ) : (
                       <span style={{ marginLeft: 6, color: '#d97706', fontWeight: 700 }}>
-                        ⚠ Parcial (Resta {formatCOP(Math.max(0, a.valor_cuota - a.nuevo_pagado))})
+                        ⚠ Parcial (Resta {formatCOP(Math.max(0, (Number(a.valor_cuota) || 0) - (Number(a.nuevo_pagado) || 0)))})
                       </span>
                     )}
                   </span>

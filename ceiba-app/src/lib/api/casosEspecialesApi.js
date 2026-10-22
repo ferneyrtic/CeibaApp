@@ -344,8 +344,8 @@ export async function agregarNotaSeguimiento(casoId, notaTexto, usuarioActual) {
 export function obtenerBadgeCasoEspecial(idLote, listaCasos = []) {
   if (!idLote) return null;
   const n = normLote(idLote);
-
-  const caso = listaCasos.find(c => normLote(c.id_lote) === n && c.estado !== 'RESUELTO');
+  const casos = Array.isArray(listaCasos) ? listaCasos : [];
+  const caso = casos.find(c => c && normLote(c.id_lote) === n && c.estado !== 'RESUELTO');
   if (!caso) return null;
 
   const cat = CATEGORIAS_CASOS.find(c => c.id === caso.categoria) || CATEGORIAS_CASOS[0];
@@ -354,10 +354,10 @@ export function obtenerBadgeCasoEspecial(idLote, listaCasos = []) {
     titulo: caso.titulo,
     categoria: caso.categoria,
     monto: caso.monto_asociado,
-    text: caso.titulo || cat.label,
-    icon: cat.icon,
-    color: cat.color,
-    bg: cat.bg,
+    text: caso.titulo || cat?.label || 'Caso Especial',
+    icon: cat?.icon,
+    color: cat?.color || '#dc2626',
+    bg: cat?.bg || '#fef2f2',
     estado: caso.estado,
     rawCaso: caso
   };

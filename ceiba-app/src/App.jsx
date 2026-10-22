@@ -61,8 +61,8 @@ function Sidebar({ active, onNav, user, onSignOut, isOpen, onClose, permissions,
   let lastSection = null;
   const isSecretaria = role === 'secretaria';
   const isSoporte = role === 'soporte';
-  const displayName = user?.user_metadata?.nombre || (isSoporte ? 'Diana (Soporte)' : (isSecretaria ? 'Tatiana (Secretaría)' : (user?.email?.split('@')[0] || 'Usuario')));
-  const initials = isSoporte && !user?.user_metadata?.nombre ? 'DI' : (isSecretaria && !user?.user_metadata?.nombre ? 'TA' : (user?.email?.slice(0, 2).toUpperCase() || 'US'));
+  const displayName = user?.user_metadata?.nombre || (isSoporte ? 'Soporte Mora' : (isSecretaria ? 'Secretaría' : (user?.email?.split('@')[0] || 'Usuario')));
+  const initials = isSoporte && !user?.user_metadata?.nombre ? 'SM' : (isSecretaria && !user?.user_metadata?.nombre ? 'SC' : (user?.email?.slice(0, 2).toUpperCase() || 'US'));
 
   const visibleNavItems = NAV_ITEMS.filter(item => {
     if (item.id === 'cierre' && !permissions?.canViewCierre) return false;
@@ -137,7 +137,7 @@ function Sidebar({ active, onNav, user, onSignOut, isOpen, onClose, permissions,
                   {displayName}
                 </div>
                 <div style={{ fontSize: 11, color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {user?.email || (isSoporte ? 'diana@ceiba.com' : (isSecretaria ? 'secretaria@ceiba.com' : ''))}
+                  {user?.email || (isSoporte ? 'soporte@ceiba.com' : (isSecretaria ? 'secretaria@ceiba.com' : ''))}
                 </div>
               </div>
               <button

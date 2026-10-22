@@ -56,10 +56,10 @@ export default function Dashboard() {
       .finally(() => setLoading(false));
   }, []);
 
-  const chartData = (kpis.ingresosMes?.labels || []).map((label, i) => ({
+  const chartData = (kpis?.ingresosMes?.labels || []).map((label, i) => ({
     label,
-    Recaudado:  kpis.ingresosMes.recaudado[i],
-    Proyectado: kpis.ingresosMes.proyectado[i],
+    Recaudado:  kpis?.ingresosMes?.recaudado?.[i] ?? 0,
+    Proyectado: kpis?.ingresosMes?.proyectado?.[i] ?? 0,
   }));
 
   const lotePct      = pct(kpis.lotesVendidos,    kpis.totalLotes);
@@ -181,14 +181,14 @@ export default function Dashboard() {
             <div className="progress-label">
               <span>Cuotas al día</span>
               <span style={{ color:'var(--text-primary)', fontWeight:700 }}>
-                {pct(kpis.estadoCartera[0].value, kpis.estadoCartera.reduce((a,c)=>a+c.value,0))}%
+                {pct(kpis?.estadoCartera?.[0]?.value || 0, (kpis?.estadoCartera || []).reduce((a,c)=>a+(c.value||0),0))}%
               </span>
             </div>
             <div className="progress-bar">
-              <div className="progress-fill" style={{ width:`${pct(kpis.estadoCartera[0].value, kpis.estadoCartera.reduce((a,c)=>a+c.value,0))}%`, background:'var(--green)' }} />
+              <div className="progress-fill" style={{ width:`${pct(kpis?.estadoCartera?.[0]?.value || 0, (kpis?.estadoCartera || []).reduce((a,c)=>a+(c.value||0),0))}%`, background:'var(--green)' }} />
             </div>
             <div style={{ fontSize:11, color:'var(--text-muted)', marginTop:4 }}>
-              {kpis.estadoCartera[0].value} de {kpis.estadoCartera.reduce((a,c)=>a+c.value,0)} cuotas activas
+              {kpis?.estadoCartera?.[0]?.value || 0} de {(kpis?.estadoCartera || []).reduce((a,c)=>a+(c.value||0),0)} cuotas activas
             </div>
           </div>
         </div>

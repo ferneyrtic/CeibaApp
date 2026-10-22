@@ -65,6 +65,7 @@ class ModalDetalleErrorBoundary extends React.Component {
 }
 
 function getCasoEspecialTag(idLote, listaCasos = []) {
+  if (!idLote || !Array.isArray(listaCasos)) return null;
   return obtenerBadgeCasoEspecial(idLote, listaCasos);
 }
 
@@ -1189,7 +1190,7 @@ export default function Cartera() {
                     </thead>
                     <tbody>
                       {cuotasVenta.map((c) => {
-                        const cuotaRecs = recibosVenta.filter(r => r.cuota_id === c.id);
+                        const cuotaRecs = (recibosVenta || []).filter(r => r && r.cuota_id === c.id);
                         return (
                           <tr key={c.id} style={{ borderBottom: '1px solid var(--border)' }}>
                             <td style={{ padding: '6px 10px', fontWeight: 600 }}>
