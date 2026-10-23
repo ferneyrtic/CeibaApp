@@ -65,12 +65,8 @@ const PAGE_META = {
 
 function Sidebar({ active, onNav, user, onSignOut, isOpen, onClose, permissions, roleInfo, role }) {
   let lastSection = null;
-  const isSecretaria = role === 'secretaria';
-  const isSoporte = role === 'soporte';
-  const rawNombre = user?.user_metadata?.nombre || '';
-  const cleanNombre = /tatiana/i.test(rawNombre) ? 'Secretaría' : (/diana/i.test(rawNombre) ? 'Soporte Mora' : rawNombre);
-  const displayName = isSoporte ? 'Soporte Mora' : (isSecretaria ? 'Secretaría' : (cleanNombre || user?.email?.split('@')[0] || 'Usuario'));
-  const initials = isSoporte ? 'SM' : (isSecretaria ? 'SC' : (displayName.slice(0, 2).toUpperCase() || 'US'));
+  const displayName = user?.user_metadata?.nombre || roleInfo?.label || user?.email?.split('@')[0] || 'Usuario';
+  const initials = displayName.slice(0, 2).toUpperCase() || 'US';
 
   const visibleNavItems = NAV_ITEMS.filter(item => {
     if (item.id === 'cierre' && !permissions?.canViewCierre) return false;

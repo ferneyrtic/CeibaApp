@@ -9,11 +9,7 @@ import { obtenerTodosLosRecibos, obtenerSiguienteNumeroRecibo } from '../lib/api
 import Pagination from './Pagination';
 
 const sanitizarRegistradoPor = (str) => {
-  if (!str) return 'Secretaría';
-  const s = String(str).trim();
-  if (/tatiana/i.test(s)) return 'Secretaría';
-  if (/diana/i.test(s)) return 'Soporte Mora';
-  return s;
+  return str ? String(str).trim() : 'Secretaría';
 };
 
 export default function RecibosListView({ onVerRecibo, onVerExtracto }) {

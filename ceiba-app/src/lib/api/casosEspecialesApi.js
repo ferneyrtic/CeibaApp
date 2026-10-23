@@ -188,7 +188,7 @@ export async function guardarCasoEspecial(casoData, usuarioActual) {
       {
         fecha: new Date().toISOString().slice(0, 10),
         nota: casoGuardado.observacion || 'Caso registrado en el sistema',
-        autor: usuarioActual?.user_metadata?.nombre || usuarioActual?.nombre || (usuarioActual?.email?.toLowerCase().includes('diana') ? 'Diana (Soporte)' : 'Secretaría')
+        autor: usuarioActual?.user_metadata?.nombre || usuarioActual?.nombre || usuarioActual?.email?.split('@')[0] || 'Secretaría'
       }
     ];
   }
@@ -331,7 +331,7 @@ export async function agregarNotaSeguimiento(casoId, notaTexto, usuarioActual) {
     fecha: new Date().toISOString().slice(0, 10),
     hora: new Date().toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' }),
     nota: notaTexto,
-    autor: usuarioActual?.user_metadata?.nombre || usuarioActual?.nombre || (usuarioActual?.email?.toLowerCase().includes('diana') ? 'Diana (Soporte)' : 'Secretaría')
+    autor: usuarioActual?.user_metadata?.nombre || usuarioActual?.nombre || usuarioActual?.email?.split('@')[0] || 'Secretaría'
   };
 
   caso.historial_notas = [nuevaNota, ...(caso.historial_notas || [])];

@@ -43,20 +43,12 @@ function getCurrentUserInfo() {
         const parsed = JSON.parse(sessionStr);
         const user = parsed?.user;
         if (user) {
-          const rawRole = (user.user_metadata?.role || '').toLowerCase().trim();
-          const emailLower = (user.email || '').toLowerCase().trim();
-          const isSec = rawRole === 'secretaria' || emailLower.startsWith('secretaria') || emailLower.startsWith('tatiana');
-          const isSop = rawRole === 'soporte' || emailLower.startsWith('soporte') || emailLower.startsWith('diana');
-
-          let defaultName = 'Usuario Operativo';
-          if (isSop) defaultName = 'Soporte Mora';
-          else if (isSec) defaultName = 'Secretaría';
-          else if (user.email) defaultName = user.email.split('@')[0];
-
+          const nombre = user.user_metadata?.nombre || (user.email ? user.email.split('@')[0] : 'Secretaría');
+          const role = user.user_metadata?.role || 'secretaria';
           return {
-            email: user.email || (isSop ? 'soporte@ceiba.com' : 'secretaria@laceiba.com'),
-            nombre: user.user_metadata?.nombre || defaultName,
-            role: isSop ? 'soporte' : (user.user_metadata?.role || (isSec ? 'secretaria' : 'secretaria'))
+            email: user.email || 'secretaria@ceiba.com',
+            nombre: nombre,
+            role: role
           };
         }
       }

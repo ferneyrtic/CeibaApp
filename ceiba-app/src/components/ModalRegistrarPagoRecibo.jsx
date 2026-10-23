@@ -299,11 +299,7 @@ export default function ModalRegistrarPagoRecibo({
         referenciaPago: referenciaPago.trim() || undefined,
         concepto: conceptoManual.trim() || conceptoSugerido,
         observaciones: observacionesManual.trim() || observacionesSugeridas,
-        registradoPor: isSoporte || role === 'soporte' || user?.email?.toLowerCase().includes('soporte') || user?.email?.toLowerCase().includes('diana')
-          ? 'Soporte Mora'
-          : (isSecretaria || role === 'secretaria' || /tatiana/i.test(user?.user_metadata?.nombre || '') || /secretaria/i.test(user?.email || '')
-            ? 'Secretaría'
-            : (user?.user_metadata?.nombre || 'Secretaría')),
+        registradoPor: user?.user_metadata?.nombre || (isSoporte ? 'Diana (Soporte)' : 'Secretaría'),
         ciudad: 'Acacías',
         loteIdStr: rawLote,
         clienteNombre: cliNom,

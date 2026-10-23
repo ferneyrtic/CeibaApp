@@ -110,15 +110,15 @@ export function getNormalizedRole(user) {
   if (['admin', 'administrador'].includes(rawRole)) return 'admin';
   if (['propietario', 'gerencia', 'owner'].includes(rawRole)) return 'propietario';
   if (['contadora', 'contador', 'financiero'].includes(rawRole)) return 'contadora';
-  if (['soporte', 'support', 'diana', 'soportemora', 'mora'].includes(rawRole)) return 'soporte';
-  if (['secretaria', 'secretario', 'asistente', 'cajero', 'cartera', 'asesor', 'tatiana'].includes(rawRole)) return 'secretaria';
+  if (['soporte', 'support', 'soportemora', 'mora'].includes(rawRole)) return 'soporte';
+  if (['secretaria', 'secretario', 'asistente', 'cajero', 'cartera', 'asesor'].includes(rawRole)) return 'secretaria';
 
   const email = (user.email || '').toLowerCase();
   if (email.startsWith('admin')) return 'admin';
   if (email.startsWith('propietario')) return 'propietario';
   if (email.startsWith('contadora')) return 'contadora';
   if (email.startsWith('soporte') || email.startsWith('soportemora') || email.startsWith('mora') || email.startsWith('diana')) return 'soporte';
-  if (email.startsWith('secretaria') || email.startsWith('tatiana')) return 'secretaria';
+  if (email.startsWith('secretaria')) return 'secretaria';
 
   return 'contadora';
 }

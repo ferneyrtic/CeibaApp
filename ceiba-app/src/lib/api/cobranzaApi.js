@@ -126,7 +126,9 @@ export async function guardarObservacionCobranza(datos, usuarioActual = 'Soporte
     observacion_adicional: notaFinal || null,
     fecha: fechaActual,
     texto_resumen: resumenFinal,
-    autor: typeof usuarioActual === 'string' ? usuarioActual : (usuarioActual?.email || 'Soporte Mora'),
+    autor: typeof usuarioActual === 'string'
+      ? usuarioActual
+      : (usuarioActual?.user_metadata?.nombre || usuarioActual?.nombre || usuarioActual?.email || 'Diana (Soporte)'),
     updated_at: new Date().toISOString()
   };
 
@@ -170,8 +172,16 @@ export async function guardarObservacionCobranza(datos, usuarioActual = 'Soporte
     }
 
     // Registrar acción de auditoría
-    const autorStr = typeof usuarioActual === 'string' ? usuarioActual : (usuarioActual?.nombre || usuarioActual?.email || 'Diana (Soporte)');
-    const isSop = /diana|soporte/i.test(autorStr);
+    const autorNombre = typeof usuarioActual === 'object'
+      ? (usuarioActual?.user_metadata?.nombre || usuarioActual?.nombre || usuarioActual?.email || 'Diana (Soporte)')
+      : (usuarioActual || 'Diana (Soporte)');
+    const autorEmail = typeof usuarioActual === 'object'
+      ? (usuarioActual?.email || 'diana@ceiba.com')
+      : 'diana@ceiba.com';
+    const autorRole = typeof usuarioActual === 'object'
+      ? (usuarioActual?.user_metadata?.role || 'soporte')
+      : 'soporte';
+
     await registrarAccion({
       modulo: 'CARTERA',
       accion: 'OBSERVACION_COBRANZA',
@@ -181,9 +191,9 @@ export async function guardarObservacionCobranza(datos, usuarioActual = 'Soporte
       descripcion: `Observación de cobranza registrada para lote ${id_lote}: "${resumenFinal}"`,
       detalles: payloadObjeto,
       usuario: {
-        nombre: isSop ? 'Diana (Soporte)' : autorStr,
-        email: isSop ? 'diana@ceiba.com' : 'secretaria@laceiba.com',
-        role: isSop ? 'soporte' : 'secretaria'
+        nombre: autorNombre,
+        email: autorEmail,
+        role: autorRole
       }
     });
 

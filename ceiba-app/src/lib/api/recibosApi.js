@@ -18,10 +18,7 @@ export const clearRecibosCache = () => {
 
 const sanitizarNombreSecretaria = (str) => {
   if (!str) return 'Secretaría';
-  const s = String(str).trim();
-  if (/tatiana/i.test(s)) return 'Secretaría';
-  if (/diana/i.test(s)) return 'Soporte Mora';
-  return s;
+  return String(str).trim();
 };
 
 /**
@@ -41,17 +38,6 @@ const obtenerRecibosLocales = () => {
       // Limpieza de prueba previa: si hay un 3412 guardado en local que no sea del lote real (LC2 - 32 - 7)
       if (num === 3412 && !String(r.lote_id_str || '').toUpperCase().includes('32')) return false;
       return true;
-    }).map(r => {
-      let rCop = r;
-      if (r.asesor && /tatiana/i.test(r.asesor)) {
-        rCop = { ...rCop, asesor: 'Secretaría' };
-        modificado = true;
-      }
-      if (r.registrado_por && /tatiana/i.test(r.registrado_por)) {
-        rCop = { ...rCop, registrado_por: 'Secretaría' };
-        modificado = true;
-      }
-      return rCop;
     });
 
     if (filtrados.length !== list.length || modificado) {
@@ -741,7 +727,8 @@ export const registrarPagoConRecibo = async ({
 
   // 6. Auditoría
   try {
-    const isSop = /diana|soporte/i.test(registradoPor || '');
+    const nombreAudit = registradoPor || 'Secretaría';
+    const esDianaSoporte = nombreAudit === 'Diana (Soporte)' || nombreAudit === 'Soporte Mora';
     await registrarAccion({
       modulo: generarRecibo ? 'RECIBOS_CAJA' : 'CARTERA',
       accion: generarRecibo ? 'EMISION_RECIBO_PAGO' : 'PAGO_REGISTRADO_SIN_RECIBO',
@@ -762,9 +749,9 @@ export const registrarPagoConRecibo = async ({
         sin_recibo: !generarRecibo
       },
       usuario: {
-        nombre: registradoPor || (isSop ? 'Diana (Soporte)' : 'Secretaría'),
-        email: isSop ? 'diana@ceiba.com' : 'secretaria@laceiba.com',
-        role: isSop ? 'soporte' : 'secretaria'
+        nombre: nombreAudit,
+        email: esDianaSoporte ? 'diana@ceiba.com' : 'secretaria@ceiba.com',
+        role: esDianaSoporte ? 'soporte' : 'secretaria'
       }
     });
   } catch (errLog) {
