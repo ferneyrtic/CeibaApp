@@ -9,8 +9,10 @@ import { getComisionesData, registrarPagoComision } from '../lib/api/comisionesA
 import { clearCierreCache } from '../lib/api/cierreApi';
 import { formatCOP, formatDate } from '../utils/helpers';
 import Modal from '../components/Modal';
+import { useAuth } from '../context/AuthContext';
 
 export default function Comisiones() {
+  const { permissions } = useAuth();
   const [data, setData] = useState({ asesores: [], pagos: [], ventas: [], kpis: {} });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -259,14 +261,16 @@ export default function Comisiones() {
             PDF
           </button>
 
-          <button
-            className="btn btn-primary"
-            onClick={() => handleOpenModal()}
-            style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 700 }}
-          >
-            <Plus size={16} />
-            Registrar Pago
-          </button>
+          {permissions?.canDisburseCommissions && (
+            <button
+              className="btn btn-primary"
+              onClick={() => handleOpenModal()}
+              style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 700 }}
+            >
+              <Plus size={16} />
+              Registrar Pago
+            </button>
+          )}
         </div>
       </div>
 
@@ -490,9 +494,11 @@ export default function Comisiones() {
                         <div style={{ fontSize: 13, marginBottom: 16 }}>
                           Registra un nuevo desembolso para comenzar el control de nómina de comisiones.
                         </div>
-                        <button className="btn btn-primary" onClick={() => handleOpenModal()} style={{ fontSize: 13 }}>
-                          <Plus size={14} /> Registrar Primer Pago
-                        </button>
+                        {permissions?.canDisburseCommissions && (
+                          <button className="btn btn-primary" onClick={() => handleOpenModal()} style={{ fontSize: 13 }}>
+                            <Plus size={14} /> Registrar Primer Pago
+                          </button>
+                        )}
                       </td>
                     </tr>
                   ) : (
@@ -632,14 +638,18 @@ export default function Comisiones() {
                         </div>
                       </td>
                       <td style={{ textAlign: 'center' }}>
-                        <button
-                          className="btn btn-primary"
-                          onClick={() => handleOpenModal(a.nombre)}
-                          style={{ fontSize: 11, padding: '5px 10px', gap: 4 }}
-                          title={`Registrar pago a ${a.nombre}`}
-                        >
-                          <Plus size={12} /> Pagar
-                        </button>
+                        {permissions?.canDisburseCommissions ? (
+                          <button
+                            className="btn btn-primary"
+                            onClick={() => handleOpenModal(a.nombre)}
+                            style={{ fontSize: 11, padding: '5px 10px', gap: 4 }}
+                            title={`Registrar pago a ${a.nombre}`}
+                          >
+                            <Plus size={12} /> Pagar
+                          </button>
+                        ) : (
+                          <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>—</span>
+                        )}
                       </td>
                     </tr>
                   ))

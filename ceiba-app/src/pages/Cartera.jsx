@@ -1156,18 +1156,20 @@ export default function Cartera() {
               >
                 <ClipboardList size={13} color="#d97706" /> Observación Cobranza
               </button>
-              <button
-                className="btn btn-primary"
-                style={{ fontSize: 12, padding: '6px 14px', background: '#16a34a', borderColor: '#16a34a', gap: 6, fontWeight: 700 }}
-                onClick={() => {
-                  setPagoReciboVenta(selected);
-                  setPagoReciboCuota(null);
-                  setShowModalPagoRecibo(true);
-                }}
-                title="Abonar a este contrato y emitir recibo oficial"
-              >
-                💳 Abonar
-              </button>
+              {permissions?.canManageRecibos && (
+                <button
+                  className="btn btn-primary"
+                  style={{ fontSize: 12, padding: '6px 14px', background: '#16a34a', borderColor: '#16a34a', gap: 6, fontWeight: 700 }}
+                  onClick={() => {
+                    setPagoReciboVenta(selected);
+                    setPagoReciboCuota(null);
+                    setShowModalPagoRecibo(true);
+                  }}
+                  title="Abonar a este contrato y emitir recibo oficial"
+                >
+                  💳 Abonar
+                </button>
+              )}
               {permissions?.canEditContrato && (
                 <button
                   className="btn btn-ghost"
@@ -1514,18 +1516,20 @@ export default function Cartera() {
                   <div style={{ fontSize: 12, color: '#64748b', marginTop: 4, marginBottom: 16 }}>
                     Cada pago registrado generará su recibo numerado con valor en letras listo para imprimir.
                   </div>
-                  <button
-                    className="btn btn-primary"
-                    style={{ background: '#16a34a', borderColor: '#16a34a', fontSize: 12.5, padding: '8px 16px', gap: 6, fontWeight: 700 }}
-                    onClick={() => {
-                      setPagoReciboVenta(selected);
-                      setPagoReciboCuota(null);
-                      setShowModalPagoRecibo(true);
-                    }}
-                    title="Abonar a este contrato y emitir recibo oficial"
-                  >
-                    💳 Abonar
-                  </button>
+                  {permissions?.canManageRecibos && (
+                    <button
+                      className="btn btn-primary"
+                      style={{ background: '#16a34a', borderColor: '#16a34a', fontSize: 12.5, padding: '8px 16px', gap: 6, fontWeight: 700 }}
+                      onClick={() => {
+                        setPagoReciboVenta(selected);
+                        setPagoReciboCuota(null);
+                        setShowModalPagoRecibo(true);
+                      }}
+                      title="Abonar a este contrato y emitir recibo oficial"
+                    >
+                      💳 Abonar
+                    </button>
+                  )}
                 </div>
               ) : (
                 <div style={{ maxHeight: 380, overflowY: 'auto' }}>

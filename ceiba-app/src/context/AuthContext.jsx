@@ -1,5 +1,10 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
+import {
+  getPermisosPersonalizados,
+  guardarPermisosRol,
+  restablecerPermisosRol
+} from '../lib/api/permisosApi';
 
 export const ROLE_PERMISSIONS = {
   admin: {
@@ -16,6 +21,7 @@ export const ROLE_PERMISSIONS = {
     canDeleteCasosEspeciales: true,
     canManageUsers: true,
     canViewHistorialAcciones: true,
+    canManagePermissions: true,
     label: 'Administrador',
     badgeColor: '#7c3aed',
     badgeBg: '#f5f3ff',
@@ -36,6 +42,7 @@ export const ROLE_PERMISSIONS = {
     canDeleteCasosEspeciales: true,
     canManageUsers: false,
     canViewHistorialAcciones: false,
+    canManagePermissions: false,
     label: 'Propietario',
     badgeColor: '#b45309',
     badgeBg: '#fffbeb',
@@ -56,15 +63,16 @@ export const ROLE_PERMISSIONS = {
     canDeleteCasosEspeciales: true,
     canManageUsers: false,
     canViewHistorialAcciones: false,
+    canManagePermissions: true,
     label: 'Contadora',
     badgeColor: '#1d4ed8',
     badgeBg: '#eff6ff',
     badgeBorder: '#bfdbfe',
-    description: 'Control contable, cierres mensuales, auditoría y recibos'
+    description: 'Control contable, cierres mensuales, auditoría, recibos y gestión de permisos'
   },
   secretaria: {
     canViewCierre: false,
-    canViewConfig: false,
+    canViewConfig: true,
     canViewComisiones: true,
     canDisburseCommissions: true,
     canViewGastos: false,
@@ -76,6 +84,7 @@ export const ROLE_PERMISSIONS = {
     canDeleteCasosEspeciales: false,
     canManageUsers: false,
     canViewHistorialAcciones: false,
+    canManagePermissions: false,
     label: 'Secretaría',
     badgeColor: '#059669',
     badgeBg: '#ecfdf5',
@@ -84,7 +93,7 @@ export const ROLE_PERMISSIONS = {
   },
   soporte: {
     canViewCierre: false,
-    canViewConfig: false,
+    canViewConfig: true,
     canViewComisiones: true,
     canDisburseCommissions: false,
     canViewGastos: false,
@@ -96,6 +105,7 @@ export const ROLE_PERMISSIONS = {
     canDeleteCasosEspeciales: false,
     canManageUsers: false,
     canViewHistorialAcciones: true,
+    canManagePermissions: false,
     label: 'Soporte Mora',
     badgeColor: '#0284c7',
     badgeBg: '#f0f9ff',
@@ -128,12 +138,27 @@ const AuthContext = createContext({});
 export function AuthProvider({ children }) {
   const [user, setUser]       = useState(null);
   const [loading, setLoading] = useState(true);
+  const [customPermissions, setCustomPermissions] = useState({});
+
+  const reloadPermissions = useCallback(async () => {
+    try {
+      const config = await getPermisosPersonalizados(true);
+      setCustomPermissions(config || {});
+    } catch (e) {
+      console.warn('Error recargando permisos personalizados:', e);
+    }
+  }, []);
 
   useEffect(() => {
     // Sesión inicial
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
       setLoading(false);
+    });
+
+    // Cargar permisos personalizados al iniciar
+    getPermisosPersonalizados().then(cfg => {
+      if (cfg) setCustomPermissions(cfg);
     });
 
     // Listener de cambios de sesión
@@ -171,15 +196,55 @@ export function AuthProvider({ children }) {
     await supabase.auth.signOut();
   };
 
-  // Rol basado en metadata y mapeo de permisos
+  // Rol basado en metadata
   const role = getNormalizedRole(user);
-  const permissions = ROLE_PERMISSIONS[role] || ROLE_PERMISSIONS.secretaria;
+  const baseRoleInfo = ROLE_PERMISSIONS[role] || ROLE_PERMISSIONS.secretaria;
+
+  // Si es admin, conserva permisos absolutos. Para otros roles, se mezclan las personalizaciones
+  const roleOverrides = customPermissions[role] || {};
+  const permissions = role === 'admin'
+    ? { ...baseRoleInfo, canManagePermissions: true }
+    : {
+        ...baseRoleInfo,
+        ...roleOverrides,
+        // Proteger permisos críticos intrínsecos al rol base
+        canManagePermissions: (role === 'admin' || role === 'contadora') && (roleOverrides.canManagePermissions !== false)
+      };
+
   const isAdmin = role === 'admin';
   const isPropietario = role === 'propietario';
   const isContadora = role === 'contadora';
   const isSecretaria = role === 'secretaria';
   const isSoporte = role === 'soporte';
   const isOwner = isPropietario || isAdmin;
+  const canManagePermissions = isAdmin || isContadora || Boolean(permissions.canManagePermissions);
+
+  const updatePermissionsForRole = async (targetRole, nuevosPermisos) => {
+    const defaultRolePerms = ROLE_PERMISSIONS[targetRole] || {};
+    const res = await guardarPermisosRol({
+      targetRole,
+      nuevosPermisos,
+      editorUser: user,
+      defaultPermissions: defaultRolePerms
+    });
+    if (res && res.config) {
+      setCustomPermissions(res.config);
+    }
+    return res;
+  };
+
+  const resetPermissionsForRole = async (targetRole) => {
+    const defaultRolePerms = ROLE_PERMISSIONS[targetRole] || {};
+    const res = await restablecerPermisosRol({
+      targetRole,
+      editorUser: user,
+      defaultPermissions: defaultRolePerms
+    });
+    if (res && res.config) {
+      setCustomPermissions(res.config);
+    }
+    return res;
+  };
 
   return (
     <AuthContext.Provider value={{
@@ -191,6 +256,11 @@ export function AuthProvider({ children }) {
       role,
       roleInfo: permissions,
       permissions,
+      customPermissions,
+      updatePermissionsForRole,
+      resetPermissionsForRole,
+      reloadPermissions,
+      canManagePermissions,
       isAdmin,
       isPropietario,
       isContadora,
