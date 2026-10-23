@@ -114,11 +114,13 @@ export class RecibosRepository {
             const abonoItem = Number(a.valor_abono) || 0;
             const nuevoPag = yaPag + abonoItem;
             const valCuota = Number(cuotaOriginal.valor_cuota) || 0;
-            const comp = a.completo || nuevoPag >= valCuota;
+            const difComp = valCuota - nuevoPag;
+            const comp = a.completo || nuevoPag >= valCuota || (valCuota > 0 && difComp <= 2000) || (valCuota > 0 && (difComp / valCuota) < 0.02);
             const nuevoEst = comp ? 'PAGA' : (cuotaOriginal.estado_cuota === 'VENCIDA' ? 'VENCIDA' : 'AL DÍA');
+            const finalPag = comp && difComp > 0 && difComp <= 2000 ? valCuota : nuevoPag;
 
             const { data: updated, error: uErr } = await supabase.from('cuotas').update({
-              valor_pagado: nuevoPag,
+              valor_pagado: finalPag,
               estado_cuota: nuevoEst,
               fecha_pago: validado.fechaPago,
               medio_pago: validado.medioPago,
@@ -147,12 +149,14 @@ export class RecibosRepository {
         const valCuota = Number(cuotaOriginal.valor_cuota) || 0;
         const yaPagado = Number(cuotaOriginal.valor_pagado) || 0;
         const nuevoPagado = yaPagado + montoNum;
-        esPagoCompleto = nuevoPagado >= valCuota;
-        saldoRestanteCuota = Math.max(0, valCuota - nuevoPagado);
+        const difMonto = valCuota - nuevoPagado;
+        esPagoCompleto = (nuevoPagado >= valCuota) || (valCuota > 0 && difMonto <= 2000) || (valCuota > 0 && (difMonto / valCuota) < 0.02);
+        saldoRestanteCuota = esPagoCompleto ? 0 : Math.max(0, valCuota - nuevoPagado);
         const nuevoEstado = esPagoCompleto ? 'PAGA' : (cuotaOriginal.estado_cuota === 'VENCIDA' ? 'VENCIDA' : 'AL DÍA');
+        const finalPagado = esPagoCompleto && difMonto > 0 && difMonto <= 2000 ? valCuota : nuevoPagado;
 
         const { data: cUpdated, error: uErr } = await supabase.from('cuotas').update({
-          valor_pagado: nuevoPagado,
+          valor_pagado: finalPagado,
           estado_cuota: nuevoEstado,
           fecha_pago: validado.fechaPago,
           medio_pago: validado.medioPago,

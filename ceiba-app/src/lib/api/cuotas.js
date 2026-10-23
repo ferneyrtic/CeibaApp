@@ -45,7 +45,7 @@ export const simularAbonoCascada = (cuotas = [], montoTotal = 0) => {
   let montoRestante = Math.max(0, Number(montoTotal) || 0);
   const lista = Array.isArray(cuotas) ? cuotas : [];
   const pendientes = lista
-    .filter(c => c && (c.estado_cuota !== 'PAGA' || (Number(c.valor_pagado) || 0) < (Number(c.valor_cuota) || 0)))
+    .filter(c => c && c.estado_cuota !== 'PAGA' && ((Number(c.valor_cuota) || 0) - (Number(c.valor_pagado) || 0) > 2000))
     .sort((a, b) => (Number(a?.numero_cuota) || 0) - (Number(b?.numero_cuota) || 0));
 
   const afectaciones = [];
@@ -59,19 +59,23 @@ export const simularAbonoCascada = (cuotas = [], montoTotal = 0) => {
 
     if (porPagar <= 0 && valCuota > 0) continue;
 
-    if (montoRestante >= porPagar) {
+    const diff = porPagar - montoRestante;
+    const esCompleta = montoRestante >= porPagar || (porPagar > 0 && diff <= 2000) || (porPagar > 0 && diff / porPagar < 0.02);
+
+    if (esCompleta) {
+      const abonoReal = montoRestante >= porPagar ? porPagar : montoRestante;
       afectaciones.push({
         id: c.id,
         numero_cuota: c.numero_cuota,
         fecha_vencimiento: c.fecha_vencimiento,
         valor_cuota: valCuota,
         valor_anterior: yaPagado,
-        valor_abono: porPagar,
+        valor_abono: abonoReal,
         nuevo_pagado: valCuota,
         nuevo_estado: 'PAGA',
         completo: true
       });
-      montoRestante -= porPagar;
+      montoRestante = Math.max(0, montoRestante - porPagar);
     } else {
       afectaciones.push({
         id: c.id,

@@ -99,7 +99,7 @@ export default function ModalRegistrarPagoRecibo({
           setModoImputacion('cuota');
         } else {
           const primeraPendiente = (cData || []).find(
-            c => c.estado_cuota !== 'PAGA' || (Number(c.valor_pagado) || 0) < (Number(c.valor_cuota) || 0)
+            c => c.estado_cuota !== 'PAGA' && ((Number(c.valor_cuota) || 0) - (Number(c.valor_pagado) || 0) > 2000)
           );
           if (primeraPendiente) {
             setSelectedCuotaId(primeraPendiente.id);
@@ -119,7 +119,7 @@ export default function ModalRegistrarPagoRecibo({
   // Cuotas pendientes de pago ordenadas cronológicamente
   const cuotasPendientes = useMemo(() => {
     return cuotas
-      .filter(c => c.estado_cuota !== 'PAGA' || (Number(c.valor_pagado) || 0) < (Number(c.valor_cuota) || 0))
+      .filter(c => c.estado_cuota !== 'PAGA' && ((Number(c.valor_cuota) || 0) - (Number(c.valor_pagado) || 0) > 2000))
       .sort((a, b) => a.numero_cuota - b.numero_cuota);
   }, [cuotas]);
 
@@ -160,7 +160,8 @@ export default function ModalRegistrarPagoRecibo({
         const yaPag = Number(currentCuota.valor_pagado) || 0;
         const porPagar = Math.max(0, valCuota - yaPag);
         const abonoAEsta = Math.min(montoNum, porPagar);
-        const completo = abonoAEsta >= porPagar;
+        const diff = porPagar - montoNum;
+        const completo = montoNum >= porPagar || (porPagar > 0 && diff <= 2000) || (porPagar > 0 && diff / porPagar < 0.02);
 
         const afectaciones = [{
           id: currentCuota.id || 'cuota-sel',

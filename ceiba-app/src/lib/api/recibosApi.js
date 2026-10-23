@@ -1,6 +1,7 @@
 import { supabase } from '../supabase';
 import { numeroALetrasCOP } from '../../utils/numeroALetras';
 import { registrarAccion } from './auditApi';
+import { clearCarteraCache } from './cartera';
 
 const CONSECUTIVO_INICIAL = 3412;
 const LOCAL_STORAGE_KEY = 'ceiba_recibos_caja';
@@ -12,6 +13,7 @@ let recibosCacheTime = 0;
 export const clearRecibosCache = () => {
   recibosCache = null;
   recibosCacheTime = 0;
+  clearCarteraCache();
 };
 
 const sanitizarNombreSecretaria = (str) => {
@@ -495,7 +497,13 @@ export const registrarPagoConRecibo = async ({
           // Primera cuota: recibe el monto total del abono con su fecha real
           valPagadoActualizar = esAbonoMultiples ? montoNum : ((Number(cuota.valor_pagado) || 0) + (Number(a.valor_abono) || 0));
           fechaPagoActualizar = fechaPago;
-          estadoCuotaActualizar = (a.completo || valPagadoActualizar >= (Number(cuota.valor_cuota) || 0)) ? 'PAGA' : (cuota.estado_cuota === 'VENCIDA' ? 'VENCIDA' : 'AL DÍA');
+          const cuotaVal = Number(cuota.valor_cuota) || 0;
+          const difCentavos = cuotaVal - valPagadoActualizar;
+          const esCompleto = a.completo || valPagadoActualizar >= cuotaVal || (cuotaVal > 0 && difCentavos <= 2000) || (cuotaVal > 0 && (difCentavos / cuotaVal) < 0.02);
+          estadoCuotaActualizar = esCompleto ? 'PAGA' : (cuota.estado_cuota === 'VENCIDA' ? 'VENCIDA' : 'AL DÍA');
+          if (esCompleto && difCentavos > 0 && difCentavos <= 2000) {
+            valPagadoActualizar = cuotaVal;
+          }
 
           const montoFormateado = (esAbonoMultiples ? montoNum : a.valor_abono).toLocaleString('es-CO');
           const notaRecibo = generarRecibo
@@ -590,8 +598,10 @@ export const registrarPagoConRecibo = async ({
     const yaPagado = Number(cuota.valor_pagado) || 0;
     const nuevoPagado = yaPagado + montoNum;
 
-    esPagoCompleto = nuevoPagado >= valCuota;
-    saldoRestanteCuota = Math.max(0, valCuota - nuevoPagado);
+    const difCentavos = valCuota - nuevoPagado;
+    // Si el monto cubre la cuota o la diferencia es de centavos/redondeo (<= $2.000 COP o < 2%)
+    esPagoCompleto = (nuevoPagado >= valCuota) || (valCuota > 0 && difCentavos <= 2000) || (valCuota > 0 && (difCentavos / valCuota) < 0.02);
+    saldoRestanteCuota = esPagoCompleto ? 0 : Math.max(0, valCuota - nuevoPagado);
 
     let nuevoEstado = cuota.estado_cuota;
     if (esPagoCompleto) {
@@ -599,6 +609,7 @@ export const registrarPagoConRecibo = async ({
     } else {
       nuevoEstado = cuota.estado_cuota === 'VENCIDA' ? 'VENCIDA' : 'AL DÍA';
     }
+    const valPagadoFinal = esPagoCompleto && difCentavos > 0 && difCentavos <= 2000 ? valCuota : nuevoPagado;
 
     const montoFormateado = montoNum.toLocaleString('es-CO');
     const notaRecibo = generarRecibo
@@ -647,7 +658,7 @@ export const registrarPagoConRecibo = async ({
     const { data: cUpdated, error: uErr } = await supabase
       .from('cuotas')
       .update({
-        valor_pagado: nuevoPagado,
+        valor_pagado: valPagadoFinal,
         estado_cuota: nuevoEstado,
         fecha_pago: fechaPago,
         medio_pago: medioPago,
@@ -903,7 +914,7 @@ export const anularRecibo = async ({
         await supabase
           .from('cuotas')
           .update({
-            valor_pagado: nuevoPagado,
+            valor_pagado: valPagadoFinal,
             estado_cuota: estadoRestaurado,
             comprobante_url: JSON.stringify(hist),
             observacion: `${c.observacion || ''} | [ANULADO Recibo #${numRec}]`.trim()
