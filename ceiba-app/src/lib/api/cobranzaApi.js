@@ -2,6 +2,7 @@ import * as sbModule from '../supabase.js';
 const supabase = sbModule.supabase;
 const supabaseAdmin = sbModule.supabaseAdmin || sbModule.supabase;
 import { registrarAccion } from './auditApi.js';
+import { clearCarteraCache } from './cartera.js';
 
 const STORAGE_KEY = 'ceiba_observaciones_cobranza_cache';
 
@@ -82,11 +83,14 @@ export function buscarObservacionCobranza(idLote, listaObservaciones = []) {
 }
 
 /**
- * Retorna la observación efectiva de un lote asegurando que si existe una observación
- * directa en la tabla lotes, siempre prevalezca de forma inmediata y actualizada.
+ * Retorna la observación efectiva de un lote asegurando que las observaciones registradas
+ * en el sistema (con autor, fecha y gestión detallada) prevalezcan de forma transparente.
  */
 export function obtenerObservacionEfectiva(idLote, listaObservaciones = [], obsDirecta = null) {
   const obsObj = buscarObservacionCobranza(idLote, listaObservaciones);
+  if (obsObj && obsObj.texto_resumen) {
+    return obsObj;
+  }
   if (obsDirecta && obsDirecta.trim()) {
     return {
       ...(obsObj || {}),
@@ -175,6 +179,7 @@ export async function guardarObservacionCobranza(datos, usuarioActual = 'Soporte
 
       if (upErr) {
         console.error('Error actualizando OBSERVACION_COBRANZA en datos_maestros:', upErr);
+        throw upErr;
       }
     } else {
       // Insertar nuevo registro en datos_maestros
@@ -190,6 +195,7 @@ export async function guardarObservacionCobranza(datos, usuarioActual = 'Soporte
 
       if (inErr) {
         console.error('Error insertando OBSERVACION_COBRANZA en datos_maestros:', inErr);
+        throw inErr;
       }
       if (inserted) {
         payloadObjeto.db_id = inserted.id;
@@ -238,10 +244,14 @@ export async function guardarObservacionCobranza(datos, usuarioActual = 'Soporte
 
   } catch (err) {
     console.error('Error persistiendo observación de cobranza en Supabase:', err);
+    throw err;
   }
 
-  // Invalidar caché en memoria y local
+  // Invalidar caché en memoria, local y de cartera
   inMemoryCobranza = null;
+  try {
+    clearCarteraCache();
+  } catch (e) {}
   if (typeof window !== 'undefined' && window.localStorage) {
     try {
       window.localStorage.removeItem(STORAGE_KEY);
