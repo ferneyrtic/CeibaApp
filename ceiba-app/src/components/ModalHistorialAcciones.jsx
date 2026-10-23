@@ -46,7 +46,7 @@ export default function ModalHistorialAcciones({ onClose, loteFiltroInicial = ''
   const fetchLogs = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await getHistorialAcciones({ limit: 200 });
+      const data = await getHistorialAcciones({ limit: 500 });
       setLogs(data || []);
     } catch (e) {
       console.error('Error cargando historial de acciones:', e);

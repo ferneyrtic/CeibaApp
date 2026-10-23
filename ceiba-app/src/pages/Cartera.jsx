@@ -25,7 +25,7 @@ import { obtenerRecibosPorVenta, anularRecibo } from '../lib/api/recibosApi';
 import Pagination from '../components/Pagination';
 import { useCarteraLogic } from '../hooks/useCarteraLogic';
 import ModalObservacionCobranza from '../components/ModalObservacionCobranza';
-import { buscarObservacionCobranza, normLote } from '../lib/api/cobranzaApi';
+import { buscarObservacionCobranza, normLote, obtenerObservacionEfectiva } from '../lib/api/cobranzaApi';
 import { ensureScrollUnlocked } from '../utils/scrollLockManager';
 
 
@@ -175,6 +175,7 @@ export default function Cartera() {
     exportarVerificacionExcel,
     observacionesCobranza,
     setObservacionesCobranza,
+    setAllCartera,
     loadData: load
   } = useCarteraLogic();
 
@@ -183,7 +184,7 @@ export default function Cartera() {
   const [showModalObsCobranza, setShowModalObsCobranza] = useState(false);
 
   const openObservacionModal = (v, obs = null) => {
-    const targetObs = obs || buscarObservacionCobranza(v?.id_lote || v?.lotes?.id_lote, observacionesCobranza) || (v?.observacion_cobranza ? { texto_resumen: v.observacion_cobranza } : null);
+    const targetObs = obs || obtenerObservacionEfectiva(v?.id_lote || v?.lotes?.id_lote, observacionesCobranza, v?.observacion_cobranza || v?.lotes?.observacion);
     setObsLoteSeleccionado({ venta: v, obs: targetObs });
     setShowModalObsCobranza(true);
   };
@@ -614,7 +615,7 @@ export default function Cartera() {
                                   <FileText size={12} /> Ver
                                 </button>
                                 {(() => {
-                                  const obs = buscarObservacionCobranza(v.id_lote || v.lotes?.id_lote, observacionesCobranza) || (v.observacion_cobranza ? { texto_resumen: v.observacion_cobranza } : null);
+                                  const obs = obtenerObservacionEfectiva(v.id_lote || v.lotes?.id_lote, observacionesCobranza, v.observacion_cobranza || v.lotes?.observacion);
                                   if (!obs) {
                                     return (
                                       <button
@@ -960,7 +961,7 @@ export default function Cartera() {
                           </button>
                           {/* Casilla / Botón de Observación de Cobranza en lugar de WhatsApp */}
                           {(() => {
-                            const obs = buscarObservacionCobranza(v.id_lote || v.lotes?.id_lote, observacionesCobranza) || (v.observacion_cobranza ? { texto_resumen: v.observacion_cobranza } : null);
+                            const obs = obtenerObservacionEfectiva(v.id_lote || v.lotes?.id_lote, observacionesCobranza, v.observacion_cobranza || v.lotes?.observacion);
                             if (!obs) {
                               return (
                                 <button
@@ -1183,7 +1184,7 @@ export default function Cartera() {
 
           {/* Tarjeta de Gestión de Cobranza Destacada */}
           {(() => {
-            const obs = buscarObservacionCobranza(selected.id_lote || selected.lotes?.id_lote, observacionesCobranza) || (selected.observacion_cobranza ? { texto_resumen: selected.observacion_cobranza } : null);
+            const obs = obtenerObservacionEfectiva(selected.id_lote || selected.lotes?.id_lote, observacionesCobranza, selected.observacion_cobranza || selected.lotes?.observacion);
             if (!obs) {
               return (
                 <div style={{
@@ -1731,16 +1732,27 @@ export default function Cartera() {
         }}
         venta={obsLoteSeleccionado?.venta}
         observacionActual={obsLoteSeleccionado?.obs}
-        usuarioActual={user?.user_metadata?.nombre || user?.email || 'Soporte Mora'}
+        usuarioActual={user?.user_metadata?.nombre || user?.nombre || user?.email || 'Diana (Soporte)'}
         onGuardado={(resultado) => {
           setObservacionesCobranza(prev => {
             const filtrados = (prev || []).filter(o => normLote(o.id_lote) !== normLote(resultado.id_lote));
             return [resultado, ...filtrados];
           });
+          setAllCartera(prev => (prev || []).map(item => {
+            if (normLote(item.id_lote || item.lotes?.id_lote) === normLote(resultado.id_lote)) {
+              return {
+                ...item,
+                observacion_cobranza: resultado.texto_resumen,
+                lotes: item.lotes ? { ...item.lotes, observacion: resultado.texto_resumen } : item.lotes
+              };
+            }
+            return item;
+          }));
           if (selected && normLote(selected.id_lote || selected.lotes?.id_lote) === normLote(resultado.id_lote)) {
             setSelected(prev => ({
               ...prev,
-              observacion_cobranza: resultado.texto_resumen
+              observacion_cobranza: resultado.texto_resumen,
+              lotes: prev.lotes ? { ...prev.lotes, observacion: resultado.texto_resumen } : prev.lotes
             }));
           }
         }}

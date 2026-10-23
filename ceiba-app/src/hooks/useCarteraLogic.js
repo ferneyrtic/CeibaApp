@@ -193,6 +193,7 @@ export function useCarteraLogic() {
       'DOCUMENTO': v.clientes?.doc_cliente || '',
       'TELÉFONO': v.clientes?.celular || '',
       'DIAGNÓSTICO': (v.saldo || 0) <= 0 ? 'SALDADO / PAZ Y SALVO' : ((v.cuotas_vencidas || 0) > 0 ? `DEBE ${v.cuotas_vencidas} CUOTAS` : 'AL DÍA'),
+      'OBSERVACIÓN / GESTIÓN': v.observacion_cobranza || v.lotes?.observacion || '',
       'CUOTAS VENCIDAS': v.cuotas_vencidas || 0,
       'VALOR EN MORA ESTIMADO': (v.cuotas_vencidas || 0) * (v.valor_cuota || 0),
       'CUOTAS PAGADAS': v.cuotas_pagadas_count || 0,
@@ -211,6 +212,7 @@ export function useCarteraLogic() {
 
   return {
     allCartera,
+    setAllCartera,
     filteredCartera,
     paginatedCartera,
     stats,

@@ -58,7 +58,7 @@ export default function ModalObservacionCobranza({
       if (observacionActual.fecha) {
         setFecha(observacionActual.fecha);
       }
-      const notaPrevia = observacionActual.nota || observacionActual.observacion_adicional || '';
+      const notaPrevia = observacionActual.nota || observacionActual.observacion_adicional || observacionActual.texto_resumen || '';
       setNotaDetallada(notaPrevia);
 
       if (observacionActual.respuesta) {
@@ -98,7 +98,7 @@ export default function ModalObservacionCobranza({
         nota: notaLimpia || null,
         observacion_adicional: notaLimpia || null,
         fecha
-      }, usuarioActual || 'Soporte Mora');
+      }, usuarioActual || 'Diana (Soporte)');
 
       if (onGuardado) {
         onGuardado(resultado);

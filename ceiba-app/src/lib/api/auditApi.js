@@ -151,7 +151,7 @@ export async function registrarAccion({
 /**
  * Consulta el historial de acciones con filtros y paginación.
  */
-export async function getHistorialAcciones({ limit = 150, modulo, lote, search } = {}) {
+export async function getHistorialAcciones({ limit = 500, modulo, lote, search } = {}) {
   let logs = [];
 
   // 1. Intentar cargar desde Supabase
@@ -160,8 +160,7 @@ export async function getHistorialAcciones({ limit = 150, modulo, lote, search }
       .from('datos_maestros')
       .select('id, tipo, valor, orden')
       .eq('tipo', 'AUDITORIA_ACCION')
-      .order('id', { ascending: false })
-      .limit(limit);
+      .limit(1000);
 
     const { data, error } = await query;
     if (!error && data && data.length > 0) {

@@ -79,6 +79,24 @@ export function buscarObservacionCobranza(idLote, listaObservaciones = []) {
 }
 
 /**
+ * Retorna la observación efectiva de un lote asegurando que si existe una observación
+ * directa en la tabla lotes, siempre prevalezca de forma inmediata y actualizada.
+ */
+export function obtenerObservacionEfectiva(idLote, listaObservaciones = [], obsDirecta = null) {
+  const obsObj = buscarObservacionCobranza(idLote, listaObservaciones);
+  if (obsDirecta && obsDirecta.trim()) {
+    return {
+      ...(obsObj || {}),
+      id_lote: idLote,
+      texto_resumen: obsDirecta.trim(),
+      nota: obsObj?.nota || obsDirecta.trim(),
+      respuesta: obsObj?.respuesta || obsDirecta.trim()
+    };
+  }
+  return obsObj || null;
+}
+
+/**
  * Guarda o actualiza una observación de cobranza para un lote.
  * Actualiza la tabla datos_maestros y también actualiza lotes.observacion.
  */
@@ -158,16 +176,17 @@ export async function guardarObservacionCobranza(datos, usuarioActual = 'Soporte
       }
     }
 
-    // Actualizar también el campo observacion en la tabla lotes si se tiene lote_id o buscando por id_lote
+    // Actualizar también el campo observacion en la tabla lotes
     if (lote_id) {
       await supabase
         .from('lotes')
-        .update({ observacion: resumenFinal })
+        .update({ observacion: resumenFinal, updated_at: new Date().toISOString() })
         .eq('id', lote_id);
-    } else {
+    }
+    if (id_lote) {
       await supabase
         .from('lotes')
-        .update({ observacion: resumenFinal })
+        .update({ observacion: resumenFinal, updated_at: new Date().toISOString() })
         .eq('id_lote', id_lote);
     }
 
@@ -201,7 +220,12 @@ export async function guardarObservacionCobranza(datos, usuarioActual = 'Soporte
     console.error('Error persistiendo observación de cobranza en Supabase:', err);
   }
 
-  // Invalidar caché en memoria
+  // Invalidar caché en memoria y local
   inMemoryCobranza = null;
+  if (typeof window !== 'undefined' && window.localStorage) {
+    try {
+      window.localStorage.removeItem(STORAGE_KEY);
+    } catch (e) {}
+  }
   return payloadObjeto;
 }
