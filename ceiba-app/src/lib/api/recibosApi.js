@@ -33,7 +33,6 @@ const obtenerRecibosLocales = () => {
     // Limpieza de seguridad: filtrar recibos de pruebas de desarrollo huérfanos o con lote TEST
     const filtrados = list.filter(r => {
       const num = Number(r.numero_recibo);
-      if (num === 3413) return false;
       if (String(r.lote_id_str || '').toUpperCase().includes('TEST')) return false;
       // Limpieza de prueba previa: si hay un 3412 guardado en local que no sea del lote real (LC2 - 32 - 7)
       if (num === 3412 && !String(r.lote_id_str || '').toUpperCase().includes('32')) return false;
@@ -108,8 +107,11 @@ export const obtenerSiguienteNumeroRecibo = async () => {
     if (qCuotas && typeof qCuotas.or === 'function') {
       qCuotas = qCuotas.or('observacion.ilike.%Recibo #%,comprobante_url.ilike.%numero_recibo%');
     }
+    if (qCuotas && typeof qCuotas.order === 'function') {
+      qCuotas = qCuotas.order('created_at', { ascending: false });
+    }
     if (qCuotas && typeof qCuotas.limit === 'function') {
-      qCuotas = qCuotas.limit(100);
+      qCuotas = qCuotas.limit(200);
     }
     const { data: cuotasConRecibos } = await qCuotas;
 
@@ -288,7 +290,6 @@ export const obtenerTodosLosRecibos = async (forceRefresh = false) => {
     .filter(r => {
       // Filtrar recibos huérfanos de lotes de prueba
       if (String(r.lote_id_str || '').toUpperCase().includes('TEST')) return false;
-      if (Number(r.numero_recibo) === 3413) return false;
       return true;
     })
     .sort((a, b) => (Number(b.numero_recibo) || 0) - (Number(a.numero_recibo) || 0));

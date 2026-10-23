@@ -419,7 +419,7 @@ export default function CierreMensual() {
           <Receipt size={18} color="#0284c7" style={{ flexShrink: 0 }} />
           <div>
             <strong style={{ color: 'var(--text-main, #0f172a)' }}>Control Contable de Caja:</strong>{' '}
-            El Recibo #3398 ($875.000) no se suma al recaudo de este cierre por haberse liquidado en el corte anterior. Las estadísticas y recaudos de este período inician oficialmente desde el <strong>Recibo #3399</strong>.
+            Hay {data.recibosExcluidosCierre.length} recibo(s) excluido(s) de este cierre por corte contable.
           </div>
         </div>
       )}

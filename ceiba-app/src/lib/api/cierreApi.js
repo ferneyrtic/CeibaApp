@@ -97,11 +97,10 @@ export const getCierreMensualData = async (param1, param2, forceRefresh = false)
   const recibosCuotaIds = new Set(rawRecibos.filter(r => r.cuota_id).map(r => r.cuota_id));
 
   // 2. Normalizar y Unificar en Lista de Ingresos Efectivos
-  // Filtrar cuotas que ya tienen recibo emitido, que pertenecen a lotes de prueba (TEST), o que pertenecen a recibos excluidos del cierre (ej. #3398 ya dejado)
+  // Filtrar cuotas que ya tienen recibo emitido o que pertenecen a lotes de prueba (TEST)
   const cuotasMesLegacy = rawCuotas
     .filter(c => !recibosCuotaIds.has(c.id))
     .filter(c => !c.ventas?.lotes?.id_lote?.toUpperCase().includes('TEST'))
-    .filter(c => !c.observacion?.includes('Recibo #3398') && !c.observacion?.includes('Recibo 3398') && !c.observacion?.includes('3398'))
     .map(c => {
       const valor = c.valor_pagado !== null && c.valor_pagado !== undefined
         ? Number(c.valor_pagado)
@@ -129,13 +128,11 @@ export const getCierreMensualData = async (param1, param2, forceRefresh = false)
     })
     .filter(c => c.valor > 0);
 
-  // Recibos Oficiales emitidos en el período:
-  // Regla contable: El recibo #3398 no entra al cierre porque ya fue dejado/liquidado en el corte anterior.
-  // La estadística y los ingresos de este cierre inician oficialmente desde el recibo #3399 en adelante.
-  const recibosExcluidosCierre = rawRecibos.filter(r => Number(r.numero_recibo) === 3398 || r.excluido_cierre);
+  // Recibos Oficiales emitidos en el período (el cierre oficial cuenta desde el recibo #3398 en adelante):
+  const recibosExcluidosCierre = rawRecibos.filter(r => r.excluido_cierre);
 
   const recibosIngresos = rawRecibos
-    .filter(r => Number(r.numero_recibo) !== 3398 && !r.excluido_cierre)
+    .filter(r => !r.excluido_cierre)
     .map(r => {
       const valor = Number(r.valor) || 0;
       return {

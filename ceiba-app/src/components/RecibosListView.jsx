@@ -16,7 +16,7 @@ export default function RecibosListView({ onVerRecibo, onVerExtracto }) {
   const [recibos, setRecibos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [filtroCiclo, setFiltroCiclo] = useState('ciclo_actual'); // 'ciclo_actual' (#3399+) | 'todos'
+  const [filtroCiclo, setFiltroCiclo] = useState('ciclo_actual'); // 'ciclo_actual' (#3398+) | 'todos'
   const [filtroMedio, setFiltroMedio] = useState('TODOS'); // 'TODOS' | 'TRANSFERENCIA' | 'EFECTIVO'
   const [proximoNumero, setProximoNumero] = useState(null);
   const [copiedId, setCopiedId] = useState(null);
@@ -55,8 +55,8 @@ export default function RecibosListView({ onVerRecibo, onVerExtracto }) {
     return (recibos || []).filter(r => {
       const num = Number(r.numero_recibo || r.recibo_numero || 0);
 
-      // Filtro de ciclo: por defecto mostrar ciclo actual (3399 en adelante)
-      if (filtroCiclo === 'ciclo_actual' && num < 3399) {
+      // Filtro de ciclo: por defecto mostrar ciclo actual (3398 en adelante)
+      if (filtroCiclo === 'ciclo_actual' && num < 3398) {
         return false;
       }
 
@@ -187,7 +187,7 @@ export default function RecibosListView({ onVerRecibo, onVerExtracto }) {
             {statsRecibos.totalCount}
           </div>
           <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>
-            {filtroCiclo === 'ciclo_actual' ? 'Recibos del ciclo actual (#3399+)' : 'Todos los registrados'}
+            {filtroCiclo === 'ciclo_actual' ? 'Recibos del ciclo actual (#3398+)' : 'Todos los registrados'}
           </div>
         </div>
 
@@ -349,7 +349,7 @@ export default function RecibosListView({ onVerRecibo, onVerExtracto }) {
             Filtros:
           </span>
 
-          {/* Píldora Ciclo Actual (#3399+) */}
+          {/* Píldora Ciclo Actual (#3398+) */}
           <button
             onClick={() => { setFiltroCiclo('ciclo_actual'); setPage(1); }}
             style={{
@@ -363,7 +363,7 @@ export default function RecibosListView({ onVerRecibo, onVerExtracto }) {
               color: filtroCiclo === 'ciclo_actual' ? '#065f46' : 'var(--text-secondary)'
             }}
           >
-            ✓ Ciclo Actual (#3399 al #{proximoNumero ? proximoNumero - 1 : '3411'})
+            ✓ Ciclo Actual (#3398 al #{proximoNumero ? proximoNumero - 1 : '3423'})
           </button>
 
           {/* Píldora Todos los Recibos */}
