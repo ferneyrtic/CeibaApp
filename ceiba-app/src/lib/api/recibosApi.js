@@ -469,7 +469,8 @@ export const registrarPagoConRecibo = async ({
     const numerosCuotas = afectaciones.map(a => a.numero_cuota);
     numeroCuota = numerosCuotas[0];
     cuotasInfoStr = `Cuotas ${numerosCuotas.join(', ')}`;
-    const esAbonoMultiples = afectaciones.length > 1;
+    const cuotasCompletadas = afectaciones.filter(a => a.completo);
+    const esAbonoMultiples = cuotasCompletadas.length > 1;
 
     for (let i = 0; i < afectaciones.length; i++) {
       const a = afectaciones[i];
@@ -486,7 +487,7 @@ export const registrarPagoConRecibo = async ({
         let estadoCuotaActualizar;
 
         if (i === 0) {
-          // Primera cuota: recibe el monto total del abono con su fecha real
+          // Primera cuota: recibe el monto total si cubre múltiples cuotas completas, o el valor abonado a esta cuota
           valPagadoActualizar = esAbonoMultiples ? montoNum : ((Number(cuota.valor_pagado) || 0) + (Number(a.valor_abono) || 0));
           fechaPagoActualizar = fechaPago;
           const cuotaVal = Number(cuota.valor_cuota) || 0;
@@ -502,16 +503,25 @@ export const registrarPagoConRecibo = async ({
             ? `Recibo #${numero_recibo} ($${montoFormateado}) el ${fechaPago}`
             : `Abono contable ($${montoFormateado}) el ${fechaPago} (Sin recibo oficial)`;
           const notaCubiertas = esAbonoMultiples
-            ? `Abono de $${montoNum.toLocaleString('es-CO')} cubre ${afectaciones.length} cuotas (cuotas ${numerosCuotas[0]} a ${numerosCuotas[numerosCuotas.length - 1]})`
+            ? `Abono de $${montoNum.toLocaleString('es-CO')} cubre ${cuotasCompletadas.length} cuotas (cuotas ${cuotasCompletadas[0].numero_cuota} a ${cuotasCompletadas[cuotasCompletadas.length - 1].numero_cuota})`
             : '';
           const partes = [notaCubiertas, notaRecibo, cuota.observacion].filter(Boolean);
           obsCuotaActualizar = partes.join(' | ');
         } else {
-          // Cuotas subsecuentes: quedan limpias como PAGA ($0 y sin fecha de pago falsa)
-          valPagadoActualizar = 0.0;
-          fechaPagoActualizar = null;
-          estadoCuotaActualizar = 'PAGA';
-          obsCuotaActualizar = null;
+          // Cuotas subsecuentes:
+          if (a.completo) {
+            // Si fue cubierta completamente en el pago agrupado, queda limpia como PAGA ($0 y sin fecha de pago falsa)
+            valPagadoActualizar = 0.0;
+            fechaPagoActualizar = null;
+            estadoCuotaActualizar = 'PAGA';
+            obsCuotaActualizar = null;
+          } else {
+            // Si solo recibió un abono parcial, conserva su valor pagado y estado AL DÍA
+            valPagadoActualizar = (Number(cuota.valor_pagado) || 0) + (Number(a.valor_abono) || 0);
+            fechaPagoActualizar = fechaPago;
+            estadoCuotaActualizar = 'AL DÍA';
+            obsCuotaActualizar = `Abono parcial ($${Number(a.valor_abono).toLocaleString('es-CO')}) el ${fechaPago}`;
+          }
         }
 
         let hist = [];

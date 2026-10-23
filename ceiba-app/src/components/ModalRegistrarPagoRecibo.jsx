@@ -159,8 +159,9 @@ export default function ModalRegistrarPagoRecibo({
         const valCuota = Number(currentCuota.valor_cuota) || 0;
         const yaPag = Number(currentCuota.valor_pagado) || 0;
         const porPagar = Math.max(0, valCuota - yaPag);
-        const abonoAEsta = Math.min(montoNum, porPagar);
         const diff = porPagar - montoNum;
+        const esPocoSobrante = diff < 0 && Math.abs(diff) <= 2000;
+        const abonoAEsta = esPocoSobrante ? montoNum : Math.min(montoNum, porPagar);
         const completo = montoNum >= porPagar || (porPagar > 0 && diff <= 2000) || (porPagar > 0 && diff / porPagar < 0.02);
 
         const afectaciones = [{

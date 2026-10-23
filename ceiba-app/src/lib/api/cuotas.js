@@ -63,7 +63,13 @@ export const simularAbonoCascada = (cuotas = [], montoTotal = 0) => {
     const esCompleta = montoRestante >= porPagar || (porPagar > 0 && diff <= 2000) || (porPagar > 0 && diff / porPagar < 0.02);
 
     if (esCompleta) {
-      const abonoReal = montoRestante >= porPagar ? porPagar : montoRestante;
+      const sobrante = montoRestante - porPagar;
+      // Si el sobrante después de cubrir la cuota es pequeño (<= 2000 por redondeo de centavos o miles),
+      // se absorbe en esta cuota para evitar que un residuo de $333 o $1.333 COP desborde a cuotas futuras.
+      const esPocoSobrante = sobrante > 0 && sobrante <= 2000;
+      const abonoReal = esPocoSobrante ? montoRestante : (montoRestante >= porPagar ? porPagar : montoRestante);
+      const nuevoPagado = esPocoSobrante ? (yaPagado + montoRestante) : valCuota;
+
       afectaciones.push({
         id: c.id,
         numero_cuota: c.numero_cuota,
@@ -71,23 +77,32 @@ export const simularAbonoCascada = (cuotas = [], montoTotal = 0) => {
         valor_cuota: valCuota,
         valor_anterior: yaPagado,
         valor_abono: abonoReal,
-        nuevo_pagado: valCuota,
+        nuevo_pagado: nuevoPagado,
         nuevo_estado: 'PAGA',
         completo: true
       });
-      montoRestante = Math.max(0, montoRestante - porPagar);
+
+      if (esPocoSobrante) {
+        montoRestante = 0;
+      } else {
+        montoRestante = Math.max(0, montoRestante - porPagar);
+      }
     } else {
-      afectaciones.push({
-        id: c.id,
-        numero_cuota: c.numero_cuota,
-        fecha_vencimiento: c.fecha_vencimiento,
-        valor_cuota: valCuota,
-        valor_anterior: yaPagado,
-        valor_abono: montoRestante,
-        nuevo_pagado: yaPagado + montoRestante,
-        nuevo_estado: 'AL DÍA', // Abono parcial registrado
-        completo: false
-      });
+      // Abono parcial a la cuota:
+      // Si el monto restante es residual (<= 2000) y ya cubrimos cuotas previas, no creamos afectación espuria
+      if (montoRestante > 2000 || afectaciones.length === 0) {
+        afectaciones.push({
+          id: c.id,
+          numero_cuota: c.numero_cuota,
+          fecha_vencimiento: c.fecha_vencimiento,
+          valor_cuota: valCuota,
+          valor_anterior: yaPagado,
+          valor_abono: montoRestante,
+          nuevo_pagado: yaPagado + montoRestante,
+          nuevo_estado: 'AL DÍA', // Abono parcial registrado
+          completo: false
+        });
+      }
       montoRestante = 0;
     }
   }
@@ -147,14 +162,15 @@ export const registrarAbonoCascada = async ({
   const fechaFinal = esPagoMultiple ? null : (fechaPago || new Date().toISOString().slice(0, 10));
   let obsBase = observacion ? observacion.trim() : '';
 
-  // 4. Actualizar cuotas afectadas en Supabase según la nueva regla:
-  // Si el abono cubre múltiples cuotas (afectaciones.length > 1), el monto completo y la fecha
-  // se registran exclusivamente en la primera cuota, y las siguientes cuotas quedan marcadas
-  // como PAGA con valor $0 y sin fecha de pago falsa.
-  const esAbonoMultiplesCuotas = afectaciones.length > 1;
+  // 4. Actualizar cuotas afectadas en Supabase:
+  // Si el abono cubre múltiples cuotas completas (cuotasCompletadas.length > 1), el monto completo y la fecha
+  // se registran en la primera cuota, y las siguientes cuotas saldadas quedan marcadas como PAGA con $0.
+  // Si una cuota subsecuente solo es parcial, se guarda con su valor abonado y estado AL DÍA (nunca PAGA ni $0).
+  const cuotasCompletadas = afectaciones.filter(a => a.completo);
+  const esAbonoMultiplesCuotas = cuotasCompletadas.length > 1;
   const primeraAfectada = afectaciones[0];
-  const ultimaAfectada = afectaciones[afectaciones.length - 1];
-  const proximaCuotaNum = ultimaAfectada.numero_cuota + 1;
+  const ultimaCompleta = cuotasCompletadas.length > 0 ? cuotasCompletadas[cuotasCompletadas.length - 1] : primeraAfectada;
+  const proximaCuotaNum = ultimaCompleta.numero_cuota + 1;
   const proximaCuotaObj = cuotas.find(c => c.numero_cuota === proximaCuotaNum);
   const proximaFechaStr = proximaCuotaObj?.fecha_vencimiento || '';
 
@@ -162,9 +178,9 @@ export const registrarAbonoCascada = async ({
   let notaAutoAbono = '';
   if (esAbonoMultiplesCuotas) {
     if (proximaCuotaObj) {
-      notaAutoAbono = `Abono extraordinario de $${montoNum.toLocaleString('es-CO')} cubre ${afectaciones.length} cuotas (cuotas ${primeraAfectada.numero_cuota} a ${ultimaAfectada.numero_cuota}) - Próximo aporte: cuota ${proximaCuotaNum}${proximaFechaStr ? ` (${proximaFechaStr})` : ''}`;
+      notaAutoAbono = `Abono extraordinario de $${montoNum.toLocaleString('es-CO')} cubre ${cuotasCompletadas.length} cuotas (cuotas ${cuotasCompletadas[0].numero_cuota} a ${ultimaCompleta.numero_cuota}) - Próximo aporte: cuota ${proximaCuotaNum}${proximaFechaStr ? ` (${proximaFechaStr})` : ''}`;
     } else {
-      notaAutoAbono = `Abono extraordinario de $${montoNum.toLocaleString('es-CO')} salda hasta cuota ${ultimaAfectada.numero_cuota} (contrato saldado en su totalidad)`;
+      notaAutoAbono = `Abono extraordinario de $${montoNum.toLocaleString('es-CO')} salda hasta cuota ${ultimaCompleta.numero_cuota} (contrato saldado en su totalidad)`;
     }
   }
 
@@ -175,9 +191,10 @@ export const registrarAbonoCascada = async ({
     let valPagadoFinal;
     let fechaPagoFinal;
     let obsFinal;
+    let estadoCuotaFinal;
 
     if (i === 0) {
-      // Primera cuota: recibe el monto total del abono
+      // Primera cuota: recibe el monto total si cubrió múltiples cuotas completas, o el abono de esta cuota
       valPagadoFinal = esAbonoMultiplesCuotas ? montoNum : a.nuevo_pagado;
       fechaPagoFinal = fechaFinal;
       const partesObs = [];
@@ -187,18 +204,29 @@ export const registrarAbonoCascada = async ({
         partesObs.push(`Abono parcial: $${a.valor_abono.toLocaleString('es-CO')}`);
       }
       obsFinal = partesObs.join(' | ') || cuotaOrig?.observacion || null;
+      estadoCuotaFinal = a.completo ? 'PAGA' : 'AL DÍA';
     } else {
-      // Cuotas subsecuentes: quedan limpias como PAGA ($0 y sin fecha falsa)
-      valPagadoFinal = 0.0;
-      fechaPagoFinal = null;
-      obsFinal = null;
+      // Cuotas subsecuentes:
+      if (a.completo) {
+        // Cuota completamente cubierta en pago agrupado: limpia como PAGA ($0 y sin fecha de pago falsa)
+        valPagadoFinal = 0.0;
+        fechaPagoFinal = null;
+        obsFinal = null;
+        estadoCuotaFinal = 'PAGA';
+      } else {
+        // Cuota con abono parcial: conserva el valor abonado y estado AL DÍA
+        valPagadoFinal = a.nuevo_pagado;
+        fechaPagoFinal = fechaFinal;
+        obsFinal = `Abono parcial: $${a.valor_abono.toLocaleString('es-CO')}`;
+        estadoCuotaFinal = 'AL DÍA';
+      }
     }
 
     const { error: updateError } = await supabase
       .from('cuotas')
       .update({
         valor_pagado: valPagadoFinal,
-        estado_cuota: 'PAGA',
+        estado_cuota: estadoCuotaFinal,
         fecha_pago: fechaPagoFinal,
         medio_pago: medioPago || cuotaOrig?.medio_pago || 'TRANSFERENCIA',
         comprobante_url: (i === 0) ? (comprobanteUrl || cuotaOrig?.comprobante_url) : null,

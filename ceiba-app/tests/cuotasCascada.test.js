@@ -92,4 +92,40 @@ describe('cuotas - simularAbonoCascada', () => {
     expect(res.afectaciones[1].nuevo_pagado).toBe(400000);
     expect(res.afectaciones[1].completo).toBe(false);
   });
+
+  it('no debe desbordar sobrantes menores a 2000 COP a la siguiente cuota por redondeo (Caso Nicole)', () => {
+    const cuotasConCentavos = [
+      { id: 'c6', numero_cuota: 6, valor_cuota: 1416666.67, valor_pagado: 0, estado_cuota: 'VENCIDA', fecha_vencimiento: '2026-09-12' },
+      { id: 'c7', numero_cuota: 7, valor_cuota: 1416666.67, valor_pagado: 0, estado_cuota: 'AL DÍA', fecha_vencimiento: '2026-10-13' },
+      { id: 'c8', numero_cuota: 8, valor_cuota: 1416666.67, valor_pagado: 0, estado_cuota: 'AL DÍA', fecha_vencimiento: '2026-11-13' },
+    ];
+
+    // Abono de 1.417.000 (redondeo de 333 COP sobre 1.416.666.67)
+    const res1 = simularAbonoCascada(cuotasConCentavos, 1417000);
+    expect(res1.afectaciones.length).toBe(1);
+    expect(res1.afectaciones[0].numero_cuota).toBe(6);
+    expect(res1.afectaciones[0].valor_abono).toBe(1417000);
+    expect(res1.afectaciones[0].nuevo_pagado).toBe(1417000);
+    expect(res1.afectaciones[0].completo).toBe(true);
+    expect(res1.afectaciones[0].nuevo_estado).toBe('PAGA');
+    expect(res1.montoSobrante).toBe(0);
+
+    // Abono de 1.418.000 (redondeo de 1333 COP sobre 1.416.666.67)
+    const res2 = simularAbonoCascada(cuotasConCentavos, 1418000);
+    expect(res2.afectaciones.length).toBe(1);
+    expect(res2.afectaciones[0].numero_cuota).toBe(6);
+    expect(res2.afectaciones[0].valor_abono).toBe(1418000);
+    expect(res2.afectaciones[0].nuevo_pagado).toBe(1418000);
+    expect(res2.afectaciones[0].completo).toBe(true);
+
+    // Abono múltiple de 2 cuotas (2.834.000)
+    const res3 = simularAbonoCascada(cuotasConCentavos, 2834000);
+    expect(res3.afectaciones.length).toBe(2);
+    expect(res3.afectaciones[0].numero_cuota).toBe(6);
+    expect(res3.afectaciones[0].completo).toBe(true);
+    expect(res3.afectaciones[1].numero_cuota).toBe(7);
+    expect(res3.afectaciones[1].completo).toBe(true);
+    // Cuota 8 no debe haber sido tocada
+    expect(res3.afectaciones.some(a => a.numero_cuota === 8)).toBe(false);
+  });
 });
