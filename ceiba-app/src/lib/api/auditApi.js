@@ -49,6 +49,15 @@ export function isInvalidOrAnomalousLog(log) {
     return true;
   }
 
+  // Descartar logs residuales de prueba generados en el desarrollo
+  if (
+    desc.includes('6b4ecb23-9fef-41a6-824b-772d4b9e5b06') ||
+    desc.includes('observación borrada') ||
+    desc.includes('cliente va a pagar el 24')
+  ) {
+    return true;
+  }
+
   return false;
 }
 
@@ -192,7 +201,7 @@ export async function registrarAccion({
 export async function getHistorialAcciones({ limit = 500, modulo, lote, search } = {}) {
   let logs = [];
 
-  // 1. Intentar cargar desde Supabase usando supabaseAdmin
+  // 1. Cargar desde Supabase usando supabaseAdmin (con fallback a supabase)
   try {
     const client = supabaseAdmin || supabase;
     let query = client
@@ -211,38 +220,42 @@ export async function getHistorialAcciones({ limit = 500, modulo, lote, search }
           return null;
         }
       }).filter(Boolean).filter(l => !isInvalidOrAnomalousLog(l));
+
+      // Mantener la caché local actualizada con la verdad central de la base de datos
+      if (typeof window !== 'undefined' && window.localStorage && logs.length > 0) {
+        try {
+          window.localStorage.setItem(CACHE_KEY, JSON.stringify(logs.slice(0, 300)));
+        } catch (e) {
+          // ignore
+        }
+      }
     }
   } catch (e) {
     console.warn('Error leyendo logs de Supabase, usando caché local:', e);
   }
 
-  // 2. Si Supabase viene vacío o falló, mezclar con caché local o memoria (depurando casos de prueba y anómalos)
-  const fallbackList = [];
-  if (typeof window !== 'undefined' && window.localStorage) {
-    try {
-      const local = JSON.parse(window.localStorage.getItem(CACHE_KEY) || '[]');
-      if (Array.isArray(local)) {
-        // Eliminar permanentemente logs de prueba o anómalos de la caché del navegador
-        const cleaned = local.filter(l => !isInvalidOrAnomalousLog(l));
-        if (cleaned.length !== local.length) {
-          window.localStorage.setItem(CACHE_KEY, JSON.stringify(cleaned));
+  // 2. Si Supabase viene vacío o falló la conexión, usar caché local
+  if (logs.length === 0) {
+    const fallbackList = [];
+    if (typeof window !== 'undefined' && window.localStorage) {
+      try {
+        const local = JSON.parse(window.localStorage.getItem(CACHE_KEY) || '[]');
+        if (Array.isArray(local)) {
+          const cleaned = local.filter(l => !isInvalidOrAnomalousLog(l));
+          fallbackList.push(...cleaned);
         }
-        fallbackList.push(...cleaned);
+      } catch {
+        // ignore
       }
-    } catch {
-      // ignore
     }
-  }
-
-  // Depurar logs en memoria
-  inMemoryLogs = inMemoryLogs.filter(l => !isInvalidOrAnomalousLog(l));
-  fallbackList.push(...inMemoryLogs);
-
-  if (fallbackList.length > 0) {
+    fallbackList.push(...inMemoryLogs.filter(l => !isInvalidOrAnomalousLog(l)));
+    logs = fallbackList;
+  } else {
+    // Si Supabase trajo datos, incorporar únicamente logs recién creados en memoria que aún no se hayan propagado
     const existingIds = new Set(logs.map(l => l.id));
-    for (const item of fallbackList) {
+    for (const item of inMemoryLogs) {
       if (!existingIds.has(item.id) && !isInvalidOrAnomalousLog(item)) {
-        logs.push(item);
+        logs.unshift(item);
       }
     }
   }

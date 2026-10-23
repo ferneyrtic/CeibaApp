@@ -18,7 +18,8 @@ vi.mock('../src/lib/supabase.js', () => {
 
 import {
   registrarAccion,
-  getHistorialAcciones
+  getHistorialAcciones,
+  isInvalidOrAnomalousLog
 } from '../src/lib/api/auditApi';
 import {
   getCasosEspeciales,
@@ -63,6 +64,44 @@ describe('Sistema de Auditoría (Audit Log)', () => {
 
     const logsBusqueda = await getHistorialAcciones({ search: 'LC1 - 10 - 2' });
     expect(Array.isArray(logsBusqueda)).toBe(true);
+  });
+
+  it('debe descartar logs anómalos o residuales de prueba y aceptar logs legítimos', () => {
+    // Caso anómalo 1: Observación de cuota de prueba o borrada
+    expect(isInvalidOrAnomalousLog({
+      descripcion: 'Observación actualizada en cuota #6b4ecb23-9fef-41a6-824b-772d4b9e5b06: "Observación borrada"',
+      timestamp: '2026-10-21T21:14:30.000Z'
+    })).toBe(true);
+
+    // Caso anómalo 2: Diana antes del 22 de octubre
+    expect(isInvalidOrAnomalousLog({
+      usuario_nombre: 'Diana (Soporte)',
+      descripcion: 'Observación de cobranza',
+      timestamp: '2026-10-01T10:32:15.000Z'
+    })).toBe(true);
+
+    // Caso anómalo 3: Usuario de prueba Juan Pérez
+    expect(isInvalidOrAnomalousLog({
+      cliente_nombre: 'Juan Perez (Prueba)',
+      descripcion: 'Test',
+      timestamp: '2026-10-23T10:00:00.000Z'
+    })).toBe(true);
+
+    // Caso legítimo 1: Recibo oficial emitido por Secretaría
+    expect(isInvalidOrAnomalousLog({
+      usuario_nombre: 'Secretaría',
+      usuario_email: 'secretaria@ceiba.com',
+      descripcion: 'Emisión de Recibo Oficial #3426 por $1.000.000 a nombre de RITA OBDILIA VILLALOBOS PARDO',
+      timestamp: '2026-10-22T12:00:00.000Z'
+    })).toBe(false);
+
+    // Caso legítimo 2: Observación de Diana en su jornada
+    expect(isInvalidOrAnomalousLog({
+      usuario_nombre: 'Diana (Soporte)',
+      usuario_email: 'diana@ceiba.com',
+      descripcion: 'Observación de cobranza registrada para lote LC1- 5 - 1: "INDICA QUE EL SIGUIENTE PAGO REALIZA LOS PAGOS ATRASADOS"',
+      timestamp: '2026-10-22T16:05:17.282Z'
+    })).toBe(false);
   });
 });
 
