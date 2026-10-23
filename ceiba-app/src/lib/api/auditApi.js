@@ -21,6 +21,36 @@ export function isTestAuditLog(log) {
 }
 
 /**
+ * Detecta si un log es anómalo o inválido (casos de prueba, o acciones atribuidas a Diana antes de su ingreso el 22 de oct de 2026).
+ */
+export function isInvalidOrAnomalousLog(log) {
+  if (!log) return true;
+  if (isTestAuditLog(log)) return true;
+
+  // Diana empezó a laborar el 22 de octubre de 2026.
+  // Cualquier registro con fecha anterior o notas contractuales importadas no corresponde a sus acciones.
+  const user = `${log.usuario_nombre || ''} ${log.usuario_email || ''}`.toLowerCase();
+  const isDiana = user.includes('diana');
+  const ts = log.timestamp || '';
+  if (isDiana && ts && ts.slice(0, 10) < '2026-10-22') {
+    return true;
+  }
+
+  // Cláusulas contractuales de lotes que no corresponden a llamadas u operaciones de cobranza
+  const desc = `${log.descripcion || ''} ${JSON.stringify(log.detalles || '')}`.toLowerCase();
+  if (
+    desc.includes('32.202.000') ||
+    desc.includes('52.663.000') ||
+    desc.includes('treinta y dos millones') ||
+    desc.includes('cincuenta y dos millones')
+  ) {
+    return true;
+  }
+
+  return false;
+}
+
+/**
  * Obtiene el usuario activo actual desde Supabase auth o del localStorage.
  */
 function getCurrentUserInfo() {
@@ -106,8 +136,8 @@ export async function registrarAccion({
     detalles: detalles || {}
   };
 
-  // No registrar logs para casos de prueba
-  if (isTestAuditLog(record)) {
+  // No registrar logs para casos de prueba o anómalos
+  if (isInvalidOrAnomalousLog(record)) {
     return null;
   }
 
@@ -171,20 +201,20 @@ export async function getHistorialAcciones({ limit = 500, modulo, lote, search }
         } catch {
           return null;
         }
-      }).filter(Boolean);
+      }).filter(Boolean).filter(l => !isInvalidOrAnomalousLog(l));
     }
   } catch (e) {
     console.warn('Error leyendo logs de Supabase, usando caché local:', e);
   }
 
-  // 2. Si Supabase viene vacío o falló, mezclar con caché local o memoria (depurando casos de prueba)
+  // 2. Si Supabase viene vacío o falló, mezclar con caché local o memoria (depurando casos de prueba y anómalos)
   const fallbackList = [];
   if (typeof window !== 'undefined' && window.localStorage) {
     try {
       const local = JSON.parse(window.localStorage.getItem(CACHE_KEY) || '[]');
       if (Array.isArray(local)) {
-        // Eliminar permanentemente logs de prueba de la caché del navegador
-        const cleaned = local.filter(l => !isTestAuditLog(l));
+        // Eliminar permanentemente logs de prueba o anómalos de la caché del navegador
+        const cleaned = local.filter(l => !isInvalidOrAnomalousLog(l));
         if (cleaned.length !== local.length) {
           window.localStorage.setItem(CACHE_KEY, JSON.stringify(cleaned));
         }
@@ -195,21 +225,21 @@ export async function getHistorialAcciones({ limit = 500, modulo, lote, search }
     }
   }
 
-  // Depurar logs de prueba en memoria
-  inMemoryLogs = inMemoryLogs.filter(l => !isTestAuditLog(l));
+  // Depurar logs en memoria
+  inMemoryLogs = inMemoryLogs.filter(l => !isInvalidOrAnomalousLog(l));
   fallbackList.push(...inMemoryLogs);
 
   if (fallbackList.length > 0) {
     const existingIds = new Set(logs.map(l => l.id));
     for (const item of fallbackList) {
-      if (!existingIds.has(item.id) && !isTestAuditLog(item)) {
+      if (!existingIds.has(item.id) && !isInvalidOrAnomalousLog(item)) {
         logs.push(item);
       }
     }
   }
 
-  // Filtrar de forma estricta cualquier log residual de prueba
-  logs = logs.filter(l => !isTestAuditLog(l));
+  // Filtrar de forma estricta cualquier log residual de prueba o anómalo
+  logs = logs.filter(l => !isInvalidOrAnomalousLog(l));
 
   // Ordenar por fecha descendente
   logs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
