@@ -1,4 +1,6 @@
-import { supabase } from '../supabase.js';
+import * as sbModule from '../supabase.js';
+const supabase = sbModule.supabase;
+const supabaseAdmin = sbModule.supabaseAdmin || sbModule.supabase;
 import { registrarAccion } from './auditApi.js';
 
 const STORAGE_KEY = 'ceiba_permisos_config_cache';
@@ -51,7 +53,8 @@ export async function getPermisosPersonalizados(forceRefresh = false) {
   let config = {};
 
   try {
-    const { data, error } = await supabase
+    const client = supabaseAdmin || supabase;
+    const { data, error } = await client
       .from('datos_maestros')
       .select('id, valor')
       .eq('tipo', 'CONFIG_PERMISOS')
@@ -129,27 +132,26 @@ export async function guardarPermisosRol({ targetRole, nuevosPermisos, editorUse
   };
 
   try {
-    const { data: existing } = await supabase
+    const client = supabaseAdmin || supabase;
+    const { data: existing } = await client
       .from('datos_maestros')
       .select('id')
       .eq('tipo', 'CONFIG_PERMISOS')
       .limit(1);
 
     if (existing && existing.length > 0) {
-      await supabase
+      await client
         .from('datos_maestros')
         .update({
-          valor: JSON.stringify(mapaActualizado),
-          descripcion: 'Configuración dinámica de permisos por rol'
+          valor: JSON.stringify(mapaActualizado)
         })
         .eq('id', existing[0].id);
     } else {
-      await supabase
+      await client
         .from('datos_maestros')
         .insert([{
           tipo: 'CONFIG_PERMISOS',
           orden: 1,
-          descripcion: 'Configuración dinámica de permisos por rol',
           valor: JSON.stringify(mapaActualizado)
         }]);
     }
@@ -195,14 +197,15 @@ export async function restablecerPermisosRol({ targetRole, editorUser, defaultPe
   delete copia[targetRole];
 
   try {
-    const { data: existing } = await supabase
+    const client = supabaseAdmin || supabase;
+    const { data: existing } = await client
       .from('datos_maestros')
       .select('id')
       .eq('tipo', 'CONFIG_PERMISOS')
       .limit(1);
 
     if (existing && existing.length > 0) {
-      await supabase
+      await client
         .from('datos_maestros')
         .update({
           valor: JSON.stringify(copia)

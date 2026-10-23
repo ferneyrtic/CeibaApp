@@ -2,12 +2,16 @@ import { describe, it, expect, vi } from 'vitest';
 import { RecibosRepository } from '../src/lib/repository/recibosRepository';
 import { ValidationError } from '../src/lib/validation/schemas';
 
-vi.mock('../src/lib/supabase', () => ({
-  supabase: {
+vi.mock('../src/lib/supabase', () => {
+  const mockClient = {
     from: vi.fn(),
     rpc: vi.fn()
-  }
-}));
+  };
+  return {
+    supabase: mockClient,
+    supabaseAdmin: mockClient
+  };
+});
 
 describe('RecibosRepository (Repository Pattern & ACID Enforcement)', () => {
   const repo = new RecibosRepository();

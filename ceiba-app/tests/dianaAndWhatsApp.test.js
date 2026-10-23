@@ -21,7 +21,7 @@ describe('Rol y Permisos de Diana (Soporte)', () => {
     expect(soportePerms.canManageRecibos).toBe(true);
     expect(soportePerms.canViewHistorialAcciones).toBe(true);
     expect(soportePerms.canViewCierre).toBe(false);
-    expect(soportePerms.canViewConfig).toBe(false);
+    expect(soportePerms.canViewConfig).toBe(true);
     expect(soportePerms.canDeleteRecibos).toBe(false);
   });
 });

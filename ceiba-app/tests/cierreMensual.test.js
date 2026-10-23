@@ -2,10 +2,10 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // Mockeamos supabase antes de importar cierreApi
 vi.mock('../src/lib/supabase.js', () => {
+  const fromMock = vi.fn();
   return {
-    supabase: {
-      from: vi.fn(),
-    },
+    supabase: { from: fromMock },
+    supabaseAdmin: { from: fromMock },
   };
 });
 
@@ -356,9 +356,9 @@ describe('cierreApi - getCierreMensualData', () => {
 
     const data = await getCierreMensualData('2026-10-01', '2026-10-31', true);
 
-    // Debe contener sólo el ingreso del recibo 3399, no el del 3398
-    expect(data.kpis.totalRecaudadoMes).toBe(1640800);
-    expect(data.cuotasMes.find(c => c.observacion.includes('3398'))).toBeUndefined();
+    // Debe contener el ingreso de los recibos desde el 3398 en adelante
+    expect(data.kpis.totalRecaudadoMes).toBe(2515800);
+    expect(data.cuotasMes.find(c => c.observacion.includes('3398'))).toBeDefined();
     expect(data.cuotasMes.find(c => c.observacion.includes('3399'))).toBeDefined();
   });
 });

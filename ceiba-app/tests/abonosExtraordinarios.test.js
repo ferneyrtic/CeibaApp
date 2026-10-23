@@ -1,10 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 vi.mock('../src/lib/supabase.js', () => {
+  const fromMock = vi.fn();
   return {
-    supabase: {
-      from: vi.fn(),
-    },
+    supabase: { from: fromMock },
+    supabaseAdmin: { from: fromMock },
   };
 });
 

@@ -1,4 +1,6 @@
-import { supabase } from '../supabase';
+import * as sbModule from '../supabase.js';
+const supabase = sbModule.supabase;
+const supabaseAdmin = sbModule.supabaseAdmin || sbModule.supabase;
 import { numeroALetrasCOP } from '../../utils/numeroALetras';
 import { registrarAccion } from './auditApi';
 import { clearCarteraCache } from './cartera';
@@ -82,9 +84,10 @@ export const obtenerSiguienteNumeroRecibo = async () => {
     if (!isNaN(n) && n > maxNum) maxNum = n;
   });
 
-  // 2. Verificar datos_maestros en Supabase (si tiene permisos)
+  // 2. Verificar datos_maestros en Supabase
   try {
-    const { data } = await supabase
+    const client = supabaseAdmin || supabase;
+    const { data } = await client
       .from('datos_maestros')
       .select('orden')
       .eq('tipo', 'RECIBO_CAJA')
@@ -223,9 +226,10 @@ export const obtenerTodosLosRecibos = async (forceRefresh = false) => {
     console.warn('Aviso cargando recibos desde cuotas:', err);
   }
 
-  // 3. Cargar desde datos_maestros (con graceful fallback)
+  // 3. Cargar desde datos_maestros usando supabaseAdmin
   try {
-    const { data, error } = await supabase
+    const client = supabaseAdmin || supabase;
+    const { data, error } = await client
       .from('datos_maestros')
       .select('id, orden, valor')
       .eq('tipo', 'RECIBO_CAJA')
@@ -348,9 +352,10 @@ export const crearReciboCaja = async (datosRecibo) => {
   // 1. Guardar de forma inmediata en almacenamiento local
   guardarReciboLocal(payload);
 
-  // 2. Intentar guardar en datos_maestros (con graceful fallback si RLS bloquea)
+  // 2. Guardar en datos_maestros usando supabaseAdmin
   try {
-    const { data, error } = await supabase
+    const client = supabaseAdmin || supabase;
+    const { data, error } = await client
       .from('datos_maestros')
       .insert([{
         tipo: 'RECIBO_CAJA',
@@ -364,7 +369,7 @@ export const crearReciboCaja = async (datosRecibo) => {
       payload.db_id = data.id;
     }
   } catch (err) {
-    console.warn('Aviso: guardado en cuota y almacenamiento local (datos_maestros RLS omitido):', err);
+    console.warn('Aviso guardando recibo en datos_maestros:', err);
   }
 
   clearRecibosCache();
@@ -828,17 +833,18 @@ export const anularRecibo = async ({
   // 1. Actualizar en localStorage
   guardarReciboLocal(reciboAnulado);
 
-  // 2. Si existe en datos_maestros, actualizar
+  // 2. Si existe en datos_maestros, actualizar con supabaseAdmin
   try {
+    const client = supabaseAdmin || supabase;
     if (recibo.db_id) {
-      await supabase
+      await client
         .from('datos_maestros')
         .update({
           valor: JSON.stringify(reciboAnulado)
         })
         .eq('id', recibo.db_id);
     } else {
-      await supabase
+      await client
         .from('datos_maestros')
         .update({
           valor: JSON.stringify(reciboAnulado)

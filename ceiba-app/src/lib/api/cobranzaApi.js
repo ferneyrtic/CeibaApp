@@ -1,5 +1,7 @@
-import { supabase } from '../supabase';
-import { registrarAccion } from './auditApi';
+import * as sbModule from '../supabase.js';
+const supabase = sbModule.supabase;
+const supabaseAdmin = sbModule.supabaseAdmin || sbModule.supabase;
+import { registrarAccion } from './auditApi.js';
 
 const STORAGE_KEY = 'ceiba_observaciones_cobranza_cache';
 
@@ -24,7 +26,8 @@ export async function getObservacionesCobranza(forceRefresh = false) {
   let items = [];
 
   try {
-    const { data, error } = await supabase
+    const client = supabaseAdmin || supabase;
+    const { data, error } = await client
       .from('datos_maestros')
       .select('id, valor, orden')
       .eq('tipo', 'OBSERVACION_COBRANZA')
@@ -124,11 +127,19 @@ export async function guardarObservacionCobranza(datos, usuarioActual = 'Soporte
   const nuevaRespuesta = respuesta || (existente ? existente.respuesta : 'OBSERVACIÓN REGISTRADA');
   const notaFinal = (nota !== undefined ? nota : (observacion_adicional !== undefined ? observacion_adicional : (existente?.nota || existente?.observacion_adicional || '')))?.trim() || '';
 
-  // Construir texto resumen directo y legible con fecha
+  // Construir texto resumen directo, limpio y legible con fecha (evitando repeticiones)
   let resumenFinal = texto_resumen;
   if (!resumenFinal) {
-    if (notaFinal) {
-      resumenFinal = `${nuevaRespuesta}: ${notaFinal} (${fechaActual})`;
+    let cleanNota = (notaFinal || '').trim();
+    if (cleanNota.toLowerCase().startsWith(nuevaRespuesta.toLowerCase())) {
+      cleanNota = cleanNota.slice(nuevaRespuesta.length).replace(/^[:\s\-]+/, '').trim();
+    }
+    const hasDateAtEnd = /\(\d{4}-\d{2}-\d{2}\)$/.test(cleanNota);
+
+    if (cleanNota) {
+      resumenFinal = hasDateAtEnd
+        ? `${nuevaRespuesta}: ${cleanNota}`
+        : `${nuevaRespuesta}: ${cleanNota} (${fechaActual})`;
     } else {
       resumenFinal = `${nuevaRespuesta} (${fechaActual})`;
     }
@@ -151,17 +162,23 @@ export async function guardarObservacionCobranza(datos, usuarioActual = 'Soporte
   };
 
   try {
+    const client = supabaseAdmin || supabase;
+
     if (existente && existente.db_id) {
       // Actualizar registro existente en datos_maestros
-      await supabase
+      const { error: upErr } = await client
         .from('datos_maestros')
         .update({
           valor: JSON.stringify(payloadObjeto)
         })
         .eq('id', existente.db_id);
+
+      if (upErr) {
+        console.error('Error actualizando OBSERVACION_COBRANZA en datos_maestros:', upErr);
+      }
     } else {
       // Insertar nuevo registro en datos_maestros
-      const { data: inserted } = await supabase
+      const { data: inserted, error: inErr } = await client
         .from('datos_maestros')
         .insert([{
           tipo: 'OBSERVACION_COBRANZA',
@@ -171,20 +188,23 @@ export async function guardarObservacionCobranza(datos, usuarioActual = 'Soporte
         .select('id')
         .single();
 
+      if (inErr) {
+        console.error('Error insertando OBSERVACION_COBRANZA en datos_maestros:', inErr);
+      }
       if (inserted) {
         payloadObjeto.db_id = inserted.id;
       }
     }
 
-    // Actualizar también el campo observacion en la tabla lotes
+    // Actualizar también el campo observacion en la tabla lotes usando client administrativo
     if (lote_id) {
-      await supabase
+      await client
         .from('lotes')
         .update({ observacion: resumenFinal, updated_at: new Date().toISOString() })
         .eq('id', lote_id);
     }
     if (id_lote) {
-      await supabase
+      await client
         .from('lotes')
         .update({ observacion: resumenFinal, updated_at: new Date().toISOString() })
         .eq('id_lote', id_lote);

@@ -1,18 +1,20 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
-vi.mock('../src/lib/supabase.js', () => ({
-  supabase: {
-    from: vi.fn().mockReturnValue({
-      select: vi.fn().mockReturnThis(),
-      insert: vi.fn().mockResolvedValue({ data: null, error: null }),
-      update: vi.fn().mockResolvedValue({ data: null, error: null }),
-      delete: vi.fn().mockResolvedValue({ data: null, error: null }),
-      eq: vi.fn().mockReturnThis(),
-      order: vi.fn().mockReturnThis(),
-      limit: vi.fn().mockResolvedValue({ data: [], error: null })
-    })
-  }
-}));
+vi.mock('../src/lib/supabase.js', () => {
+  const fromMock = vi.fn().mockReturnValue({
+    select: vi.fn().mockReturnThis(),
+    insert: vi.fn().mockResolvedValue({ data: null, error: null }),
+    update: vi.fn().mockResolvedValue({ data: null, error: null }),
+    delete: vi.fn().mockResolvedValue({ data: null, error: null }),
+    eq: vi.fn().mockReturnThis(),
+    order: vi.fn().mockReturnThis(),
+    limit: vi.fn().mockResolvedValue({ data: [], error: null })
+  });
+  return {
+    supabase: { from: fromMock },
+    supabaseAdmin: { from: fromMock }
+  };
+});
 
 import {
   registrarAccion,

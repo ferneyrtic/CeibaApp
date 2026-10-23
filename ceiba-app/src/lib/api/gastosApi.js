@@ -1,4 +1,6 @@
-import { supabase } from '../supabase';
+import * as sbModule from '../supabase.js';
+const supabase = sbModule.supabase;
+const supabaseAdmin = sbModule.supabaseAdmin || sbModule.supabase;
 import { registrarAccion } from './auditApi';
 import { formatCOP, formatDate } from '../../utils/helpers';
 
@@ -72,7 +74,8 @@ export const getGastos = async (forceRefresh = false) => {
 
   // 2. Cargar desde Supabase datos_maestros (tipo: GASTO_PROYECTO)
   try {
-    const { data, error } = await supabase
+    const client = supabaseAdmin || supabase;
+    const { data, error } = await client
       .from('datos_maestros')
       .select('id, orden, valor, created_at')
       .eq('tipo', 'GASTO_PROYECTO')
@@ -158,19 +161,20 @@ export const guardarGasto = async (gastoData, usuarioActual = 'Propietario') => 
 
   // 2. Guardar en Supabase datos_maestros (con graceful fallback)
   try {
+    const client = supabaseAdmin || supabase;
     if (payload.db_id) {
-      await supabase
+      await client
         .from('datos_maestros')
         .update({
           valor: JSON.stringify(payload)
         })
         .eq('id', payload.db_id);
     } else {
-      const { data, error } = await supabase
+      const { data, error } = await client
         .from('datos_maestros')
         .insert([{
           tipo: 'GASTO_PROYECTO',
-          orden: Date.now(),
+          orden: Date.now() % 1000000000,
           valor: JSON.stringify(payload)
         }])
         .select()
@@ -215,7 +219,8 @@ export const eliminarGasto = async (id, usuarioActual = 'Propietario') => {
   // 2. Eliminar de Supabase si tiene db_id
   if (gasto?.db_id) {
     try {
-      await supabase
+      const client = supabaseAdmin || supabase;
+      await client
         .from('datos_maestros')
         .delete()
         .eq('id', gasto.db_id);

@@ -1,4 +1,6 @@
-import { supabase } from '../supabase';
+import * as sbModule from '../supabase.js';
+const supabase = sbModule.supabase;
+const supabaseAdmin = sbModule.supabaseAdmin || sbModule.supabase;
 import { registrarAccion } from './auditApi';
 
 const STORAGE_KEY = 'ceiba_casos_especiales_data';
@@ -120,7 +122,8 @@ export async function getCasosEspeciales() {
 
   // 1. Cargar desde Supabase `datos_maestros`
   try {
-    const { data, error } = await supabase
+    const client = supabaseAdmin || supabase;
+    const { data, error } = await client
       .from('datos_maestros')
       .select('id, valor, orden')
       .eq('tipo', 'CASO_ESPECIAL')
@@ -216,8 +219,9 @@ export async function guardarCasoEspecial(casoData, usuarioActual) {
 
   // 2. Persistir en Supabase `datos_maestros`
   try {
+    const client = supabaseAdmin || supabase;
     if (casoGuardado.db_id) {
-      await supabase
+      await client
         .from('datos_maestros')
         .update({
           valor: JSON.stringify(casoGuardado),
@@ -225,17 +229,25 @@ export async function guardarCasoEspecial(casoData, usuarioActual) {
         })
         .eq('id', casoGuardado.db_id);
     } else {
-      const { data } = await supabase
+      const q = client
         .from('datos_maestros')
         .insert({
           tipo: 'CASO_ESPECIAL',
           valor: JSON.stringify(casoGuardado),
           orden: Date.now() % 1000000000
-        })
-        .select()
-        .single();
+        });
 
-      if (data) casoGuardado.db_id = data.id;
+      let resData = null;
+      if (typeof q?.select === 'function') {
+        const s = q.select();
+        const r = typeof s?.single === 'function' ? await s.single() : await s;
+        resData = r?.data;
+      } else {
+        const r = await q;
+        resData = r?.data;
+      }
+
+      if (resData) casoGuardado.db_id = resData.id || resData[0]?.id;
     }
   } catch (e) {
     console.warn('Aviso guardando caso en Supabase:', e);
@@ -295,7 +307,8 @@ export async function eliminarCasoEspecial(id, usuarioActual) {
 
   if (casoEncontrado?.db_id) {
     try {
-      await supabase
+      const client = supabaseAdmin || supabase;
+      await client
         .from('datos_maestros')
         .delete()
         .eq('id', casoEncontrado.db_id);

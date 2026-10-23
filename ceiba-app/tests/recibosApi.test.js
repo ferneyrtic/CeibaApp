@@ -2,10 +2,10 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // Mock Supabase y AuditApi antes de importar
 vi.mock('../src/lib/supabase.js', () => {
+  const fromMock = vi.fn();
   return {
-    supabase: {
-      from: vi.fn()
-    }
+    supabase: { from: fromMock },
+    supabaseAdmin: { from: fromMock }
   };
 });
 
@@ -13,7 +13,7 @@ vi.mock('../src/lib/api/auditApi.js', () => ({
   registrarAccion: vi.fn().mockResolvedValue({ success: true })
 }));
 
-import { supabase } from '../src/lib/supabase.js';
+import { supabase, supabaseAdmin } from '../src/lib/supabase.js';
 import {
   obtenerSiguienteNumeroRecibo,
   crearReciboCaja,

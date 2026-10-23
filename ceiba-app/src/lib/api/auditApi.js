@@ -1,4 +1,6 @@
-import { supabase } from '../supabase';
+import * as sbModule from '../supabase.js';
+const supabase = sbModule.supabase;
+const supabaseAdmin = sbModule.supabaseAdmin || sbModule.supabase;
 
 const CACHE_KEY = 'ceiba_audit_logs_cache';
 let inMemoryLogs = [];
@@ -155,24 +157,30 @@ export async function registrarAccion({
     }
   }
 
-  // 3. Persistir en Supabase en `datos_maestros`
+  // 3. Persistir en Supabase en `datos_maestros` usando supabaseAdmin (evita bloqueos RLS)
   try {
-    if (supabase && typeof supabase.from === 'function') {
-      const fromObj = supabase.from('datos_maestros');
+    const client = supabaseAdmin || supabase;
+    if (client && typeof client.from === 'function') {
+      const fromObj = client.from('datos_maestros');
       if (fromObj && typeof fromObj.insert === 'function') {
-        const { error } = await fromObj.insert({
+        const insertQuery = fromObj.insert({
           tipo: 'AUDITORIA_ACCION',
           valor: JSON.stringify(record),
           orden: Date.now() % 1000000000
         });
+        const { data: insData, error } = typeof insertQuery?.select === 'function'
+          ? await insertQuery.select('id')
+          : await insertQuery;
 
         if (error) {
-          // Log suave para no interrumpir
+          console.error('Error insertando AUDITORIA_ACCION en Supabase:', error);
+        } else if (insData && insData[0]) {
+          record.db_id = insData[0].id;
         }
       }
     }
   } catch (err) {
-    // Excepción silenciada
+    console.error('Excepción guardando acción de auditoría:', err);
   }
 
   return record;
@@ -184,9 +192,10 @@ export async function registrarAccion({
 export async function getHistorialAcciones({ limit = 500, modulo, lote, search } = {}) {
   let logs = [];
 
-  // 1. Intentar cargar desde Supabase
+  // 1. Intentar cargar desde Supabase usando supabaseAdmin
   try {
-    let query = supabase
+    const client = supabaseAdmin || supabase;
+    let query = client
       .from('datos_maestros')
       .select('id, tipo, valor, orden')
       .eq('tipo', 'AUDITORIA_ACCION')
