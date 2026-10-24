@@ -187,7 +187,7 @@ export const registrarPagoComision = async (pagoData) => {
     .insert([{
       tipo: 'PAGO_COMISION',
       valor: JSON.stringify(payload),
-      orden: Date.now(),
+      orden: Math.floor(Date.now() / 1000),
     }])
     .select();
 

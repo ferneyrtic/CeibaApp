@@ -188,7 +188,7 @@ export async function guardarObservacionCobranza(datos, usuarioActual = 'Soporte
         .insert([{
           tipo: 'OBSERVACION_COBRANZA',
           valor: JSON.stringify(payloadObjeto),
-          orden: Date.now()
+          orden: Math.floor(Date.now() / 1000)
         }])
         .select('id')
         .single();

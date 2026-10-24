@@ -155,7 +155,7 @@ export async function registrarAccion({
     const insertQuery = fromObj.insert({
       tipo: 'AUDITORIA_ACCION',
       valor: JSON.stringify(record),
-      orden: Date.now()
+      orden: Math.floor(Date.now() / 1000)
     });
     const { data: insData, error } = typeof insertQuery?.select === 'function'
       ? await insertQuery.select('id')

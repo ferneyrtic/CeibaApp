@@ -74,8 +74,8 @@ const guardarReciboLocal = (recibo) => {
  * Inicia en 3175 si no existen recibos previos.
  */
 export const obtenerSiguienteNumeroRecibo = async () => {
-  // La base oficial confirmada es 3411 (el próximo recibo asignable inicia estrictamente en 3412)
-  let maxNum = Math.max(3411, CONSECUTIVO_INICIAL - 1);
+  // La base oficial confirmada: recibo 3436 fue saltado por error en papelería física (el siguiente consecutivo a expedir es estrictamente 3437)
+  let maxNum = Math.max(3436, CONSECUTIVO_INICIAL - 1);
 
   // 1. Verificar recibos en almacenamiento local
   const locales = obtenerRecibosLocales();

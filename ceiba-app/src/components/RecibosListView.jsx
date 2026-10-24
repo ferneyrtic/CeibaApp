@@ -504,11 +504,11 @@ export default function RecibosListView({ onVerRecibo, onVerExtracto }) {
                           fontFamily: 'monospace',
                           padding: '3px 8px',
                           borderRadius: 6,
-                          background: '#ecfdf5',
-                          color: '#065f46',
-                          border: '1px solid #a7f3d0'
+                          background: r.estado === 'ANULADO' ? '#fef2f2' : '#ecfdf5',
+                          color: r.estado === 'ANULADO' ? '#991b1b' : '#065f46',
+                          border: `1px solid ${r.estado === 'ANULADO' ? '#fecaca' : '#a7f3d0'}`
                         }}>
-                          #{numRecibo}
+                          #{numRecibo} {r.estado === 'ANULADO' ? '(ANULADO)' : ''}
                         </span>
                       </td>
 
