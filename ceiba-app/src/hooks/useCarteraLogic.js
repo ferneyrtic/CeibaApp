@@ -114,7 +114,9 @@ export function useCarteraLogic() {
         (v.clientes?.nombre && v.clientes.nombre.toLowerCase().includes(s)) ||
         (v.vendedor_nombre && v.vendedor_nombre.toLowerCase().includes(s)) ||
         (v.clientes?.doc_cliente && String(v.clientes.doc_cliente).toLowerCase().includes(s)) ||
-        (v.clientes?.celular && String(v.clientes.celular).includes(s))
+        (v.clientes?.celular && String(v.clientes.celular).includes(s)) ||
+        (v.observacion_cobranza && v.observacion_cobranza.toLowerCase().includes(s)) ||
+        (v.lotes?.observacion && v.lotes.observacion.toLowerCase().includes(s))
       );
     }
 
@@ -166,7 +168,9 @@ export function useCarteraLogic() {
         (v.clientes?.nombre && v.clientes.nombre.toLowerCase().includes(s)) ||
         (v.vendedor_nombre && v.vendedor_nombre.toLowerCase().includes(s)) ||
         (v.clientes?.doc_cliente && String(v.clientes.doc_cliente).toLowerCase().includes(s)) ||
-        (v.clientes?.celular && String(v.clientes.celular).includes(s))
+        (v.clientes?.celular && String(v.clientes.celular).includes(s)) ||
+        (v.observacion_cobranza && v.observacion_cobranza.toLowerCase().includes(s)) ||
+        (v.lotes?.observacion && v.lotes.observacion.toLowerCase().includes(s))
       );
     }
 

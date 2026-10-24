@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { X, Phone, PhoneCall, Calendar, ClipboardList, Clock, CheckCircle2, User, AlertCircle, Plus } from 'lucide-react';
 import Modal from './Modal';
-import { guardarObservacionCobranza } from '../lib/api/cobranzaApi';
+import { guardarObservacionCobranza, getEstiloObservacionCobranza } from '../lib/api/cobranzaApi';
 import { formatDate } from '../utils/helpers';
 
 const OPCIONES_RESPUESTA = [
+  'VERIFICAR PAGO',
   'NO NECESITA',
   'SOLICITA PLAZO',
   'INDICA QUE EL SIGUIENTE PAGO REALIZA LOS PAGOS ATRASADOS',
@@ -23,6 +24,7 @@ const OPCIONES_GESTION = [
   'MENSAJE POR WHATSAPP',
   'VISITA DIRECTA',
   'CORREO ELECTRÓNICO',
+  'VERIFICAR PAGO',
   'NO NECESITA'
 ];
 
@@ -112,7 +114,8 @@ export default function ModalObservacionCobranza({
     }
   };
 
-  const isNoNecesita = respuesta === 'NO NECESITA' || gestion === 'NO NECESITA';
+  const estiloActual = getEstiloObservacionCobranza(observacionActual);
+  const estiloForm = getEstiloObservacionCobranza(respuesta === 'OTRO' ? (respuestaCustom || 'OTRO') : respuesta);
 
   return (
     <Modal onClose={onClose} maxWidth={560} zIndex={100010}>
@@ -125,10 +128,11 @@ export default function ModalObservacionCobranza({
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <div style={{
               width: 38, height: 38, borderRadius: 8,
-              background: '#fef3c7', color: '#b45309',
+              background: estiloForm.bg, color: estiloForm.colorDark,
+              border: `1px solid ${estiloForm.border}`,
               display: 'flex', alignItems: 'center', justifyContent: 'center'
             }}>
-              <ClipboardList size={22} />
+              <ClipboardList size={22} color={estiloForm.iconColor} />
             </div>
             <div>
               <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: '#0f172a' }}>
@@ -198,41 +202,54 @@ export default function ModalObservacionCobranza({
         {/* Observación Actual Destacada si ya existe */}
         {observacionActual && (observacionActual.respuesta || observacionActual.texto_resumen || observacionActual.nota) && (
           <div style={{
-            background: isNoNecesita ? '#ecfdf5' : '#fffbeb',
-            border: `1px solid ${isNoNecesita ? '#a7f3d0' : '#fde68a'}`,
+            background: estiloActual.bg,
+            border: `1px solid ${estiloActual.border}`,
             borderRadius: 8,
             padding: '12px 14px',
             marginBottom: 16
           }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-              <span style={{ fontSize: 10.5, fontWeight: 800, textTransform: 'uppercase', color: isNoNecesita ? '#065f46' : '#92400e', letterSpacing: '0.5px' }}>
-                Observación Actual en Sistema
-              </span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span style={{
+                  fontSize: 10,
+                  fontWeight: 800,
+                  textTransform: 'uppercase',
+                  padding: '2px 7px',
+                  borderRadius: 4,
+                  background: estiloActual.badgeBg,
+                  color: estiloActual.badgeColor
+                }}>
+                  {estiloActual.label}
+                </span>
+                <span style={{ fontSize: 10.5, fontWeight: 800, textTransform: 'uppercase', color: estiloActual.colorDark, letterSpacing: '0.5px' }}>
+                  Observación Actual en Sistema
+                </span>
+              </div>
               {observacionActual.fecha && (
-                <span style={{ fontSize: 11, fontWeight: 700, color: isNoNecesita ? '#047857' : '#b45309' }}>
+                <span style={{ fontSize: 11, fontWeight: 700, color: estiloActual.color }}>
                   📅 {observacionActual.fecha}
                 </span>
               )}
             </div>
-            <div style={{ fontSize: 13, fontWeight: 700, color: isNoNecesita ? '#064e3b' : '#78350f' }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: estiloActual.colorDark }}>
               {observacionActual.respuesta || observacionActual.texto_resumen}
             </div>
             {(observacionActual.nota || observacionActual.observacion_adicional) && (
               <div style={{
                 fontSize: 12.5,
-                color: isNoNecesita ? '#064e3b' : '#451a03',
+                color: estiloActual.colorText,
                 fontWeight: 600,
                 marginTop: 6,
                 background: '#fff',
                 padding: '6px 10px',
                 borderRadius: 6,
-                border: `1px solid ${isNoNecesita ? '#a7f3d0' : '#fde68a'}`
+                border: `1px solid ${estiloActual.border}`
               }}>
                 "{observacionActual.nota || observacionActual.observacion_adicional}"
               </div>
             )}
             {observacionActual.gestion && (
-              <div style={{ fontSize: 11, color: isNoNecesita ? '#065f46' : '#92400e', marginTop: 4 }}>
+              <div style={{ fontSize: 11, color: estiloActual.colorDark, marginTop: 4 }}>
                 Medio: <strong>{observacionActual.gestion}</strong>
               </div>
             )}
@@ -286,7 +303,14 @@ export default function ModalObservacionCobranza({
             </label>
             <select
               className="input"
-              style={{ width: '100%', fontSize: 12 }}
+              style={{
+                width: '100%',
+                fontSize: 12,
+                fontWeight: 700,
+                borderColor: estiloForm.border,
+                background: estiloForm.bg,
+                color: estiloForm.colorDark
+              }}
               value={respuesta}
               onChange={e => setRespuesta(e.target.value)}
             >
@@ -294,6 +318,22 @@ export default function ModalObservacionCobranza({
                 <option key={opt} value={opt}>{opt}</option>
               ))}
             </select>
+            {/* Indicador visual semafórico según la opción seleccionada */}
+            <div style={{
+              fontSize: 11,
+              marginTop: 6,
+              padding: '4px 10px',
+              borderRadius: 6,
+              background: estiloForm.bg,
+              color: estiloForm.colorDark,
+              border: `1px solid ${estiloForm.border}`,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+              fontWeight: 600
+            }}>
+              <span>{estiloForm.pillDesc}</span>
+            </div>
           </div>
 
           {respuesta === 'OTRO' && (
@@ -343,7 +383,13 @@ export default function ModalObservacionCobranza({
             <button
               type="submit"
               className="btn btn-primary"
-              style={{ background: '#b45309', borderColor: '#b45309', gap: 6, fontWeight: 700 }}
+              style={{
+                background: estiloForm.badgeBg,
+                borderColor: estiloForm.badgeBg,
+                color: estiloForm.badgeColor,
+                gap: 6,
+                fontWeight: 700
+              }}
               disabled={guardando}
             >
               {guardando ? 'Guardando...' : '💾 Guardar Observación'}

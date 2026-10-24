@@ -26,7 +26,7 @@ import { obtenerRecibosPorVenta, anularRecibo } from '../lib/api/recibosApi';
 import Pagination from '../components/Pagination';
 import { useCarteraLogic } from '../hooks/useCarteraLogic';
 import ModalObservacionCobranza from '../components/ModalObservacionCobranza';
-import { buscarObservacionCobranza, normLote, obtenerObservacionEfectiva } from '../lib/api/cobranzaApi';
+import { buscarObservacionCobranza, normLote, obtenerObservacionEfectiva, getEstiloObservacionCobranza } from '../lib/api/cobranzaApi';
 import { ensureScrollUnlocked } from '../utils/scrollLockManager';
 
 
@@ -649,7 +649,7 @@ export default function Cartera() {
                                       </button>
                                     );
                                   }
-                                  const isNoNecesita = (obs.respuesta || '').toUpperCase().includes('NO NECESITA') || (obs.gestion || '').toUpperCase().includes('NO NECESITA');
+                                  const estiloObs = getEstiloObservacionCobranza(obs);
                                   return (
                                     <button
                                       type="button"
@@ -658,22 +658,22 @@ export default function Cartera() {
                                         fontSize: 10.5,
                                         padding: '4px 8px',
                                         gap: 4,
-                                        color: isNoNecesita ? '#047857' : '#92400e',
-                                        borderColor: isNoNecesita ? '#a7f3d0' : '#fde68a',
-                                        background: isNoNecesita ? '#ecfdf5' : '#fffbeb',
+                                        color: estiloObs.colorDark,
+                                        borderColor: estiloObs.border,
+                                        background: estiloObs.bg,
                                         fontWeight: 700,
                                         display: 'inline-flex',
                                         alignItems: 'center',
                                         maxWidth: 200,
                                         cursor: 'pointer'
                                       }}
-                                      title={`Observación de Cobranza:\n${obs.texto_resumen || obs.respuesta || ''}\n(Clic para actualizar o editar)`}
+                                      title={`Observación [${estiloObs.label}]:\n${obs.texto_resumen || obs.respuesta || ''}\n(Clic para actualizar o editar)`}
                                       onClick={(e) => {
                                         e.stopPropagation();
                                         openObservacionModal(v, obs);
                                       }}
                                     >
-                                      <ClipboardList size={11} color={isNoNecesita ? '#059669' : '#d97706'} />
+                                      <ClipboardList size={11} color={estiloObs.iconColor} />
                                       <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                         {obs.texto_resumen || obs.respuesta}
                                       </span>
@@ -1019,7 +1019,7 @@ export default function Cartera() {
                                 </button>
                               );
                             }
-                            const isNoNecesita = (obs.respuesta || '').toUpperCase().includes('NO NECESITA') || (obs.gestion || '').toUpperCase().includes('NO NECESITA');
+                            const estiloObs = getEstiloObservacionCobranza(obs);
                             return (
                               <button
                                 type="button"
@@ -1028,22 +1028,22 @@ export default function Cartera() {
                                   fontSize: 11,
                                   padding: '4px 8px',
                                   gap: 4,
-                                  color: isNoNecesita ? '#047857' : '#92400e',
-                                  borderColor: isNoNecesita ? '#a7f3d0' : '#fde68a',
-                                  background: isNoNecesita ? '#ecfdf5' : '#fffbeb',
+                                  color: estiloObs.colorDark,
+                                  borderColor: estiloObs.border,
+                                  background: estiloObs.bg,
                                   fontWeight: 700,
                                   display: 'inline-flex',
                                   alignItems: 'center',
                                   maxWidth: 240,
                                   cursor: 'pointer'
                                 }}
-                                title={`Observación de Cobranza:\n${obs.texto_resumen || obs.respuesta || ''}\n(Clic para actualizar o editar)`}
+                                title={`Observación [${estiloObs.label}]:\n${obs.texto_resumen || obs.respuesta || ''}\n(Clic para actualizar o editar)`}
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   openObservacionModal(v, obs);
                                 }}
                               >
-                                <ClipboardList size={12} color={isNoNecesita ? '#059669' : '#d97706'} />
+                                <ClipboardList size={12} color={estiloObs.iconColor} />
                                 <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                   {obs.texto_resumen || obs.respuesta}
                                 </span>
@@ -1263,13 +1263,13 @@ export default function Cartera() {
                 </div>
               );
             }
-            const isNoNecesita = (obs.respuesta || '').toUpperCase().includes('NO NECESITA') || (obs.gestion || '').toUpperCase().includes('NO NECESITA');
+            const estiloObs = getEstiloObservacionCobranza(obs);
             return (
               <div style={{
                 margin: '10px 0 14px',
                 padding: '12px 16px',
-                background: isNoNecesita ? 'linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%)' : 'linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)',
-                border: `1px solid ${isNoNecesita ? '#a7f3d0' : '#fde68a'}`,
+                background: estiloObs.gradientBg,
+                border: `1px solid ${estiloObs.border}`,
                 borderRadius: 8,
                 display: 'flex',
                 alignItems: 'center',
@@ -1280,41 +1280,52 @@ export default function Cartera() {
                 <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
                   <div style={{
                     width: 32, height: 32, borderRadius: 6,
-                    background: isNoNecesita ? '#059669' : '#d97706', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    color: '#fff', flexShrink: 0, marginTop: 1
+                    background: estiloObs.badgeBg, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    color: estiloObs.badgeColor, flexShrink: 0, marginTop: 1
                   }}>
                     <ClipboardList size={18} />
                   </div>
                   <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <span style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px', color: isNoNecesita ? '#065f46' : '#92400e' }}>
+                      <span style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px', color: estiloObs.colorDark }}>
                         Observación de Cobranza Actual
                       </span>
+                      <span style={{
+                        fontSize: 10,
+                        fontWeight: 800,
+                        textTransform: 'uppercase',
+                        padding: '1px 6px',
+                        borderRadius: 4,
+                        background: estiloObs.badgeBg,
+                        color: estiloObs.badgeColor
+                      }}>
+                        {estiloObs.label}
+                      </span>
                       {obs.fecha && (
-                        <span style={{ fontSize: 10.5, fontWeight: 700, color: isNoNecesita ? '#047857' : '#b45309', background: '#fff', padding: '1px 6px', borderRadius: 4, border: `1px solid ${isNoNecesita ? '#a7f3d0' : '#fde68a'}` }}>
+                        <span style={{ fontSize: 10.5, fontWeight: 700, color: estiloObs.colorDark, background: '#fff', padding: '1px 6px', borderRadius: 4, border: `1px solid ${estiloObs.border}` }}>
                           📅 {obs.fecha}
                         </span>
                       )}
                     </div>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: isNoNecesita ? '#064e3b' : '#78350f', marginTop: 2 }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: estiloObs.colorDark, marginTop: 2 }}>
                       {obs.respuesta || obs.texto_resumen}
                     </div>
                     {(obs.nota || obs.observacion_adicional) && (
                       <div style={{
                         fontSize: 12.5,
-                        color: isNoNecesita ? '#064e3b' : '#451a03',
+                        color: estiloObs.colorText,
                         fontWeight: 600,
                         marginTop: 4,
                         background: '#fff',
                         padding: '6px 10px',
                         borderRadius: 6,
-                        border: `1px solid ${isNoNecesita ? '#a7f3d0' : '#fde68a'}`
+                        border: `1px solid ${estiloObs.border}`
                       }}>
                         "{obs.nota || obs.observacion_adicional}"
                       </div>
                     )}
                     {obs.gestion && (
-                      <div style={{ fontSize: 11, color: isNoNecesita ? '#065f46' : '#92400e', marginTop: 3 }}>
+                      <div style={{ fontSize: 11, color: estiloObs.colorDark, marginTop: 3 }}>
                         Canal: <strong>{obs.gestion}</strong>
                       </div>
                     )}
@@ -1328,8 +1339,8 @@ export default function Cartera() {
                     padding: '5px 12px',
                     gap: 5,
                     background: '#fff',
-                    borderColor: isNoNecesita ? '#a7f3d0' : '#fde68a',
-                    color: isNoNecesita ? '#047857' : '#b45309',
+                    borderColor: estiloObs.border,
+                    color: estiloObs.colorDark,
                     fontWeight: 700,
                     whiteSpace: 'nowrap'
                   }}
@@ -1338,7 +1349,7 @@ export default function Cartera() {
                     openObservacionModal(selected, obs);
                   }}
                 >
-                  <Edit2 size={12} /> Editar Observación
+                  ✏️ Editar Obs
                 </button>
               </div>
             );

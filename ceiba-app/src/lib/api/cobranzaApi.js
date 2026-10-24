@@ -9,6 +9,88 @@ const STORAGE_KEY = 'ceiba_observaciones_cobranza_cache';
 let inMemoryCobranza = null;
 
 /**
+ * Retorna la configuración de color y estilo semafórico para una observación de cobranza:
+ * - AZUL: 'VERIFICAR PAGO' (requiere confirmación bancaria con administración).
+ * - VERDE: 'NO NECESITA' o 'DESISTIMIENTO' (lotes que no son mora real o están en devolución).
+ * - AMARILLO: Casos con mora activa estándar (no responde, acordó pago, solicita plazo, recordatorio, etc.).
+ */
+export function getEstiloObservacionCobranza(obsOrRespuesta) {
+  let texto = '';
+  if (typeof obsOrRespuesta === 'string') {
+    texto = obsOrRespuesta.toUpperCase();
+  } else if (obsOrRespuesta && typeof obsOrRespuesta === 'object') {
+    texto = `${obsOrRespuesta.respuesta || ''} ${obsOrRespuesta.gestion || ''} ${obsOrRespuesta.texto_resumen || ''} ${obsOrRespuesta.nota || ''} ${obsOrRespuesta.observacion_adicional || ''}`.toUpperCase();
+  }
+
+  // 1. AZUL: Verificar Pago (pendiente confirmación en banco del titular por administración)
+  if (
+    texto.includes('VERIFICAR PAGO') ||
+    texto.includes('VERIFICACION DE PAGO') ||
+    texto.includes('VERIFICACIÓN DE PAGO') ||
+    texto.includes('VERIFICACION PAGO') ||
+    texto.includes('VERIFICACIÓN PAGO') ||
+    texto.includes('VERIFICAR CON ADM') ||
+    texto.includes('CONFIRMAR PAGO')
+  ) {
+    return {
+      tipo: 'azul',
+      color: '#0284c7',       // Sky 600 / Blue
+      colorDark: '#0369a1',   // Sky 700
+      colorText: '#0c4a6e',   // Sky 900
+      bg: '#eff6ff',          // Blue 50
+      gradientBg: 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)',
+      border: '#bfdbfe',      // Blue 200
+      iconColor: '#0284c7',
+      badgeBg: '#0284c7',
+      badgeColor: '#ffffff',
+      label: 'Verificar Pago (Adm)',
+      pillDesc: '🔍 Requiere confirmación bancaria con Administración'
+    };
+  }
+
+  // 2. VERDE: No Requiere Cobro / Desistimiento (no es mora real)
+  if (
+    texto.includes('NO NECESITA') ||
+    texto.includes('DESISTIMIENTO') ||
+    texto.includes('DESISTIÓ') ||
+    texto.includes('DESISTIO') ||
+    texto.includes('DEVOLUCION') ||
+    texto.includes('DEVOLUCIÓN')
+  ) {
+    return {
+      tipo: 'verde',
+      color: '#047857',       // Emerald 700
+      colorDark: '#065f46',   // Emerald 800
+      colorText: '#064e3b',   // Emerald 950
+      bg: '#ecfdf5',          // Emerald 50
+      gradientBg: 'linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%)',
+      border: '#a7f3d0',      // Emerald 200
+      iconColor: '#059669',
+      badgeBg: '#059669',
+      badgeColor: '#ffffff',
+      label: 'No Requiere Cobro / Desistimiento',
+      pillDesc: '✅ Sin gestión de cobro / Proceso de desistimiento o devolución'
+    };
+  }
+
+  // 3. AMARILLO: Mora Activa / Cobranza habitual
+  return {
+    tipo: 'amarillo',
+    color: '#92400e',         // Amber 800
+    colorDark: '#78350f',     // Amber 900
+    colorText: '#451a03',     // Amber 950
+    bg: '#fffbeb',            // Amber 50
+    gradientBg: 'linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)',
+    border: '#fde68a',        // Amber 200
+    iconColor: '#d97706',     // Amber 600
+    badgeBg: '#d97706',
+    badgeColor: '#ffffff',
+    label: 'En Seguimiento Mora',
+    pillDesc: '⚠️ Cliente en mora activa: seguimiento y recordatorio'
+  };
+}
+
+/**
  * Normaliza el string de un lote para búsquedas sin inconsistencias de espacios o guiones.
  */
 export function normLote(str) {
