@@ -87,7 +87,7 @@ export class RecibosRepository {
     let numeroRecibo = null;
 
     try {
-      numeroRecibo = await this.getNextConsecutivo();
+      numeroRecibo = Number(validado.numeroReciboManual || validado.numeroRecibo) || await this.getNextConsecutivo();
       let cuotasActualizadas = [];
       let esPagoCompleto = false;
       let saldoRestanteCuota = 0;

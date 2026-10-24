@@ -305,7 +305,8 @@ export default function ModalRegistrarPagoRecibo({
         loteIdStr: rawLote,
         clienteNombre: cliNom,
         clienteDoc: cliDoc,
-        generarRecibo: !sinRecibo
+        generarRecibo: !sinRecibo,
+        numeroReciboManual: !sinRecibo && proximoReciboNum ? Number(proximoReciboNum) : null
       });
 
       if (sinRecibo) {
@@ -545,17 +546,51 @@ export default function ModalRegistrarPagoRecibo({
               </div>
             </div>
           </label>
-          <span className="badge" style={{
-            background: sinRecibo ? '#dcfce7' : 'var(--bg-secondary)',
-            color: sinRecibo ? '#15803d' : 'var(--text-muted)',
-            border: sinRecibo ? '1px solid #86efac' : '1px solid var(--border)',
-            fontWeight: 800,
-            fontSize: 11,
-            padding: '3px 9px',
-            borderRadius: 6
-          }}>
-            {sinRecibo ? 'Cuota Actualizada' : `Recibo Nº ${proximoReciboNum}`}
-          </span>
+          {sinRecibo ? (
+            <span className="badge" style={{
+              background: '#dcfce7',
+              color: '#15803d',
+              border: '1px solid #86efac',
+              fontWeight: 800,
+              fontSize: 11,
+              padding: '4px 10px',
+              borderRadius: 6
+            }}>
+              Cuota Actualizada
+            </span>
+          ) : (
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+              background: '#f8fafc',
+              border: '1px solid #cbd5e1',
+              borderRadius: 8,
+              padding: '3px 8px'
+            }}>
+              <span style={{ fontSize: 11, fontWeight: 700, color: '#475569' }}>
+                Recibo Nº:
+              </span>
+              <input
+                type="number"
+                value={proximoReciboNum}
+                onChange={(e) => setProximoReciboNum(Math.max(1, parseInt(e.target.value) || 0))}
+                style={{
+                  width: 72,
+                  padding: '3px 6px',
+                  fontSize: 13,
+                  fontWeight: 800,
+                  fontFamily: 'monospace',
+                  textAlign: 'center',
+                  borderRadius: 6,
+                  border: '1px solid #94a3b8',
+                  background: '#ffffff',
+                  color: '#0f172a'
+                }}
+                title="Número de recibo de caja oficial asignado (calculado automáticamente como 3441, ajustable si es necesario)"
+              />
+            </div>
+          )}
         </div>
 
         {/* 2. Selector de Modo: Cascada Automática vs Cuota Específica */}

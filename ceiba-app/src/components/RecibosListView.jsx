@@ -507,11 +507,11 @@ export default function RecibosListView({ onVerRecibo, onVerExtracto }) {
                           fontFamily: 'monospace',
                           padding: '3px 8px',
                           borderRadius: 6,
-                          background: r.estado === 'ANULADO' ? '#fef2f2' : '#ecfdf5',
-                          color: r.estado === 'ANULADO' ? '#991b1b' : '#065f46',
-                          border: `1px solid ${r.estado === 'ANULADO' ? '#fecaca' : '#a7f3d0'}`
+                          background: r.estado === 'ANULADO' ? '#fef2f2' : (r.estado === 'ARRAS' ? '#fef3c7' : '#ecfdf5'),
+                          color: r.estado === 'ANULADO' ? '#991b1b' : (r.estado === 'ARRAS' ? '#92400e' : '#065f46'),
+                          border: `1px solid ${r.estado === 'ANULADO' ? '#fecaca' : (r.estado === 'ARRAS' ? '#fde68a' : '#a7f3d0')}`
                         }}>
-                          #{numRecibo} {r.estado === 'ANULADO' ? '(ANULADO)' : ''}
+                          #{numRecibo} {r.estado === 'ANULADO' ? '(ANULADO)' : (r.estado === 'ARRAS' ? '(ARRAS)' : '')}
                         </span>
                       </td>
 
@@ -575,10 +575,12 @@ export default function RecibosListView({ onVerRecibo, onVerExtracto }) {
                         <span style={{
                           fontWeight: 800,
                           fontSize: 13,
-                          color: '#15803d',
+                          color: r.estado === 'ARRAS' ? '#92400e' : (r.estado === 'ANULADO' ? '#991b1b' : '#15803d'),
                           fontFamily: 'monospace'
                         }}>
-                          {formatCOP(valNum)}
+                          {r.estado === 'ARRAS' && valNum === 0
+                            ? 'ARRAS'
+                            : (r.estado === 'ANULADO' ? 'ANULADO' : formatCOP(valNum))}
                         </span>
                       </td>
 

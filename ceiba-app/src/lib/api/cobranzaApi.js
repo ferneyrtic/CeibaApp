@@ -15,66 +15,83 @@ let inMemoryCobranza = null;
  * - AMARILLO: Casos con mora activa estándar (no responde, acordó pago, solicita plazo, recordatorio, etc.).
  */
 export function getEstiloObservacionCobranza(obsOrRespuesta) {
-  let texto = '';
+  let cat = '';
+  let fullText = '';
+
   if (typeof obsOrRespuesta === 'string') {
-    texto = obsOrRespuesta.toUpperCase();
+    fullText = obsOrRespuesta.toUpperCase();
+    const parts = obsOrRespuesta.split(':');
+    cat = parts[0].trim().toUpperCase();
   } else if (obsOrRespuesta && typeof obsOrRespuesta === 'object') {
-    texto = `${obsOrRespuesta.respuesta || ''} ${obsOrRespuesta.gestion || ''} ${obsOrRespuesta.texto_resumen || ''} ${obsOrRespuesta.nota || ''} ${obsOrRespuesta.observacion_adicional || ''}`.toUpperCase();
+    const resp = (obsOrRespuesta.respuesta || '').trim().toUpperCase();
+    const gest = (obsOrRespuesta.gestion || '').trim().toUpperCase();
+
+    // La categoría principal es la respuesta seleccionada por el usuario (o gestión si fue directa)
+    if (resp && resp !== 'OTRO') {
+      cat = resp;
+    } else if (gest && (gest === 'VERIFICAR PAGO' || gest === 'NO NECESITA')) {
+      cat = gest;
+    } else if (obsOrRespuesta.texto_resumen) {
+      const parts = String(obsOrRespuesta.texto_resumen).split(':');
+      cat = parts[0].trim().toUpperCase();
+    } else {
+      cat = gest || resp || '';
+    }
+
+    // Texto de fallback solo para registros legados sin estructura
+    fullText = `${obsOrRespuesta.respuesta || ''} ${obsOrRespuesta.gestion || ''} ${obsOrRespuesta.texto_resumen || ''}`.toUpperCase();
   }
 
-  // 1. AZUL: Verificar Pago (pendiente confirmación en banco del titular por administración)
-  if (
-    texto.includes('VERIFICAR PAGO') ||
-    texto.includes('VERIFICACION DE PAGO') ||
-    texto.includes('VERIFICACIÓN DE PAGO') ||
-    texto.includes('VERIFICACION PAGO') ||
-    texto.includes('VERIFICACIÓN PAGO') ||
-    texto.includes('VERIFICAR CON ADM') ||
-    texto.includes('CONFIRMAR PAGO')
-  ) {
-    return {
-      tipo: 'azul',
-      color: '#0284c7',       // Sky 600 / Blue
-      colorDark: '#0369a1',   // Sky 700
-      colorText: '#0c4a6e',   // Sky 900
-      bg: '#eff6ff',          // Blue 50
-      gradientBg: 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)',
-      border: '#bfdbfe',      // Blue 200
-      iconColor: '#0284c7',
-      badgeBg: '#0284c7',
-      badgeColor: '#ffffff',
-      label: 'Verificar Pago (Adm)',
-      pillDesc: '🔍 Requiere confirmación bancaria con Administración'
-    };
-  }
+  const esAzul = (t) =>
+    t.includes('VERIFICAR PAGO') ||
+    t.includes('VERIFICACION DE PAGO') ||
+    t.includes('VERIFICACIÓN DE PAGO') ||
+    t.includes('VERIFICACION PAGO') ||
+    t.includes('VERIFICACIÓN PAGO') ||
+    t.includes('VERIFICAR CON ADM') ||
+    t.includes('CONFIRMAR PAGO');
 
-  // 2. VERDE: No Requiere Cobro / Desistimiento (no es mora real)
-  if (
-    texto.includes('NO NECESITA') ||
-    texto.includes('DESISTIMIENTO') ||
-    texto.includes('DESISTIÓ') ||
-    texto.includes('DESISTIO') ||
-    texto.includes('DEVOLUCION') ||
-    texto.includes('DEVOLUCIÓN')
-  ) {
-    return {
-      tipo: 'verde',
-      color: '#047857',       // Emerald 700
-      colorDark: '#065f46',   // Emerald 800
-      colorText: '#064e3b',   // Emerald 950
-      bg: '#ecfdf5',          // Emerald 50
-      gradientBg: 'linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%)',
-      border: '#a7f3d0',      // Emerald 200
-      iconColor: '#059669',
-      badgeBg: '#059669',
-      badgeColor: '#ffffff',
-      label: 'No Requiere Cobro / Desistimiento',
-      pillDesc: '✅ Sin gestión de cobro / Proceso de desistimiento o devolución'
-    };
-  }
+  const esVerde = (t) =>
+    t.includes('NO NECESITA') ||
+    t.includes('DESISTIMIENTO') ||
+    t.includes('DESISTESTIMIENTO') ||
+    t.includes('DESESTIMIENTO') ||
+    t.includes('DESISTIÓ') ||
+    t.includes('DESISTIO') ||
+    t.includes('DEVOLUCION') ||
+    t.includes('DEVOLUCIÓN');
 
-  // 3. AMARILLO: Mora Activa / Cobranza habitual
-  return {
+  const estiloAzul = {
+    tipo: 'azul',
+    color: '#0284c7',       // Sky 600 / Blue
+    colorDark: '#0369a1',   // Sky 700
+    colorText: '#0c4a6e',   // Sky 900
+    bg: '#eff6ff',          // Blue 50
+    gradientBg: 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)',
+    border: '#bfdbfe',      // Blue 200
+    iconColor: '#0284c7',
+    badgeBg: '#0284c7',
+    badgeColor: '#ffffff',
+    label: 'Verificar Pago (Adm)',
+    pillDesc: '🔍 Requiere confirmación bancaria con Administración'
+  };
+
+  const estiloVerde = {
+    tipo: 'verde',
+    color: '#047857',       // Emerald 700
+    colorDark: '#065f46',   // Emerald 800
+    colorText: '#064e3b',   // Emerald 950
+    bg: '#ecfdf5',          // Emerald 50
+    gradientBg: 'linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%)',
+    border: '#a7f3d0',      // Emerald 200
+    iconColor: '#059669',
+    badgeBg: '#059669',
+    badgeColor: '#ffffff',
+    label: 'No Requiere Cobro / Desistimiento',
+    pillDesc: '✅ Sin gestión de cobro / Proceso de desistimiento o devolución'
+  };
+
+  const estiloAmarillo = {
     tipo: 'amarillo',
     color: '#92400e',         // Amber 800
     colorDark: '#78350f',     // Amber 900
@@ -88,6 +105,18 @@ export function getEstiloObservacionCobranza(obsOrRespuesta) {
     label: 'En Seguimiento Mora',
     pillDesc: '⚠️ Cliente en mora activa: seguimiento y recordatorio'
   };
+
+  // 1. Prioridad: la categoría seleccionada (respuesta o gestión)
+  if (cat) {
+    if (esAzul(cat)) return estiloAzul;
+    if (esVerde(cat)) return estiloVerde;
+    return estiloAmarillo;
+  }
+
+  // 2. Fallback para textos legados
+  if (esAzul(fullText)) return estiloAzul;
+  if (esVerde(fullText)) return estiloVerde;
+  return estiloAmarillo;
 }
 
 /**

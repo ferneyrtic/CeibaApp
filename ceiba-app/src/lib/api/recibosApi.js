@@ -74,14 +74,15 @@ const guardarReciboLocal = (recibo) => {
  * Inicia en 3175 si no existen recibos previos.
  */
 export const obtenerSiguienteNumeroRecibo = async () => {
-  // La base oficial confirmada: recibo 3436 fue saltado por error en papelería física (el siguiente consecutivo a expedir es estrictamente 3437)
-  let maxNum = Math.max(3436, CONSECUTIVO_INICIAL - 1);
+  const recibosOcupados = new Set();
+  // La base oficial confirmada: recibo 3436 fue saltado por error en papelería física
+  recibosOcupados.add(3436);
 
   // 1. Verificar recibos en almacenamiento local
   const locales = obtenerRecibosLocales();
   locales.forEach(r => {
-    const n = Number(r.numero_recibo);
-    if (!isNaN(n) && n > maxNum) maxNum = n;
+    const n = Number(r.numero_recibo || r.recibo_numero);
+    if (!isNaN(n) && n > 0) recibosOcupados.add(n);
   });
 
   // 2. Verificar datos_maestros en Supabase
@@ -89,14 +90,21 @@ export const obtenerSiguienteNumeroRecibo = async () => {
     const client = supabaseAdmin || supabase;
     const { data } = await client
       .from('datos_maestros')
-      .select('orden')
-      .eq('tipo', 'RECIBO_CAJA')
-      .order('orden', { ascending: false })
-      .limit(1);
+      .select('orden, valor')
+      .eq('tipo', 'RECIBO_CAJA');
 
-    if (data && data.length > 0 && data[0].orden) {
-      const n = Number(data[0].orden);
-      if (!isNaN(n) && n > maxNum) maxNum = n;
+    if (data && data.length > 0) {
+      data.forEach(d => {
+        const n = Number(d.orden);
+        if (!isNaN(n) && n > 0) recibosOcupados.add(n);
+        if (d.valor) {
+          try {
+            const p = typeof d.valor === 'string' ? JSON.parse(d.valor) : d.valor;
+            const nr = Number(p.numero_recibo || p.recibo_numero);
+            if (!isNaN(nr) && nr > 0) recibosOcupados.add(nr);
+          } catch (e) {}
+        }
+      });
     }
   } catch (err) {
     // Silencioso
@@ -125,7 +133,7 @@ export const obtenerSiguienteNumeroRecibo = async () => {
           if (m) {
             m.forEach(matchStr => {
               const num = parseInt(matchStr.replace('Recibo #', ''), 10);
-              if (!isNaN(num) && num > maxNum) maxNum = num;
+              if (!isNaN(num) && num > 0) recibosOcupados.add(num);
             });
           }
         }
@@ -135,7 +143,7 @@ export const obtenerSiguienteNumeroRecibo = async () => {
             const arr = Array.isArray(parsed) ? parsed : [parsed];
             arr.forEach(item => {
               const n = Number(item.numero_recibo);
-              if (!isNaN(n) && n > maxNum) maxNum = n;
+              if (!isNaN(n) && n > 0) recibosOcupados.add(n);
             });
           } catch (e) {}
         }
@@ -145,7 +153,13 @@ export const obtenerSiguienteNumeroRecibo = async () => {
     // Silencioso
   }
 
-  return maxNum + 1;
+  // Buscar el primer número disponible a partir de 3437
+  let candidato = 3437;
+  while (recibosOcupados.has(candidato)) {
+    candidato++;
+  }
+
+  return candidato;
 };
 
 /**
@@ -396,7 +410,8 @@ export const registrarPagoConRecibo = async ({
   loteIdStr = '',
   clienteNombre = '',
   clienteDoc = '',
-  generarRecibo = true
+  generarRecibo = true,
+  numeroReciboManual = null
 }) => {
   const montoNum = Math.round(Number(monto) || 0);
   if (montoNum <= 0) {
@@ -444,7 +459,9 @@ export const registrarPagoConRecibo = async ({
   }
 
   // 1. Obtener siguiente número de recibo consecutivo (solo si se genera recibo oficial)
-  const numero_recibo = generarRecibo ? await obtenerSiguienteNumeroRecibo() : null;
+  const numero_recibo = generarRecibo
+    ? (Number(numeroReciboManual) > 0 ? Number(numeroReciboManual) : await obtenerSiguienteNumeroRecibo())
+    : null;
 
   let cuotasActualizadas = [];
   let esPagoCompleto = false;
