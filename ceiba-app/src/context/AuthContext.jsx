@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback, useMemo } from 'react';
 import { supabase } from '../lib/supabase';
 import {
   getPermisosPersonalizados,
@@ -202,14 +202,16 @@ export function AuthProvider({ children }) {
 
   // Si es admin, conserva permisos absolutos. Para otros roles, se mezclan las personalizaciones
   const roleOverrides = customPermissions[role] || {};
-  const permissions = role === 'admin'
-    ? { ...baseRoleInfo, canManagePermissions: true }
-    : {
-        ...baseRoleInfo,
-        ...roleOverrides,
-        // Proteger permisos críticos intrínsecos al rol base
-        canManagePermissions: (role === 'admin' || role === 'contadora') && (roleOverrides.canManagePermissions !== false)
-      };
+  const permissions = useMemo(() => {
+    return role === 'admin'
+      ? { ...baseRoleInfo, canManagePermissions: true }
+      : {
+          ...baseRoleInfo,
+          ...roleOverrides,
+          // Proteger permisos críticos intrínsecos al rol base
+          canManagePermissions: (role === 'admin' || role === 'contadora') && (roleOverrides.canManagePermissions !== false)
+        };
+  }, [role, baseRoleInfo, roleOverrides]);
 
   const isAdmin = role === 'admin';
   const isPropietario = role === 'propietario';

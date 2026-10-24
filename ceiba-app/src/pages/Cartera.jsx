@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
   AlertTriangle, Clock, CheckCircle2, Search,
   RefreshCw, DollarSign, TrendingUp, Users, FileText, X,
@@ -217,6 +217,26 @@ export default function Cartera() {
       ensureScrollUnlocked();
     }
   }, [selected, reciboParaVer, showModalPagoRecibo, showModalObsCobranza, showModalLogs, editingCuota, editingContrato, vistaModo]);
+
+  // Conservar la posición de scroll al alternar entre pestañas de Cartera (Verificación, Cartera General, Casos Especiales, Recibos)
+  const scrollPosByVistaRef = useRef({});
+  const prevVistaModoRef = useRef(vistaModo);
+
+  useEffect(() => {
+    const oldModo = prevVistaModoRef.current;
+    if (oldModo !== vistaModo) {
+      scrollPosByVistaRef.current[oldModo] = window.scrollY || document.documentElement?.scrollTop || 0;
+      prevVistaModoRef.current = vistaModo;
+
+      const targetY = scrollPosByVistaRef.current[vistaModo] ?? 0;
+      requestAnimationFrame(() => {
+        window.scrollTo({ top: targetY, left: 0, behavior: 'instant' });
+        setTimeout(() => {
+          window.scrollTo({ top: targetY, left: 0, behavior: 'instant' });
+        }, 30);
+      });
+    }
+  }, [vistaModo]);
 
   const handleAnularRecibo = async (recibo) => {
     if (!permissions?.canDeleteRecibos) {

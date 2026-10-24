@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   LayoutDashboard, Building2, HandCoins, Wallet, Users, BarChart3,
   Settings, TrendingUp, Bell, LogOut, Menu, X, Sun, Moon, Calculator,
@@ -303,6 +303,9 @@ export default function App() {
     }
   }, [user]);
 
+  const scrollPosByPageRef = useRef({});
+  const prevPageRef = useRef(page);
+
   // Redirección si se intenta acceder a una sección restringida para el rol
   useEffect(() => {
     if (page === 'cierre' && !permissions?.canViewCierre) {
@@ -314,10 +317,23 @@ export default function App() {
     if (page === 'gastos' && !permissions?.canViewGastos) {
       setPage('dashboard');
     }
-    // Garantizar que al navegar entre páginas el scroll esté 100% liberado y en el tope
-    ensureScrollUnlocked();
-    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
   }, [page, permissions]);
+
+  // Manejo de navegación entre páginas del sistema:
+  // Conserva la posición del scroll en cada página para no perder el punto de trabajo
+  useEffect(() => {
+    const oldPage = prevPageRef.current;
+    if (oldPage !== page) {
+      scrollPosByPageRef.current[oldPage] = window.scrollY || document.documentElement?.scrollTop || 0;
+      prevPageRef.current = page;
+
+      ensureScrollUnlocked();
+      const savedY = scrollPosByPageRef.current[page] ?? 0;
+      requestAnimationFrame(() => {
+        window.scrollTo({ top: savedY, left: 0, behavior: 'instant' });
+      });
+    }
+  }, [page]);
 
   useEffect(() => {
     document.body.classList.toggle('dark-mode', theme === 'dark');
