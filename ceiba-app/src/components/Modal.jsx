@@ -10,6 +10,7 @@ import { lockBodyScroll, unlockBodyScroll, ensureScrollUnlocked } from '../utils
 export default function Modal({ onClose, children, maxWidth = 600, zIndex = 99999 }) {
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
+  const isMouseDownOnOverlay = useRef(false);
 
   // Gestión robusta del scroll: conteo de referencias y prevención de trancas
   useEffect(() => {
@@ -31,9 +32,30 @@ export default function Modal({ onClose, children, maxWidth = 600, zIndex = 9999
     };
   }, []);
 
+  const handleOverlayMouseDown = (e) => {
+    // Solo registrar inicio de click si se presionó directamente en el fondo oscuro
+    isMouseDownOnOverlay.current = (e.target === e.currentTarget);
+  };
+
+  const handleOverlayClick = (e) => {
+    // Si el usuario estaba seleccionando o copiando texto, NO cerrar el modal
+    const hasSelection = typeof window !== 'undefined' && window.getSelection()?.toString().trim().length > 0;
+    if (hasSelection) {
+      isMouseDownOnOverlay.current = false;
+      return;
+    }
+
+    // Solo cerrar si el mousedown empezó directamente en el overlay y terminó en el overlay
+    if (isMouseDownOnOverlay.current && e.target === e.currentTarget && onClose) {
+      onClose();
+    }
+    isMouseDownOnOverlay.current = false;
+  };
+
   return ReactDOM.createPortal(
     <div
-      onClick={onClose}
+      onMouseDown={handleOverlayMouseDown}
+      onClick={handleOverlayClick}
       className="modal-portal-overlay"
       data-modal-portal="true"
       style={{
@@ -54,6 +76,7 @@ export default function Modal({ onClose, children, maxWidth = 600, zIndex = 9999
       }}
     >
       <div
+        onMouseDown={e => e.stopPropagation()}
         onClick={e => e.stopPropagation()}
         className="modal-portal-content modal"
         style={{

@@ -252,6 +252,10 @@ export default function Cartera() {
 
 
   const openDetalle = async (v) => {
+    // Si el usuario estaba seleccionando o copiando texto, no abrir el detalle ni interrumpir la selección
+    if (typeof window !== 'undefined' && window.getSelection()?.toString().trim().length > 0) {
+      return;
+    }
     setSelected(v);
     setActiveTab('resumen');
     setLoadingCuotas(true);

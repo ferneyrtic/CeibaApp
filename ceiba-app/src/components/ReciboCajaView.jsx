@@ -268,6 +268,7 @@ function ReciboCajaContent({ recibo, onClose, onPrint, autoDownload = false }) {
 
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
+  const isMouseDownOnOverlay = useRef(false);
 
   // Cerrar con tecla Escape y gestión infalible de scroll
   useEffect(() => {
@@ -285,11 +286,28 @@ function ReciboCajaContent({ recibo, onClose, onPrint, autoDownload = false }) {
     };
   }, []);
 
+  const handleOverlayMouseDown = (e) => {
+    isMouseDownOnOverlay.current = (e.target === e.currentTarget);
+  };
+
+  const handleOverlayClick = (e) => {
+    const hasSelection = typeof window !== 'undefined' && window.getSelection()?.toString().trim().length > 0;
+    if (hasSelection) {
+      isMouseDownOnOverlay.current = false;
+      return;
+    }
+    if (isMouseDownOnOverlay.current && e.target === e.currentTarget && onClose) {
+      onClose();
+    }
+    isMouseDownOnOverlay.current = false;
+  };
+
   if (!recibo) return null;
 
   return ReactDOM.createPortal(
     <div
-      onClick={onClose}
+      onMouseDown={handleOverlayMouseDown}
+      onClick={handleOverlayClick}
       className="modal-portal-overlay"
       data-modal-portal="true"
       style={{
@@ -335,6 +353,7 @@ function ReciboCajaContent({ recibo, onClose, onPrint, autoDownload = false }) {
       `}</style>
 
       <div
+        onMouseDown={e => e.stopPropagation()}
         onClick={e => e.stopPropagation()}
         style={{
           background: '#fff',

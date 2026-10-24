@@ -143,7 +143,10 @@ export default function Ventas() {
                   {paginatedVentas.map((v, i) => {
                     const rowNum = (page - 1) * pageSize + i + 1;
                     return (
-                      <tr key={v.id} style={{ cursor: 'pointer' }} onClick={() => setSelected(v)}>
+                      <tr key={v.id} style={{ cursor: 'pointer' }} onClick={() => {
+                        if (typeof window !== 'undefined' && window.getSelection()?.toString().trim().length > 0) return;
+                        setSelected(v);
+                      }}>
                         <td style={{ color: 'var(--text-muted)', fontSize: 11 }}>{rowNum}</td>
                         <td style={{ fontWeight: 700, fontFamily: 'monospace' }}>{idLote(v)}</td>
                         <td>

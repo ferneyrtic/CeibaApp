@@ -490,7 +490,10 @@ export default function RecibosListView({ onVerRecibo, onVerExtracto }) {
                     <tr
                       key={numRecibo}
                       style={{ cursor: 'pointer', transition: 'background 0.15s ease' }}
-                      onClick={() => onVerRecibo && onVerRecibo(r)}
+                      onClick={() => {
+                        if (typeof window !== 'undefined' && window.getSelection()?.toString().trim().length > 0) return;
+                        if (onVerRecibo) onVerRecibo(r);
+                      }}
                       title={`Clic para ver recibo #${numRecibo}`}
                     >
                       {/* # Recibo */}
@@ -627,7 +630,10 @@ export default function RecibosListView({ onVerRecibo, onVerExtracto }) {
                               background: '#f0f9ff',
                               fontWeight: 700
                             }}
-                            onClick={() => onVerRecibo && onVerRecibo(r)}
+                            onClick={() => {
+                        if (typeof window !== 'undefined' && window.getSelection()?.toString().trim().length > 0) return;
+                        if (onVerRecibo) onVerRecibo(r);
+                      }}
                             title="Ver e imprimir recibo oficial con sello autenticado"
                           >
                             <Eye size={12} /> Ver

@@ -278,7 +278,10 @@ export default function Lotes() {
                     const rowNum = (page - 1) * pageSize + idx + 1;
                     const especial = obtenerBadgeCasoEspecial(l.id_lote, casosEspeciales);
                     return (
-                      <tr key={l.id} style={{ cursor: 'pointer' }} onClick={() => setSelected(l)}>
+                      <tr key={l.id} style={{ cursor: 'pointer' }} onClick={() => {
+                        if (typeof window !== 'undefined' && window.getSelection()?.toString().trim().length > 0) return;
+                        setSelected(l);
+                      }}>
                         <td style={{ color: 'var(--text-muted)', fontSize: 11 }}>{rowNum}</td>
                         <td style={{ fontWeight: 700, fontFamily: 'monospace', color: 'var(--text-primary)' }}>
                           <div>{l.id_lote}</div>

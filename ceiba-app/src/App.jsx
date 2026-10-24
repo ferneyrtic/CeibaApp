@@ -117,6 +117,7 @@ function Sidebar({ active, onNav, user, onSignOut, isOpen, onClose, permissions,
                 <div
                   className={`nav-item ${active === item.id ? 'active' : ''}`}
                   onClick={() => {
+                    if (typeof window !== 'undefined' && window.getSelection()?.toString().trim().length > 0) return;
                     onNav(item.id);
                     if (onClose) onClose();
                   }}
