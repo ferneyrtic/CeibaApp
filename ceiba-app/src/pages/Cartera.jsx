@@ -3,7 +3,8 @@ import {
   AlertTriangle, Clock, CheckCircle2, Search,
   RefreshCw, DollarSign, TrendingUp, Users, FileText, X,
   Plus, Edit2, Download, Table, Calendar, ArrowRight, ShieldAlert, Zap,
-  ShieldCheck, Tag, Receipt, Eye, Phone, PhoneCall, ClipboardList
+  ShieldCheck, Tag, Receipt, Eye, Phone, PhoneCall, ClipboardList,
+  Copy, Check
 } from 'lucide-react';
 
 import { useAuth } from '../context/AuthContext';
@@ -208,6 +209,7 @@ export default function Cartera() {
   const [pagoReciboVenta, setPagoReciboVenta] = useState(null);
   const [pagoReciboCuota, setPagoReciboCuota] = useState(null);
   const [reciboParaVer, setReciboParaVer] = useState(null);
+  const [copiedPhoneId, setCopiedPhoneId] = useState(null);
 
   // Garantizar que si no hay modales abiertos en Cartera, el scroll nunca se bloquee
   useEffect(() => {
@@ -251,9 +253,9 @@ export default function Cartera() {
   };
 
 
-  const openDetalle = async (v) => {
-    // Si el usuario estaba seleccionando o copiando texto, no abrir el detalle ni interrumpir la selección
-    if (typeof window !== 'undefined' && window.getSelection()?.toString().trim().length > 0) {
+  const openDetalle = async (v, force = false) => {
+    // Si el usuario estaba seleccionando o copiando texto y no es clic explícito en botón, no abrir ni interrumpir la selección
+    if (!force && typeof window !== 'undefined' && window.getSelection()?.toString().trim().length > 0) {
       return;
     }
     setSelected(v);
@@ -614,7 +616,7 @@ export default function Cartera() {
                                 <button
                                   className="btn btn-ghost"
                                   style={{ fontSize: 11, padding: '4px 8px' }}
-                                  onClick={() => openDetalle(v)}
+                                  onClick={() => openDetalle(v, true)}
                                 >
                                   <FileText size={12} /> Ver
                                 </button>
@@ -845,7 +847,7 @@ export default function Cartera() {
                   const rawPhone = v.clientes?.celular || v.celular || '';
 
                   return (
-                    <tr key={v.id} style={{ cursor: 'pointer' }} onClick={() => openDetalle(v)}>
+                    <tr key={v.id}>
                       <td style={{ color: 'var(--text-muted)', fontSize: 11 }}>{rowIdx}</td>
                       <td>
                         <div style={{ fontWeight: 800, fontFamily: 'monospace', fontSize: 13, color: '#1e293b' }}>
@@ -876,14 +878,38 @@ export default function Cartera() {
                         <div style={{ fontSize: 11, color: 'var(--text-muted)', display: 'flex', gap: 8, alignItems: 'center', marginTop: 2, flexWrap: 'wrap' }}>
                           {v.clientes?.doc_cliente && <span>CC {v.clientes.doc_cliente}</span>}
                           {rawPhone && (
-                            <a
-                              href={`tel:${rawPhone.replace(/\s+/g, '')}`}
-                              onClick={e => e.stopPropagation()}
-                              style={{ color: '#1e40af', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 3, fontWeight: 600 }}
-                              title={`Llamar al cliente: ${rawPhone}`}
-                            >
-                              <PhoneCall size={10} color="#2563eb" /> {rawPhone}
-                            </a>
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                              <a
+                                href={`tel:${rawPhone.replace(/\s+/g, '')}`}
+                                onClick={e => e.stopPropagation()}
+                                style={{ color: '#1e40af', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 3, fontWeight: 600 }}
+                                title={`Llamar al cliente: ${rawPhone}`}
+                              >
+                                <PhoneCall size={10} color="#2563eb" /> {rawPhone}
+                              </a>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  navigator.clipboard?.writeText(rawPhone.replace(/\s+/g, ''));
+                                  setCopiedPhoneId(v.id);
+                                  setTimeout(() => setCopiedPhoneId(null), 1500);
+                                }}
+                                style={{
+                                  border: 'none',
+                                  background: 'transparent',
+                                  padding: '1px 4px',
+                                  cursor: 'pointer',
+                                  color: copiedPhoneId === v.id ? '#16a34a' : '#64748b',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  borderRadius: 4
+                                }}
+                                title={copiedPhoneId === v.id ? '¡Copiado!' : 'Copiar teléfono'}
+                              >
+                                {copiedPhoneId === v.id ? <Check size={11} color="#16a34a" /> : <Copy size={11} />}
+                              </button>
+                            </span>
                           )}
                         </div>
                       </td>
@@ -958,7 +984,7 @@ export default function Cartera() {
                           <button
                             className="btn btn-ghost"
                             style={{ fontSize: 11, padding: '4px 8px', gap: 4, color: '#0284c7', borderColor: '#bae6fd', background: '#f0f9ff' }}
-                            onClick={() => openDetalle(v)}
+                            onClick={() => openDetalle(v, true)}
                             title="Ver estado de cuenta completo del lote"
                           >
                             <FileText size={12} /> Extracto
@@ -1057,7 +1083,7 @@ export default function Cartera() {
           <AbonosExtraordinariosView
             onVerExtracto={async (ventaId) => {
               const venta = allCartera.find(v => v.id === ventaId || v.venta_id === ventaId);
-              if (venta) openDetalle(venta);
+              if (venta) openDetalle(venta, true);
             }}
           />
         </div>
@@ -1073,7 +1099,7 @@ export default function Cartera() {
                 const lStr = norm(v.id_lote || v.lotes?.id_lote);
                 return lStr.includes(target) || target.includes(lStr);
               });
-              if (venta) openDetalle(venta);
+              if (venta) openDetalle(venta, true);
             }}
             usuarioActual={user}
           />
@@ -1086,7 +1112,7 @@ export default function Cartera() {
             onVerRecibo={(recibo) => setReciboParaVer(recibo)}
             onVerExtracto={(idLote, ventaId) => {
               const venta = allCartera.find(v => (ventaId && (v.id === ventaId || v.venta_id === ventaId)) || (idLote && (v.id_lote === idLote || v.lotes?.id_lote === idLote)));
-              if (venta) openDetalle(venta);
+              if (venta) openDetalle(venta, true);
             }}
           />
         </div>
