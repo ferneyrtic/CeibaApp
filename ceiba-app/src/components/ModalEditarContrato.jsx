@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { UserCheck, X, AlertCircle } from 'lucide-react';
+import { UserCheck, X, AlertCircle, Eye, FileText } from 'lucide-react';
 import Modal from './Modal';
 import { formatCOP } from '../utils/helpers';
 import { updateVenta } from '../lib/api/ventas';
@@ -7,7 +7,7 @@ import { updateCliente, createCliente } from '../lib/api/clientes';
 import { supabase } from '../lib/supabase';
 import { registrarAccion } from '../lib/api/auditApi';
 
-export default function ModalEditarContrato({ venta, onClose, onSuccess }) {
+export default function ModalEditarContrato({ venta, onClose, onSuccess, readOnly = false }) {
   // Datos del Cliente
   const [docCliente, setDocCliente] = useState(venta?.clientes?.doc_cliente || '');
   const [nombreCliente, setNombreCliente] = useState(venta?.clientes?.nombre || venta?.cliente_nombre || '');
@@ -31,8 +31,22 @@ export default function ModalEditarContrato({ venta, onClose, onSuccess }) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
 
+  const inputStyle = (extra = {}) => ({
+    width: '100%',
+    ...(readOnly ? {
+      background: '#f8fafc',
+      borderColor: '#e2e8f0',
+      color: '#0f172a',
+      fontWeight: 600,
+      cursor: 'default',
+      userSelect: 'text'
+    } : {}),
+    ...extra
+  });
+
   // Auto-cálculo de saldo financiado si cambian precio o cuota inicial
   const handlePrecioChange = (pv) => {
+    if (readOnly) return;
     setPrecioVenta(pv);
     const ci = Number(cuotaInicial) || 0;
     const p = Number(pv) || 0;
@@ -40,6 +54,7 @@ export default function ModalEditarContrato({ venta, onClose, onSuccess }) {
   };
 
   const handleCIChange = (ci) => {
+    if (readOnly) return;
     setCuotaInicial(ci);
     const p = Number(precioVenta) || 0;
     const c = Number(ci) || 0;
@@ -48,6 +63,7 @@ export default function ModalEditarContrato({ venta, onClose, onSuccess }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (readOnly) return;
     setSaving(true);
     setError(null);
 
@@ -153,16 +169,29 @@ export default function ModalEditarContrato({ venta, onClose, onSuccess }) {
   return (
     <Modal onClose={onClose} maxWidth={640} zIndex={100010}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-        <div style={{ fontSize: 17, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 8 }}>
-          <UserCheck size={18} color="var(--accent)" />
-          Editar Contrato y Titular — Lote {venta?.id_lote || venta?.lotes?.id_lote}
+        <div style={{ fontSize: 17, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+          {readOnly ? <Eye size={18} color="#0284c7" /> : <UserCheck size={18} color="var(--accent)" />}
+          <span>{readOnly ? 'Ficha Técnica del Contrato' : 'Editar Contrato y Titular'} — Lote {venta?.id_lote || venta?.lotes?.id_lote}</span>
+          {readOnly && (
+            <span style={{
+              fontSize: 10,
+              fontWeight: 700,
+              background: '#eff6ff',
+              color: '#1d4ed8',
+              border: '1px solid #bfdbfe',
+              padding: '2px 8px',
+              borderRadius: 12
+            }}>
+              👁 Modo Lectura
+            </span>
+          )}
         </div>
         <button className="btn btn-ghost" onClick={onClose} style={{ padding: 4 }}>
           <X size={16} />
         </button>
       </div>
 
-      {error && (
+      {error && !readOnly && (
         <div className="alert-banner red" style={{ marginBottom: 12 }}>
           <AlertCircle size={14} />
           <span>{error}</span>
@@ -183,10 +212,11 @@ export default function ModalEditarContrato({ venta, onClose, onSuccess }) {
               <input
                 type="text"
                 className="search-input"
-                style={{ width: '100%' }}
-                placeholder="Ej: 79872109"
+                style={inputStyle()}
+                placeholder={readOnly ? '—' : 'Ej: 79872109'}
                 value={docCliente}
-                onChange={e => setDocCliente(e.target.value)}
+                readOnly={readOnly}
+                onChange={readOnly ? undefined : e => setDocCliente(e.target.value)}
               />
             </div>
             <div>
@@ -196,11 +226,12 @@ export default function ModalEditarContrato({ venta, onClose, onSuccess }) {
               <input
                 type="text"
                 className="search-input"
-                style={{ width: '100%' }}
-                placeholder="Nombre completo"
+                style={inputStyle()}
+                placeholder={readOnly ? '—' : 'Nombre completo'}
                 value={nombreCliente}
-                onChange={e => setNombreCliente(e.target.value)}
-                required
+                readOnly={readOnly}
+                onChange={readOnly ? undefined : e => setNombreCliente(e.target.value)}
+                required={!readOnly}
               />
             </div>
           </div>
@@ -211,9 +242,10 @@ export default function ModalEditarContrato({ venta, onClose, onSuccess }) {
               <input
                 type="text"
                 className="search-input"
-                style={{ width: '100%' }}
-                value={celular}
-                onChange={e => setCelular(e.target.value)}
+                style={inputStyle()}
+                value={celular || (readOnly ? '—' : '')}
+                readOnly={readOnly}
+                onChange={readOnly ? undefined : e => setCelular(e.target.value)}
               />
             </div>
             <div>
@@ -221,9 +253,10 @@ export default function ModalEditarContrato({ venta, onClose, onSuccess }) {
               <input
                 type="text"
                 className="search-input"
-                style={{ width: '100%' }}
-                value={ciudad}
-                onChange={e => setCiudad(e.target.value)}
+                style={inputStyle()}
+                value={ciudad || (readOnly ? '—' : '')}
+                readOnly={readOnly}
+                onChange={readOnly ? undefined : e => setCiudad(e.target.value)}
               />
             </div>
             <div>
@@ -231,9 +264,10 @@ export default function ModalEditarContrato({ venta, onClose, onSuccess }) {
               <input
                 type="text"
                 className="search-input"
-                style={{ width: '100%' }}
-                value={direccion}
-                onChange={e => setDireccion(e.target.value)}
+                style={inputStyle()}
+                value={direccion || (readOnly ? '—' : '')}
+                readOnly={readOnly}
+                onChange={readOnly ? undefined : e => setDireccion(e.target.value)}
               />
             </div>
           </div>
@@ -249,36 +283,39 @@ export default function ModalEditarContrato({ venta, onClose, onSuccess }) {
             <div>
               <label style={{ fontSize: 11, fontWeight: 600, display: 'block', marginBottom: 3 }}>Precio Venta ($):</label>
               <input
-                type="number"
+                type={readOnly ? 'text' : 'number'}
                 className="search-input"
-                style={{ width: '100%' }}
-                value={precioVenta}
-                onChange={e => handlePrecioChange(e.target.value)}
-                required
+                style={inputStyle()}
+                value={readOnly ? (precioVenta ? formatCOP(precioVenta) : '$0') : precioVenta}
+                readOnly={readOnly}
+                onChange={readOnly ? undefined : e => handlePrecioChange(e.target.value)}
+                required={!readOnly}
               />
-              {precioVenta > 0 && <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>{formatCOP(precioVenta)}</span>}
+              {!readOnly && precioVenta > 0 && <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>{formatCOP(precioVenta)}</span>}
             </div>
             <div>
               <label style={{ fontSize: 11, fontWeight: 600, display: 'block', marginBottom: 3 }}>Cuota Inicial ($):</label>
               <input
-                type="number"
+                type={readOnly ? 'text' : 'number'}
                 className="search-input"
-                style={{ width: '100%' }}
-                value={cuotaInicial}
-                onChange={e => handleCIChange(e.target.value)}
+                style={inputStyle()}
+                value={readOnly ? (cuotaInicial ? formatCOP(cuotaInicial) : '$0') : cuotaInicial}
+                readOnly={readOnly}
+                onChange={readOnly ? undefined : e => handleCIChange(e.target.value)}
               />
-              {cuotaInicial > 0 && <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>{formatCOP(cuotaInicial)}</span>}
+              {!readOnly && cuotaInicial > 0 && <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>{formatCOP(cuotaInicial)}</span>}
             </div>
             <div>
               <label style={{ fontSize: 11, fontWeight: 600, display: 'block', marginBottom: 3 }}>Saldo Financiado ($):</label>
               <input
-                type="number"
+                type={readOnly ? 'text' : 'number'}
                 className="search-input"
-                style={{ width: '100%' }}
-                value={saldoFinanciado}
-                onChange={e => setSaldoFinanciado(e.target.value)}
+                style={inputStyle()}
+                value={readOnly ? (saldoFinanciado ? formatCOP(saldoFinanciado) : '$0') : saldoFinanciado}
+                readOnly={readOnly}
+                onChange={readOnly ? undefined : e => setSaldoFinanciado(e.target.value)}
               />
-              {saldoFinanciado > 0 && <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>{formatCOP(saldoFinanciado)}</span>}
+              {!readOnly && saldoFinanciado > 0 && <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>{formatCOP(saldoFinanciado)}</span>}
             </div>
           </div>
 
@@ -286,34 +323,37 @@ export default function ModalEditarContrato({ venta, onClose, onSuccess }) {
             <div>
               <label style={{ fontSize: 11, fontWeight: 600, display: 'block', marginBottom: 3 }}>Plazo (# cuotas):</label>
               <input
-                type="number"
+                type="text"
                 className="search-input"
-                style={{ width: '100%' }}
-                placeholder="Ej: 24"
-                value={plazoCuotas}
-                onChange={e => setPlazoCuotas(e.target.value)}
+                style={inputStyle()}
+                placeholder={readOnly ? '—' : 'Ej: 24'}
+                value={readOnly ? (plazoCuotas ? `${plazoCuotas} cuotas` : '—') : plazoCuotas}
+                readOnly={readOnly}
+                onChange={readOnly ? undefined : e => setPlazoCuotas(e.target.value)}
               />
             </div>
             <div>
               <label style={{ fontSize: 11, fontWeight: 600, display: 'block', marginBottom: 3 }}>Valor Cuota ($):</label>
               <input
-                type="number"
+                type={readOnly ? 'text' : 'number'}
                 className="search-input"
-                style={{ width: '100%' }}
-                value={valorCuota}
-                onChange={e => setValorCuota(e.target.value)}
+                style={inputStyle()}
+                value={readOnly ? (valorCuota ? formatCOP(valorCuota) : '$0') : valorCuota}
+                readOnly={readOnly}
+                onChange={readOnly ? undefined : e => setValorCuota(e.target.value)}
               />
-              {valorCuota > 0 && <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>{formatCOP(valorCuota)}</span>}
+              {!readOnly && valorCuota > 0 && <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>{formatCOP(valorCuota)}</span>}
             </div>
             <div>
               <label style={{ fontSize: 11, fontWeight: 600, display: 'block', marginBottom: 3 }}>Días de Pago:</label>
               <input
                 type="text"
                 className="search-input"
-                style={{ width: '100%' }}
-                placeholder="Ej: 20 DE CADA MES"
-                value={diasPago}
-                onChange={e => setDiasPago(e.target.value)}
+                style={inputStyle()}
+                placeholder={readOnly ? '—' : 'Ej: 20 DE CADA MES'}
+                value={diasPago || (readOnly ? '—' : '')}
+                readOnly={readOnly}
+                onChange={readOnly ? undefined : e => setDiasPago(e.target.value)}
               />
             </div>
           </div>
@@ -322,21 +362,23 @@ export default function ModalEditarContrato({ venta, onClose, onSuccess }) {
             <div>
               <label style={{ fontSize: 11, color: 'var(--text-muted)', display: 'block', marginBottom: 3 }}>Fecha Venta:</label>
               <input
-                type="date"
+                type={readOnly ? 'text' : 'date'}
                 className="search-input"
-                style={{ width: '100%' }}
-                value={fechaVenta}
-                onChange={e => setFechaVenta(e.target.value)}
+                style={inputStyle()}
+                value={readOnly ? (fechaVenta || '— Sin fecha registrada —') : fechaVenta}
+                readOnly={readOnly}
+                onChange={readOnly ? undefined : e => setFechaVenta(e.target.value)}
               />
             </div>
             <div>
               <label style={{ fontSize: 11, color: 'var(--text-muted)', display: 'block', marginBottom: 3 }}>Fecha Pago Inicial:</label>
               <input
-                type="date"
+                type={readOnly ? 'text' : 'date'}
                 className="search-input"
-                style={{ width: '100%' }}
-                value={fechaPagoCI}
-                onChange={e => setFechaPagoCI(e.target.value)}
+                style={inputStyle()}
+                value={readOnly ? (fechaPagoCI || '—') : fechaPagoCI}
+                readOnly={readOnly}
+                onChange={readOnly ? undefined : e => setFechaPagoCI(e.target.value)}
               />
             </div>
             <div>
@@ -344,9 +386,10 @@ export default function ModalEditarContrato({ venta, onClose, onSuccess }) {
               <input
                 type="text"
                 className="search-input"
-                style={{ width: '100%' }}
-                value={vendedorNombre}
-                onChange={e => setVendedorNombre(e.target.value)}
+                style={inputStyle()}
+                value={vendedorNombre || (readOnly ? '— Sin vendedor asignado —' : '')}
+                readOnly={readOnly}
+                onChange={readOnly ? undefined : e => setVendedorNombre(e.target.value)}
               />
             </div>
           </div>
@@ -356,16 +399,26 @@ export default function ModalEditarContrato({ venta, onClose, onSuccess }) {
               <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-primary)', display: 'block', marginBottom: 3 }}>
                 Estado del Lote / Contrato:
               </label>
-              <select
-                className="filter-select"
-                style={{ width: '100%' }}
-                value={estadoVenta}
-                onChange={e => setEstadoVenta(e.target.value)}
-              >
-                {['VENDIDO', 'PAGADO EN SU TOTALIDAD', 'EN NEGOCIACIÓN', 'APARTADO', 'DISPONIBLE', 'NO APTO PARA VENTA'].map(st => (
-                  <option key={st} value={st}>{st}</option>
-                ))}
-              </select>
+              {readOnly ? (
+                <input
+                  type="text"
+                  className="search-input"
+                  style={inputStyle({ fontWeight: 700, color: estadoVenta === 'VENDIDO' ? '#16a34a' : (estadoVenta === 'PAGADO EN SU TOTALIDAD' ? '#2563eb' : '#d97706') })}
+                  value={estadoVenta || '—'}
+                  readOnly
+                />
+              ) : (
+                <select
+                  className="filter-select"
+                  style={{ width: '100%' }}
+                  value={estadoVenta}
+                  onChange={e => setEstadoVenta(e.target.value)}
+                >
+                  {['VENDIDO', 'PAGADO EN SU TOTALIDAD', 'EN NEGOCIACIÓN', 'APARTADO', 'DISPONIBLE', 'NO APTO PARA VENTA'].map(st => (
+                    <option key={st} value={st}>{st}</option>
+                  ))}
+                </select>
+              )}
             </div>
             <div>
               <label style={{ fontSize: 11, color: 'var(--text-muted)', display: 'block', marginBottom: 3 }}>
@@ -374,23 +427,36 @@ export default function ModalEditarContrato({ venta, onClose, onSuccess }) {
               <input
                 type="text"
                 className="search-input"
-                style={{ width: '100%' }}
-                value={medioPago}
-                onChange={e => setMedioPago(e.target.value)}
+                style={inputStyle()}
+                value={medioPago || (readOnly ? '—' : '')}
+                readOnly={readOnly}
+                onChange={readOnly ? undefined : e => setMedioPago(e.target.value)}
                 placeholder="TRANSFERENCIA, EFECTIVO..."
               />
             </div>
           </div>
         </div>
 
-
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 10 }}>
-          <button type="button" className="btn btn-ghost" onClick={onClose} disabled={saving}>
-            Cancelar
-          </button>
-          <button type="submit" className="btn btn-primary" disabled={saving}>
-            {saving ? 'Guardando...' : 'Guardar Cambios'}
-          </button>
+          {readOnly ? (
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={onClose}
+              style={{ background: '#0284c7', borderColor: '#0284c7', padding: '7px 24px', fontWeight: 700 }}
+            >
+              Cerrar
+            </button>
+          ) : (
+            <>
+              <button type="button" className="btn btn-ghost" onClick={onClose} disabled={saving}>
+                Cancelar
+              </button>
+              <button type="submit" className="btn btn-primary" disabled={saving}>
+                {saving ? 'Guardando...' : 'Guardar Cambios'}
+              </button>
+            </>
+          )}
         </div>
       </form>
     </Modal>

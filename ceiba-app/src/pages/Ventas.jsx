@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { Plus, Search, X, RefreshCw, DollarSign, User, Download, FileText, Edit3 } from 'lucide-react';
+import { Plus, Search, X, RefreshCw, DollarSign, User, Download, FileText, Edit3, Eye } from 'lucide-react';
 import { getVentas } from '../lib/api/ventas';
 import { formatCOP, formatDate, getEstadoBadge } from '../utils/helpers';
 import { exportEstadoCuentaPDF } from '../utils/exportEstadoCuenta';
@@ -242,7 +242,7 @@ export default function Ventas() {
 
           <div className="modal-footer" style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 20 }}>
             <button className="btn btn-ghost" onClick={() => setSelected(null)}>Cerrar</button>
-            {permissions?.canEditContrato && (
+            {permissions?.canEditContrato ? (
               <button
                 className="btn btn-secondary"
                 style={{ display: 'flex', alignItems: 'center', gap: 6 }}
@@ -254,6 +254,19 @@ export default function Ventas() {
                 title="Editar titular y condiciones del contrato"
               >
                 <Edit3 size={13} /> Editar Contrato
+              </button>
+            ) : (
+              <button
+                className="btn btn-secondary"
+                style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#0284c7', borderColor: '#bae6fd', background: '#f0f9ff', fontWeight: 600 }}
+                onClick={() => {
+                  const v = selected;
+                  setSelected(null);
+                  setEditingVenta(v);
+                }}
+                title="Ver condiciones del contrato, fecha de venta y titular (Solo lectura)"
+              >
+                <Eye size={13} /> Ver Contrato
               </button>
             )}
             <button
@@ -270,6 +283,7 @@ export default function Ventas() {
       {editingVenta && (
         <ModalEditarContrato
           venta={editingVenta}
+          readOnly={!permissions?.canEditContrato}
           onClose={() => setEditingVenta(null)}
           onSuccess={() => {
             fetchVentas();

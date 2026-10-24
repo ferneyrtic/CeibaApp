@@ -1200,13 +1200,23 @@ export default function Cartera() {
                   💳 Abonar
                 </button>
               )}
-              {permissions?.canEditContrato && (
+              {permissions?.canEditContrato ? (
                 <button
                   className="btn btn-ghost"
                   style={{ fontSize: 12, padding: '6px 10px', gap: 6 }}
                   onClick={() => setEditingContrato(selected)}
+                  title="Editar titular y condiciones financieras del contrato"
                 >
                   <Edit2 size={13} /> Editar Contrato
+                </button>
+              ) : (
+                <button
+                  className="btn btn-ghost"
+                  style={{ fontSize: 12, padding: '6px 10px', gap: 6, color: '#0284c7', borderColor: '#bae6fd', background: '#f0f9ff', fontWeight: 600 }}
+                  onClick={() => setEditingContrato(selected)}
+                  title="Visualizar condiciones del contrato, fecha de venta y titular (Solo lectura)"
+                >
+                  <Eye size={13} /> Ver Contrato
                 </button>
               )}
               <button className="btn btn-ghost" style={{ padding: '6px 10px' }}
@@ -1712,7 +1722,7 @@ export default function Cartera() {
         />
       )}
 
-      {/* Modal Editar Contrato Completo */}
+      {/* Modal Editar / Ver Contrato Completo */}
       {editingContrato && (
         <ModalEditarContrato
           venta={editingContrato}
@@ -1721,6 +1731,7 @@ export default function Cartera() {
             load(true);
             setSelected(null);
           }}
+          readOnly={!permissions?.canEditContrato}
         />
       )}
 

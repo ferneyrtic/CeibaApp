@@ -518,17 +518,30 @@ export default function Lotes() {
           )}
 
           <div className="modal-footer" style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 20 }}>
-            {permissions?.canEditContrato && (selected.estado === 'VENDIDO' || selected.estado === 'PAGADO EN SU TOTALIDAD' || selected.propietario) && (
-              <button
-                className="btn btn-secondary"
-                style={{ display: 'flex', alignItems: 'center', gap: 6 }}
-                onClick={() => handleEditarContratoLote(selected)}
-                disabled={loadingContrato}
-                title="Editar titular y condiciones del contrato de este lote"
-              >
-                {loadingContrato ? <RefreshCw size={13} style={{ animation: 'spin 1s linear infinite' }} /> : <Edit3 size={13} />}
-                Editar Contrato / Titular
-              </button>
+            {(selected.estado === 'VENDIDO' || selected.estado === 'PAGADO EN SU TOTALIDAD' || selected.propietario) && (
+              permissions?.canEditContrato ? (
+                <button
+                  className="btn btn-secondary"
+                  style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+                  onClick={() => handleEditarContratoLote(selected)}
+                  disabled={loadingContrato}
+                  title="Editar titular y condiciones del contrato de este lote"
+                >
+                  {loadingContrato ? <RefreshCw size={13} style={{ animation: 'spin 1s linear infinite' }} /> : <Edit3 size={13} />}
+                  Editar Contrato / Titular
+                </button>
+              ) : (
+                <button
+                  className="btn btn-secondary"
+                  style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#0284c7', borderColor: '#bae6fd', background: '#f0f9ff', fontWeight: 600 }}
+                  onClick={() => handleEditarContratoLote(selected)}
+                  disabled={loadingContrato}
+                  title="Ver condiciones del contrato, fecha de venta y titular (Solo lectura)"
+                >
+                  {loadingContrato ? <RefreshCw size={13} style={{ animation: 'spin 1s linear infinite' }} /> : <Eye size={13} />}
+                  Ver Contrato / Titular
+                </button>
+              )
             )}
             {selected.estado !== 'VENDIDO' && selected.estado !== 'PAGADO EN SU TOTALIDAD' && selected.estado !== 'NO APTO PARA VENTA' && (
               <button
@@ -551,6 +564,7 @@ export default function Lotes() {
       {ventaParaEditar && (
         <ModalEditarContrato
           venta={ventaParaEditar}
+          readOnly={!permissions?.canEditContrato}
           onClose={() => setVentaParaEditar(null)}
           onSuccess={() => {
             fetchLotes();
