@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Phone, PhoneCall, Calendar, ClipboardList, Clock, CheckCircle2, User, AlertCircle, Plus } from 'lucide-react';
+import { X, Phone, PhoneCall, Calendar, ClipboardList, Clock, CheckCircle2, User, AlertCircle, Plus, Copy, Check } from 'lucide-react';
 import Modal from './Modal';
 import { guardarObservacionCobranza, getEstiloObservacionCobranza } from '../lib/api/cobranzaApi';
 import { formatDate } from '../utils/helpers';
@@ -50,6 +50,7 @@ export default function ModalObservacionCobranza({
   const [fecha, setFecha] = useState(() => new Date().toISOString().slice(0, 10));
   const [notaDetallada, setNotaDetallada] = useState('');
   const [guardando, setGuardando] = useState(false);
+  const [copiedPhone, setCopiedPhone] = useState(false);
 
   // Inicializar o sincronizar cuando cambia
   useEffect(() => {
@@ -171,31 +172,62 @@ export default function ModalObservacionCobranza({
         }}>
           <div>
             <div style={{ fontSize: 10.5, color: '#64748b', fontWeight: 700, textTransform: 'uppercase' }}>
-              Teléfono para Llamada Directa
+              Teléfono de Contacto
             </div>
             <div style={{ fontSize: 13.5, fontWeight: 700, color: '#0f172a', marginTop: 2, display: 'flex', alignItems: 'center', gap: 6 }}>
               <Phone size={14} color="#2563eb" />
-              {telefono ? telefono : <span style={{ color: '#94a3b8', fontStyle: 'italic', fontWeight: 500 }}>Sin teléfono registrado</span>}
+              {telefono ? (
+                <span style={{ fontFamily: 'monospace', letterSpacing: '0.3px' }}>{telefono}</span>
+              ) : (
+                <span style={{ color: '#94a3b8', fontStyle: 'italic', fontWeight: 500 }}>Sin teléfono registrado</span>
+              )}
             </div>
           </div>
           {telefono && (
-            <a
-              href={`tel:${cleanPhone}`}
-              className="btn btn-primary"
-              style={{
-                fontSize: 12,
-                padding: '5px 12px',
-                background: '#2563eb',
-                borderColor: '#2563eb',
-                gap: 6,
-                fontWeight: 700,
-                textDecoration: 'none',
-                display: 'inline-flex',
-                alignItems: 'center'
-              }}
-            >
-              <PhoneCall size={14} /> Llamar ahora
-            </a>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <button
+                type="button"
+                className="btn btn-ghost"
+                onClick={() => {
+                  navigator.clipboard?.writeText(cleanPhone);
+                  setCopiedPhone(true);
+                  setTimeout(() => setCopiedPhone(false), 1500);
+                }}
+                style={{
+                  fontSize: 12,
+                  padding: '5px 12px',
+                  borderColor: copiedPhone ? '#86efac' : '#cbd5e1',
+                  background: copiedPhone ? '#f0fdf4' : '#fff',
+                  color: copiedPhone ? '#15803d' : '#334155',
+                  gap: 6,
+                  fontWeight: 700,
+                  display: 'inline-flex',
+                  alignItems: 'center'
+                }}
+                title={copiedPhone ? '¡Copiado al portapapeles!' : 'Copiar número de teléfono'}
+              >
+                {copiedPhone ? <Check size={14} color="#15803d" /> : <Copy size={14} />}
+                <span>{copiedPhone ? '¡Copiado!' : 'Copiar'}</span>
+              </button>
+              <a
+                href={`tel:${cleanPhone}`}
+                className="btn btn-primary"
+                style={{
+                  fontSize: 12,
+                  padding: '5px 12px',
+                  background: '#2563eb',
+                  borderColor: '#2563eb',
+                  gap: 6,
+                  fontWeight: 700,
+                  textDecoration: 'none',
+                  display: 'inline-flex',
+                  alignItems: 'center'
+                }}
+                title="Llamar directamente si el dispositivo tiene telefonía"
+              >
+                <PhoneCall size={14} /> Llamar
+              </a>
+            </div>
           )}
         </div>
 

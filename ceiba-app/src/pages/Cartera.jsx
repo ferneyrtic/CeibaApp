@@ -210,6 +210,7 @@ export default function Cartera() {
   const [pagoReciboCuota, setPagoReciboCuota] = useState(null);
   const [reciboParaVer, setReciboParaVer] = useState(null);
   const [copiedPhoneId, setCopiedPhoneId] = useState(null);
+  const [copiedModalPhone, setCopiedModalPhone] = useState(false);
 
   // Garantizar que si no hay modales abiertos en Cartera, el scroll nunca se bloquee
   useEffect(() => {
@@ -1160,27 +1161,55 @@ export default function Cartera() {
                 {selected.fecha_venta ? `Venta: ${formatDate(selected.fecha_venta)}` : '⚠ Sin fecha de venta'}
                 {cuotasVenta.length > 0 && ` · ${cuotasVenta.length} cuotas registradas`}
                 {selected.clientes?.doc_cliente && ` · Cédula: ${selected.clientes.doc_cliente}`}
-                {selected.clientes?.celular && (
-                  <a
-                    href={`tel:${String(selected.clientes.celular).replace(/\s+/g, '')}`}
-                    style={{
+                {(() => {
+                  const modalPhone = selected.clientes?.celular || selected.celular || '';
+                  if (!modalPhone) return null;
+                  const cleanPhone = String(modalPhone).replace(/\s+/g, '');
+                  return (
+                    <span style={{
                       display: 'inline-flex',
                       alignItems: 'center',
-                      gap: 4,
-                      fontSize: 11,
-                      color: '#1d4ed8',
+                      gap: 6,
+                      fontSize: 11.5,
+                      color: '#1e40af',
                       background: '#eff6ff',
                       border: '1px solid #bfdbfe',
                       borderRadius: 4,
                       padding: '2px 8px',
-                      textDecoration: 'none',
-                      fontWeight: 700
-                    }}
-                    title={`Llamar por teléfono a ${selected.clientes.celular}`}
-                  >
-                    <PhoneCall size={11} color="#2563eb" /> Llamar: {selected.clientes.celular}
-                  </a>
-                )}
+                      fontWeight: 600
+                    }}>
+                      <Phone size={11} color="#2563eb" />
+                      <span>{modalPhone}</span>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigator.clipboard?.writeText(cleanPhone);
+                          setCopiedModalPhone(true);
+                          setTimeout(() => setCopiedModalPhone(false), 1500);
+                        }}
+                        style={{
+                          border: 'none',
+                          background: copiedModalPhone ? '#dcfce7' : '#dbeafe',
+                          color: copiedModalPhone ? '#15803d' : '#1d4ed8',
+                          padding: '1px 6px',
+                          cursor: 'pointer',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 3,
+                          borderRadius: 3,
+                          fontSize: 10.5,
+                          fontWeight: 700,
+                          transition: 'all 0.15s ease'
+                        }}
+                        title={copiedModalPhone ? '¡Copiado!' : 'Copiar teléfono'}
+                      >
+                        {copiedModalPhone ? <Check size={11} color="#15803d" /> : <Copy size={11} />}
+                        <span>{copiedModalPhone ? '¡Copiado!' : 'Copiar'}</span>
+                      </button>
+                    </span>
+                  );
+                })()}
               </div>
             </div>
             <div className="modal-header-actions">
