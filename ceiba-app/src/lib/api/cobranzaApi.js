@@ -188,7 +188,7 @@ export async function guardarObservacionCobranza(datos, usuarioActual = 'Soporte
         .insert([{
           tipo: 'OBSERVACION_COBRANZA',
           valor: JSON.stringify(payloadObjeto),
-          orden: todas.length + 1
+          orden: Date.now()
         }])
         .select('id')
         .single();
@@ -216,13 +216,13 @@ export async function guardarObservacionCobranza(datos, usuarioActual = 'Soporte
         .eq('id_lote', id_lote);
     }
 
-    // Registrar acción de auditoría
+    // Registrar acción de auditoría — OBLIGATORIO: si falla, la observación se revierte
     const autorNombre = typeof usuarioActual === 'object'
-      ? (usuarioActual?.user_metadata?.nombre || usuarioActual?.nombre || usuarioActual?.email || 'Diana (Soporte)')
-      : (usuarioActual || 'Diana (Soporte)');
+      ? (usuarioActual?.user_metadata?.nombre || usuarioActual?.nombre || usuarioActual?.email || 'Soporte Mora')
+      : (usuarioActual || 'Soporte Mora');
     const autorEmail = typeof usuarioActual === 'object'
-      ? (usuarioActual?.email || 'diana@ceiba.com')
-      : 'diana@ceiba.com';
+      ? (usuarioActual?.email || 'soporte@ceiba.com')
+      : 'soporte@ceiba.com';
     const autorRole = typeof usuarioActual === 'object'
       ? (usuarioActual?.user_metadata?.role || 'soporte')
       : 'soporte';
@@ -235,6 +235,7 @@ export async function guardarObservacionCobranza(datos, usuarioActual = 'Soporte
       cliente_nombre: payloadObjeto.cliente || '—',
       descripcion: `Observación de cobranza registrada para lote ${id_lote}: "${resumenFinal}"`,
       detalles: payloadObjeto,
+      throwOnFailure: true,
       usuario: {
         nombre: autorNombre,
         email: autorEmail,

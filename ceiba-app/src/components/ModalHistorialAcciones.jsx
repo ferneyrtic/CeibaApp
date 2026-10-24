@@ -8,6 +8,15 @@ import Modal from './Modal';
 import { getHistorialAcciones, exportarHistorialExcel } from '../lib/api/auditApi';
 
 const MODULOS = ['Todos', 'RECIBOS_CAJA', 'CARTERA', 'ABONOS_EXTRAORDINARIOS', 'CASOS_ESPECIALES', 'LOTES', 'CUOTAS'];
+const MODULOS_LABELS = {
+  'Todos': 'Todos los Módulos',
+  'RECIBOS_CAJA': 'Recibos de Caja',
+  'CARTERA': '📞 Cobranza & Seguimiento',
+  'ABONOS_EXTRAORDINARIOS': 'Abonos Extraordinarios',
+  'CASOS_ESPECIALES': 'Casos Especiales',
+  'LOTES': 'Lotes',
+  'CUOTAS': 'Cuotas'
+};
 
 function getActionBadge(accion) {
   if (!accion) return { label: 'Acción', bg: '#f1f5f9', color: '#475569' };
@@ -46,7 +55,7 @@ export default function ModalHistorialAcciones({ onClose, loteFiltroInicial = ''
   const fetchLogs = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await getHistorialAcciones({ limit: 500 });
+      const data = await getHistorialAcciones({ limit: 2000 });
       setLogs(data || []);
     } catch (e) {
       console.error('Error cargando historial de acciones:', e);
@@ -137,10 +146,10 @@ export default function ModalHistorialAcciones({ onClose, loteFiltroInicial = ''
             style={{ fontSize: 12, padding: '7px 12px' }}
           >
             {MODULOS.map(m => (
-              <option key={m} value={m}>
-                {m === 'Todos' ? 'Todos los Módulos' : m.replace(/_/g, ' ')}
-              </option>
-            ))}
+                <option key={m} value={m}>
+                  {m === 'Todos' ? 'Todos los Módulos' : m.replace(/_/g, ' ')}
+                </option>
+              ))}
           </select>
 
           <button
@@ -167,8 +176,16 @@ export default function ModalHistorialAcciones({ onClose, loteFiltroInicial = ''
         </div>
 
         {/* Resumen numérico */}
-        <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 12, display: 'flex', justifyContent: 'space-between' }}>
-          <span>Mostrando <strong>{filteredLogs.length}</strong> eventos registrados</span>
+        <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 12, display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
+          <span>Mostrando <strong>{filteredLogs.length}</strong> de <strong>{logs.length}</strong> eventos registrados</span>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <span style={{ background: '#e0f2fe', color: '#0284c7', borderRadius: 20, padding: '2px 10px', fontWeight: 700, fontSize: 11 }}>
+              📞 {logs.filter(l => l.accion === 'OBSERVACION_COBRANZA').length} de Cobranza
+            </span>
+            <span style={{ background: '#ecfdf5', color: '#059669', borderRadius: 20, padding: '2px 10px', fontWeight: 700, fontSize: 11 }}>
+              🧾 {logs.filter(l => l.modulo === 'RECIBOS_CAJA').length} de Recibos
+            </span>
+          </div>
           {search && <span>Filtro activo: "<strong>{search}</strong>"</span>}
         </div>
 

@@ -766,7 +766,7 @@ export const registrarPagoConRecibo = async ({
       },
       usuario: {
         nombre: nombreAudit,
-        email: esDianaSoporte ? 'diana@ceiba.com' : 'secretaria@ceiba.com',
+        email: esDianaSoporte ? 'soporte@ceiba.com' : 'secretaria@ceiba.com',
         role: esDianaSoporte ? 'soporte' : 'secretaria'
       }
     });

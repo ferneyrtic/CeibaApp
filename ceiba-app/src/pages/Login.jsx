@@ -344,7 +344,7 @@ export default function Login() {
                 { label: '🏛️ Propietario', email: 'propietario@ceiba.com', color: '#b45309', bg: '#fffbeb', border: '#fde68a' },
                 { label: '📊 Contadora', email: 'contadora@ceiba.com', color: '#1d4ed8', bg: '#eff6ff', border: '#bfdbfe' },
                 { label: '💼 Secretaría', email: 'secretaria@ceiba.com', color: '#059669', bg: '#ecfdf5', border: '#a7f3d0' },
-                { label: '🎧 Soporte (Diana)', email: 'diana@ceiba.com', color: '#0284c7', bg: '#f0f9ff', border: '#bae6fd', span: 2 }
+                { label: '🎧 Soporte Mora', email: 'soporte@ceiba.com', color: '#0284c7', bg: '#f0f9ff', border: '#bae6fd', span: 2 }
               ].map(r => (
                 <button
                   key={r.email}

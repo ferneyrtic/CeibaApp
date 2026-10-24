@@ -23,40 +23,23 @@ export function isTestAuditLog(log) {
 }
 
 /**
- * Detecta si un log es anómalo o inválido (casos de prueba, o acciones atribuidas a Diana antes de su ingreso el 22 de oct de 2026).
+ * Detecta si un log es anómalo o inválido.
+ * Solo filtra datos de prueba claramente identificados.
+ * ⚠️ IMPORTANTE: Esta función NO debe filtrar logs legítimos de Soporte Mora, Secretaría
+ *    ni ningún otro usuario real. En caso de duda, NO filtrar.
  */
 export function isInvalidOrAnomalousLog(log) {
   if (!log) return true;
   if (isTestAuditLog(log)) return true;
 
-  // Diana empezó a laborar el 22 de octubre de 2026.
-  // Cualquier registro con fecha anterior o notas contractuales importadas no corresponde a sus acciones.
-  const user = `${log.usuario_nombre || ''} ${log.usuario_email || ''}`.toLowerCase();
-  const isDiana = user.includes('diana');
-  const ts = log.timestamp || '';
-  if (isDiana && ts && ts.slice(0, 10) < '2026-10-22') {
-    return true;
-  }
-
-  // Cláusulas contractuales de lotes que no corresponden a llamadas u operaciones de cobranza
+  // Solo filtrar cláusulas contractuales numéricas específicas que se sabe que no son logs de gestión real
   const desc = `${log.descripcion || ''} ${JSON.stringify(log.detalles || '')}`.toLowerCase();
   if (
     desc.includes('32.202.000') ||
     desc.includes('52.663.000') ||
     desc.includes('treinta y dos millones') ||
     desc.includes('cincuenta y dos millones')
-  ) {
-    return true;
-  }
-
-  // Descartar logs residuales de prueba generados en el desarrollo
-  if (
-    desc.includes('6b4ecb23-9fef-41a6-824b-772d4b9e5b06') ||
-    desc.includes('observación borrada') ||
-    desc.includes('cliente va a pagar el 24')
-  ) {
-    return true;
-  }
+  ) return true;
 
   return false;
 }
@@ -108,6 +91,9 @@ function getCurrentUserInfo() {
 /**
  * Registra una acción operativa en el historial de auditoría.
  * Guarda en la tabla `datos_maestros` de Supabase y en la caché local.
+ * ⚠️ CRÍTICO: Si `throwOnFailure=true` (default), lanza un error si Supabase falla,
+ *    para que la acción que invoca pueda revertirse y el usuario sea notificado.
+ *    NUNCA se debe permitir que una acción quede sin registro silenciosamente.
  *
  * @param {Object} params
  * @param {string} params.modulo - 'ABONOS_EXTRAORDINARIOS' | 'CARTERA' | 'LOTES' | 'CUOTAS' | 'CASOS_ESPECIALES'
@@ -118,6 +104,7 @@ function getCurrentUserInfo() {
  * @param {string} params.descripcion - Resumen legible en español
  * @param {Object} [params.detalles] - Snapshot técnico de cuotas, montos, etc.
  * @param {Object} [params.usuario] - Información de usuario que ejecutó la acción (opcional)
+ * @param {boolean} [params.throwOnFailure=true] - Si true, lanza error cuando Supabase no puede guardar el log.
  */
 export async function registrarAccion({
   modulo,
@@ -127,7 +114,8 @@ export async function registrarAccion({
   cliente_nombre = '',
   descripcion,
   detalles = {},
-  usuario = null
+  usuario = null,
+  throwOnFailure = true
 }) {
   const userInfo = usuario || getCurrentUserInfo();
   const timestamp = new Date().toISOString();
@@ -152,44 +140,63 @@ export async function registrarAccion({
     return null;
   }
 
-  // 1. Guardar en memoria
-  inMemoryLogs.unshift(record);
+  // 1. Persistir PRIMERO en Supabase — si falla, se rechaza toda la operación.
+  //    El registro en memoria/localStorage solo ocurre si Supabase confirma.
+  let persistError = null;
+  try {
+    const client = supabaseAdmin || supabase;
+    if (!client || typeof client.from !== 'function') {
+      throw new Error('No hay cliente Supabase disponible para guardar la auditoría.');
+    }
+    const fromObj = client.from('datos_maestros');
+    if (!fromObj || typeof fromObj.insert !== 'function') {
+      throw new Error('La tabla datos_maestros no está disponible.');
+    }
+    const insertQuery = fromObj.insert({
+      tipo: 'AUDITORIA_ACCION',
+      valor: JSON.stringify(record),
+      orden: Date.now()
+    });
+    const { data: insData, error } = typeof insertQuery?.select === 'function'
+      ? await insertQuery.select('id')
+      : await insertQuery;
 
-  // 2. Guardar en caché local si existe window
+    if (error) {
+      persistError = error;
+    } else if (insData && insData[0]) {
+      record.db_id = insData[0].id;
+    }
+  } catch (err) {
+    persistError = err;
+  }
+
+  if (persistError) {
+    const msg = `⚠️ No se pudo guardar el registro de auditoría en la base de datos. La acción fue rechazada para garantizar trazabilidad completa. Error: ${persistError.message || JSON.stringify(persistError)}`;
+    console.error('[AUDIT CRÍTICO]', msg, persistError);
+    if (throwOnFailure) {
+      throw new Error(msg);
+    }
+    // Solo si se pide ignorar el fallo (ej: logs internos del sistema), guardar localmente de respaldo
+    if (typeof window !== 'undefined' && window.localStorage) {
+      try {
+        const cached = JSON.parse(window.localStorage.getItem(CACHE_KEY) || '[]');
+        cached.unshift({ ...record, _persistFailed: true });
+        window.localStorage.setItem(CACHE_KEY, JSON.stringify(cached.slice(0, 300)));
+      } catch (e) { /* ignore */ }
+    }
+    return null;
+  }
+
+  // 2. Solo si Supabase confirmó: guardar en memoria y caché local (para respuesta instantánea)
+  inMemoryLogs.unshift(record);
   if (typeof window !== 'undefined' && window.localStorage) {
     try {
       const cached = JSON.parse(window.localStorage.getItem(CACHE_KEY) || '[]');
       cached.unshift(record);
       window.localStorage.setItem(CACHE_KEY, JSON.stringify(cached.slice(0, 300)));
     } catch (e) {
-      console.warn('Error guardando en caché de logs:', e);
+      console.warn('Error guardando en caché local de logs:', e);
     }
-  }
-
-  // 3. Persistir en Supabase en `datos_maestros` usando supabaseAdmin (evita bloqueos RLS)
-  try {
-    const client = supabaseAdmin || supabase;
-    if (client && typeof client.from === 'function') {
-      const fromObj = client.from('datos_maestros');
-      if (fromObj && typeof fromObj.insert === 'function') {
-        const insertQuery = fromObj.insert({
-          tipo: 'AUDITORIA_ACCION',
-          valor: JSON.stringify(record),
-          orden: Date.now() % 1000000000
-        });
-        const { data: insData, error } = typeof insertQuery?.select === 'function'
-          ? await insertQuery.select('id')
-          : await insertQuery;
-
-        if (error) {
-          console.error('Error insertando AUDITORIA_ACCION en Supabase:', error);
-        } else if (insData && insData[0]) {
-          record.db_id = insData[0].id;
-        }
-      }
-    }
-  } catch (err) {
-    console.error('Excepción guardando acción de auditoría:', err);
   }
 
   return record;
@@ -197,25 +204,28 @@ export async function registrarAccion({
 
 /**
  * Consulta el historial de acciones con filtros y paginación.
+ * Lee directamente desde Supabase (fuente de verdad) y usa el caché local como respaldo offline.
  */
-export async function getHistorialAcciones({ limit = 500, modulo, lote, search } = {}) {
+export async function getHistorialAcciones({ limit = 1000, modulo, lote, search } = {}) {
   let logs = [];
 
-  // 1. Cargar desde Supabase usando supabaseAdmin (con fallback a supabase)
+  // 1. Cargar desde Supabase (fuente de verdad central) — ordenar por fecha desc directamente en DB
   try {
     const client = supabaseAdmin || supabase;
-    let query = client
+    // Traer hasta 2000 registros; la columna "orden" ahora almacena Date.now() (ms epoch),
+    // por lo que ordenar descendente por orden nos da el más reciente primero.
+    const { data, error } = await client
       .from('datos_maestros')
       .select('id, tipo, valor, orden')
       .eq('tipo', 'AUDITORIA_ACCION')
-      .limit(1000);
+      .order('orden', { ascending: false })
+      .limit(2000);
 
-    const { data, error } = await query;
     if (!error && data && data.length > 0) {
       logs = data.map(d => {
         try {
           const parsed = typeof d.valor === 'string' ? JSON.parse(d.valor) : d.valor;
-          return { ...parsed, db_id: d.id };
+          return { ...parsed, db_id: d.id, _db_orden: d.orden };
         } catch {
           return null;
         }
