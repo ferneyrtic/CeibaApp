@@ -19,36 +19,28 @@ export default function ChromeTabsBar({
   onOpenAdvisor,
   onCloseAll,
 }) {
-  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
   const [dropdownSearch, setDropdownSearch] = useState('');
-  const dropdownRef = useRef(null);
   const searchInputRef = useRef(null);
   const tabsContainerRef = useRef(null);
 
-  // Cerrar dropdown al hacer clic fuera o presionar Escape
+  // Cerrar modal al presionar Escape
   useEffect(() => {
-    function handleClickOutside(e) {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
-        setDropdownOpen(false);
-      }
-    }
     function handleKeyDown(e) {
-      if (e.key === 'Escape') {
-        setDropdownOpen(false);
+      if (e.key === 'Escape' && modalOpen) {
+        setModalOpen(false);
       }
     }
-    if (dropdownOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
+    if (modalOpen) {
       document.addEventListener('keydown', handleKeyDown);
       setTimeout(() => {
         searchInputRef.current?.focus();
       }, 50);
     }
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [dropdownOpen]);
+  }, [modalOpen]);
 
   // Desplazar automáticamente al tab activo cuando cambia
   useEffect(() => {
@@ -60,8 +52,8 @@ export default function ChromeTabsBar({
     }
   }, [activeTabId]);
 
-  // Lista de asesores para el dropdown buscador
-  const filteredAsesoresDropdown = asesores.filter(a => {
+  // Lista de asesores para el buscador
+  const filteredAsesores = asesores.filter(a => {
     const s = dropdownSearch.toLowerCase().trim();
     return !s || a.nombre.toLowerCase().includes(s);
   });
@@ -70,473 +62,523 @@ export default function ChromeTabsBar({
     <div style={{ position: 'relative', marginBottom: 20, zIndex: 10 }}>
       {/* Contenedor principal de pestañas estilo Chrome */}
       <div
-        ref={tabsContainerRef}
         style={{
           display: 'flex',
-          alignItems: 'flex-end',
-          background: 'var(--bg-card2)',
-          padding: '8px 8px 0 8px',
-          borderTopLeftRadius: 10,
-          borderTopRightRadius: 10,
-          border: '1px solid var(--border)',
-          borderBottom: '2px solid var(--accent)',
-          overflowX: 'auto',
-          scrollbarWidth: 'thin',
-          gap: 3,
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          background: '#e2e8f0',
+          borderRadius: '12px 12px 0 0',
+          border: '1px solid #cbd5e1',
+          borderBottom: '2px solid #16a34a',
+          padding: '6px 8px 0 8px',
+          gap: 6,
+          boxShadow: '0 2px 4px rgba(0,0,0,0.03)',
         }}
-        className="chrome-tabs-strip"
       >
-        {/* PESTAÑA FIJA: BALANCE GENERAL / HISTORIAL */}
+        {/* Strip con scroll horizontal para pestañas */}
         <div
-          onClick={() => onSelectTab('general')}
-          className={activeTabId === 'general' ? 'chrome-tab-active' : 'chrome-tab-inactive'}
-          title="Vista consolidada: Balance general y pagos de todos los comisionistas"
+          ref={tabsContainerRef}
           style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: 8,
-            padding: '9px 16px',
-            cursor: 'pointer',
-            fontSize: 13,
-            fontWeight: activeTabId === 'general' ? 700 : 500,
-            color: activeTabId === 'general' ? 'var(--text-primary)' : 'var(--text-secondary)',
-            background: activeTabId === 'general' ? 'var(--bg-card)' : 'transparent',
-            borderTopLeftRadius: 8,
-            borderTopRightRadius: 8,
-            border: activeTabId === 'general' ? '1px solid var(--border)' : '1px solid transparent',
-            borderBottom: activeTabId === 'general' ? '2px solid var(--bg-card)' : 'none',
-            marginBottom: activeTabId === 'general' ? -2 : 0,
-            boxShadow: activeTabId === 'general' ? '0 -2px 6px rgba(0,0,0,0.05)' : 'none',
-            whiteSpace: 'nowrap',
-            userSelect: 'none',
-            transition: 'background 0.15s, color 0.15s',
-            zIndex: activeTabId === 'general' ? 2 : 1,
-            flexShrink: 0,
+            display: 'flex',
+            alignItems: 'flex-end',
+            gap: 4,
+            overflowX: 'auto',
+            scrollbarWidth: 'thin',
+            flex: 1,
+            paddingBottom: 0,
           }}
+          className="chrome-tabs-strip"
         >
-          <LayoutDashboard size={15} color={activeTabId === 'general' ? 'var(--accent)' : 'var(--text-muted)'} />
-          <span>Balance General & Historial</span>
-          <span style={{
-            fontSize: 11,
-            padding: '1px 6px',
-            borderRadius: 10,
-            background: activeTabId === 'general' ? 'var(--accent-soft)' : 'var(--bg-secondary)',
-            color: activeTabId === 'general' ? 'var(--accent)' : 'var(--text-muted)',
-            fontWeight: 700,
-          }}>
-            {asesores.length}
-          </span>
-        </div>
-
-        {/* PESTAÑAS DINÁMICAS DE ASESORES ABIERTOS */}
-        {openAdvisorNames.map((nombre) => {
-          const isActive = activeTabId === nombre;
-          const asesorInfo = asesores.find(a => a.nombre.toUpperCase() === nombre.toUpperCase());
-          const totalVentas = asesorInfo?.totalVentas ?? 0;
-          const saldoPendiente = asesorInfo?.saldoPendiente ?? 0;
-
-          return (
-            <div
-              key={nombre}
-              onClick={() => onSelectTab(nombre)}
-              className={isActive ? 'chrome-tab-active' : 'chrome-tab-inactive'}
-              title={`Ficha de ${nombre} · ${totalVentas} ventas · Saldo: ${formatCOP(saldoPendiente)}`}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 8,
-                padding: '9px 12px 9px 14px',
-                cursor: 'pointer',
-                fontSize: 13,
-                fontWeight: isActive ? 700 : 500,
-                color: isActive ? 'var(--text-primary)' : 'var(--text-secondary)',
-                background: isActive ? 'var(--bg-card)' : 'transparent',
-                borderTopLeftRadius: 8,
-                borderTopRightRadius: 8,
-                border: isActive ? '1px solid var(--border)' : '1px solid transparent',
-                borderBottom: isActive ? '2px solid var(--bg-card)' : 'none',
-                marginBottom: isActive ? -2 : 0,
-                boxShadow: isActive ? '0 -2px 6px rgba(0,0,0,0.05)' : 'none',
-                maxWidth: 220,
-                whiteSpace: 'nowrap',
-                userSelect: 'none',
-                transition: 'background 0.15s, color 0.15s',
-                zIndex: isActive ? 2 : 1,
-                flexShrink: 0,
-                position: 'relative',
-              }}
-            >
-              {/* Avatar circular con inicial */}
-              <div style={{
-                width: 20,
-                height: 20,
-                borderRadius: '50%',
-                background: isActive ? 'var(--accent)' : 'var(--border-light)',
-                color: isActive ? '#ffffff' : 'var(--text-secondary)',
-                fontSize: 10,
-                fontWeight: 800,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexShrink: 0,
-              }}>
-                {nombre.charAt(0).toUpperCase()}
-              </div>
-
-              {/* Nombre recortado si es largo */}
-              <span style={{
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
-                maxWidth: 120,
-              }}>
-                {nombre}
-              </span>
-
-              {/* Badge sutil de saldo o ventas */}
-              {saldoPendiente > 0 ? (
-                <span style={{
-                  fontSize: 10,
-                  padding: '1px 5px',
-                  borderRadius: 8,
-                  background: '#fef3c7',
-                  color: '#92400e',
-                  fontWeight: 700,
-                  flexShrink: 0,
-                }}>
-                  Pend.
-                </span>
-              ) : (
-                <span style={{
-                  fontSize: 10,
-                  padding: '1px 5px',
-                  borderRadius: 8,
-                  background: '#dcfce7',
-                  color: '#166534',
-                  fontWeight: 700,
-                  flexShrink: 0,
-                }}>
-                  {totalVentas}v
-                </span>
-              )}
-
-              {/* Botón de cerrar pestaña '×' */}
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onCloseTab(nombre, e);
-                }}
-                title={`Cerrar pestaña de ${nombre}`}
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  width: 18,
-                  height: 18,
-                  borderRadius: '50%',
-                  border: 'none',
-                  background: 'transparent',
-                  cursor: 'pointer',
-                  color: 'var(--text-muted)',
-                  marginLeft: 2,
-                  padding: 0,
-                  transition: 'all 0.15s',
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = '#fee2e2';
-                  e.currentTarget.style.color = '#ef4444';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = 'transparent';
-                  e.currentTarget.style.color = 'var(--text-muted)';
-                }}
-              >
-                <X size={12} strokeWidth={2.5} />
-              </button>
-            </div>
-          );
-        })}
-
-        {/* BOTÓN NUEVA PESTAÑA '+' (ESTILO CHROME) */}
-        <div style={{ position: 'relative', display: 'flex', alignItems: 'center', paddingBottom: 6 }}>
-          <button
-            type="button"
-            onClick={() => {
-              setDropdownOpen(!dropdownOpen);
-              setDropdownSearch('');
-            }}
-            title="Abrir ficha de asesor en una nueva pestaña"
+          {/* PESTAÑA FIJA: BALANCE GENERAL / HISTORIAL */}
+          <div
+            onClick={() => onSelectTab('general')}
+            className={activeTabId === 'general' ? 'chrome-tab-active' : 'chrome-tab-inactive'}
+            title="Vista consolidada: Balance general y pagos de todos los comisionistas"
             style={{
               display: 'inline-flex',
               alignItems: 'center',
-              justifyContent: 'center',
-              width: 28,
-              height: 28,
-              borderRadius: 6,
-              border: '1px solid var(--border)',
-              background: dropdownOpen ? 'var(--accent-soft)' : 'var(--bg-card)',
-              color: dropdownOpen ? 'var(--accent)' : 'var(--text-secondary)',
+              gap: 8,
+              padding: '9px 16px',
               cursor: 'pointer',
-              marginLeft: 4,
-              transition: 'all 0.15s',
-            }}
-            onMouseEnter={(e) => {
-              if (!dropdownOpen) {
-                e.currentTarget.style.background = 'var(--accent-soft)';
-                e.currentTarget.style.color = 'var(--accent)';
-              }
-            }}
-            onMouseLeave={(e) => {
-              if (!dropdownOpen) {
-                e.currentTarget.style.background = 'var(--bg-card)';
-                e.currentTarget.style.color = 'var(--text-secondary)';
-              }
+              fontSize: 13,
+              fontWeight: activeTabId === 'general' ? 800 : 600,
+              color: activeTabId === 'general' ? '#0f172a' : '#475569',
+              background: activeTabId === 'general' ? '#ffffff' : '#f1f5f9',
+              borderTopLeftRadius: 8,
+              borderTopRightRadius: 8,
+              borderTop: activeTabId === 'general' ? '3px solid #16a34a' : '3px solid transparent',
+              borderLeft: activeTabId === 'general' ? '1px solid #cbd5e1' : '1px solid #e2e8f0',
+              borderRight: activeTabId === 'general' ? '1px solid #cbd5e1' : '1px solid #e2e8f0',
+              borderBottom: activeTabId === 'general' ? '2px solid #ffffff' : 'none',
+              marginBottom: activeTabId === 'general' ? -2 : 0,
+              boxShadow: activeTabId === 'general' ? '0 -2px 6px rgba(0,0,0,0.05)' : 'none',
+              whiteSpace: 'nowrap',
+              userSelect: 'none',
+              transition: 'all 0.15s ease-in-out',
+              zIndex: activeTabId === 'general' ? 3 : 1,
+              flexShrink: 0,
             }}
           >
-            <Plus size={16} strokeWidth={2.5} />
-          </button>
-
-          {/* Menú desplegable para seleccionar asesor a abrir */}
-          {dropdownOpen && (
-            <div
-              ref={dropdownRef}
+            <LayoutDashboard size={15} color={activeTabId === 'general' ? '#16a34a' : '#64748b'} />
+            <span>Balance General & Historial</span>
+            <span
               style={{
-                position: 'absolute',
-                top: '100%',
-                left: 0,
-                marginTop: 6,
-                width: 320,
-                maxHeight: 400,
-                background: 'var(--bg-card)',
-                border: '1px solid var(--border-light)',
-                borderRadius: 10,
-                boxShadow: 'var(--shadow-lg)',
-                padding: '10px 0',
-                display: 'flex',
-                flexDirection: 'column',
-                zIndex: 100,
+                fontSize: 11,
+                padding: '1px 8px',
+                borderRadius: 12,
+                background: activeTabId === 'general' ? '#dcfce7' : '#e2e8f0',
+                color: activeTabId === 'general' ? '#15803d' : '#475569',
+                fontWeight: 800,
               }}
             >
-              {/* Encabezado del menú */}
-              <div style={{
-                padding: '4px 14px 10px 14px',
-                borderBottom: '1px solid var(--border)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-              }}>
-                <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <Users size={14} color="var(--accent)" />
-                  <span>Abrir Asesor en Pestaña</span>
+              {asesores.length}
+            </span>
+          </div>
+
+          {/* PESTAÑAS DINÁMICAS DE ASESORES ABIERTOS */}
+          {openAdvisorNames.map((nombre) => {
+            const isActive = activeTabId === nombre;
+            const asesorInfo = asesores.find(a => a.nombre.toUpperCase() === nombre.toUpperCase());
+            const totalVentas = asesorInfo?.totalVentas ?? 0;
+            const saldoPendiente = asesorInfo?.saldoPendiente ?? 0;
+
+            return (
+              <div
+                key={nombre}
+                onClick={() => onSelectTab(nombre)}
+                className={isActive ? 'chrome-tab-active' : 'chrome-tab-inactive'}
+                title={`Ficha de ${nombre} · ${totalVentas} ventas · Saldo: ${formatCOP(saldoPendiente)}`}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  padding: '9px 12px 9px 14px',
+                  cursor: 'pointer',
+                  fontSize: 13,
+                  fontWeight: isActive ? 800 : 600,
+                  color: isActive ? '#0f172a' : '#334155',
+                  background: isActive ? '#ffffff' : '#f1f5f9',
+                  borderTopLeftRadius: 8,
+                  borderTopRightRadius: 8,
+                  borderTop: isActive ? '3px solid #16a34a' : '3px solid transparent',
+                  borderLeft: isActive ? '1px solid #cbd5e1' : '1px solid #e2e8f0',
+                  borderRight: isActive ? '1px solid #cbd5e1' : '1px solid #e2e8f0',
+                  borderBottom: isActive ? '2px solid #ffffff' : 'none',
+                  marginBottom: isActive ? -2 : 0,
+                  boxShadow: isActive ? '0 -2px 6px rgba(0,0,0,0.05)' : 'none',
+                  maxWidth: 240,
+                  whiteSpace: 'nowrap',
+                  userSelect: 'none',
+                  transition: 'all 0.15s ease-in-out',
+                  zIndex: isActive ? 3 : 1,
+                  flexShrink: 0,
+                  position: 'relative',
+                }}
+              >
+                {/* Avatar circular con inicial */}
+                <div
+                  style={{
+                    width: 20,
+                    height: 20,
+                    borderRadius: '50%',
+                    background: isActive ? '#16a34a' : '#cbd5e1',
+                    color: isActive ? '#ffffff' : '#334155',
+                    fontSize: 10.5,
+                    fontWeight: 800,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0,
+                  }}
+                >
+                  {nombre.charAt(0).toUpperCase()}
                 </div>
-                {openAdvisorNames.length > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      onCloseAll?.();
-                      setDropdownOpen(false);
-                    }}
+
+                {/* Nombre recortado */}
+                <span
+                  style={{
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                    maxWidth: 120,
+                    color: isActive ? '#0f172a' : '#334155',
+                  }}
+                >
+                  {nombre}
+                </span>
+
+                {/* Badge de saldo o ventas */}
+                {saldoPendiente > 0 ? (
+                  <span
                     style={{
-                      fontSize: 11,
-                      color: '#dc2626',
-                      background: 'none',
-                      border: 'none',
-                      cursor: 'pointer',
-                      fontWeight: 600,
+                      fontSize: 10,
+                      padding: '2px 6px',
+                      borderRadius: 6,
+                      background: '#fef3c7',
+                      color: '#92400e',
+                      border: '1px solid #fde68a',
+                      fontWeight: 800,
+                      flexShrink: 0,
                     }}
                   >
-                    Cerrar todas ({openAdvisorNames.length})
-                  </button>
-                )}
-              </div>
-
-              {/* Buscador de asesores */}
-              <div style={{ padding: '8px 12px', borderBottom: '1px solid var(--border)' }}>
-                <div style={{ position: 'relative' }}>
-                  <Search size={13} style={{ position: 'absolute', left: 9, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-                  <input
-                    ref={searchInputRef}
-                    type="text"
-                    className="form-input"
-                    placeholder="Buscar asesor..."
-                    value={dropdownSearch}
-                    onChange={(e) => setDropdownSearch(e.target.value)}
-                    style={{
-                      width: '100%',
-                      paddingLeft: 28,
-                      paddingTop: 5,
-                      paddingBottom: 5,
-                      fontSize: 12,
-                      height: 32,
-                    }}
-                  />
-                  {dropdownSearch && (
-                    <button
-                      type="button"
-                      onClick={() => setDropdownSearch('')}
-                      style={{
-                        position: 'absolute',
-                        right: 8,
-                        top: '50%',
-                        transform: 'translateY(-50%)',
-                        background: 'none',
-                        border: 'none',
-                        cursor: 'pointer',
-                        color: 'var(--text-muted)',
-                      }}
-                    >
-                      <X size={12} />
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              {/* Lista scrolleable de asesores */}
-              <div style={{ overflowY: 'auto', maxHeight: 260, padding: '4px 6px' }}>
-                {filteredAsesoresDropdown.length === 0 ? (
-                  <div style={{ padding: '20px 10px', textAlign: 'center', fontSize: 12, color: 'var(--text-muted)' }}>
-                    No se encontró ningún comisionista con ese nombre.
-                  </div>
+                    Pend.
+                  </span>
                 ) : (
-                  filteredAsesoresDropdown.map((asesor) => {
-                    const isOpen = openAdvisorNames.some(
-                      n => n.toUpperCase() === asesor.nombre.toUpperCase()
-                    );
-
-                    return (
-                      <div
-                        key={asesor.nombre}
-                        onClick={() => {
-                          onOpenAdvisor(asesor.nombre);
-                          setDropdownOpen(false);
-                        }}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                          padding: '8px 10px',
-                          borderRadius: 6,
-                          cursor: 'pointer',
-                          background: isOpen ? 'var(--accent-soft)' : 'transparent',
-                          transition: 'background 0.15s',
-                        }}
-                        onMouseEnter={(e) => {
-                          if (!isOpen) e.currentTarget.style.background = 'var(--bg-secondary)';
-                        }}
-                        onMouseLeave={(e) => {
-                          if (!isOpen) e.currentTarget.style.background = 'transparent';
-                        }}
-                      >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, overflow: 'hidden' }}>
-                          <div style={{
-                            width: 24,
-                            height: 24,
-                            borderRadius: '50%',
-                            background: isOpen ? 'var(--accent)' : 'var(--bg-card2)',
-                            border: '1px solid var(--border)',
-                            color: isOpen ? '#ffffff' : 'var(--text-primary)',
-                            fontSize: 11,
-                            fontWeight: 800,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            flexShrink: 0,
-                          }}>
-                            {asesor.nombre.charAt(0).toUpperCase()}
-                          </div>
-                          <div style={{ overflow: 'hidden' }}>
-                            <div style={{
-                              fontSize: 12,
-                              fontWeight: 700,
-                              color: 'var(--text-primary)',
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis',
-                              whiteSpace: 'nowrap',
-                            }}>
-                              {asesor.nombre}
-                            </div>
-                            <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>
-                              {asesor.totalVentas} ventas · Saldo: {formatCOP(asesor.saldoPendiente)}
-                            </div>
-                          </div>
-                        </div>
-
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
-                          {isOpen ? (
-                            <span style={{
-                              fontSize: 10,
-                              fontWeight: 700,
-                              color: 'var(--accent)',
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: 2,
-                            }}>
-                              <Check size={12} /> Abierto
-                            </span>
-                          ) : (
-                            <ChevronRight size={14} color="var(--text-muted)" />
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })
+                  <span
+                    style={{
+                      fontSize: 10,
+                      padding: '2px 6px',
+                      borderRadius: 6,
+                      background: '#dcfce7',
+                      color: '#15803d',
+                      border: '1px solid #86efac',
+                      fontWeight: 800,
+                      flexShrink: 0,
+                    }}
+                  >
+                    {totalVentas}v
+                  </span>
                 )}
-              </div>
 
-              {/* Pie con atajo */}
-              <div style={{
-                padding: '8px 12px',
-                borderTop: '1px solid var(--border)',
-                background: 'var(--bg-secondary)',
-                fontSize: 11,
-                color: 'var(--text-muted)',
-                display: 'flex',
-                justifyContent: 'space-between',
-                borderBottomLeftRadius: 10,
-                borderBottomRightRadius: 10,
-              }}>
-                <span>💡 Tip: También puedes abrirlos desde la tabla general.</span>
+                {/* Botón de cerrar pestaña '×' */}
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onCloseTab(nombre, e);
+                  }}
+                  title={`Cerrar pestaña de ${nombre}`}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    width: 18,
+                    height: 18,
+                    borderRadius: '50%',
+                    border: 'none',
+                    background: 'transparent',
+                    cursor: 'pointer',
+                    color: '#94a3b8',
+                    marginLeft: 2,
+                    padding: 0,
+                    transition: 'all 0.15s',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = '#fee2e2';
+                    e.currentTarget.style.color = '#ef4444';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = 'transparent';
+                    e.currentTarget.style.color = '#94a3b8';
+                  }}
+                >
+                  <X size={13} strokeWidth={2.5} />
+                </button>
               </div>
-            </div>
-          )}
+            );
+          })}
+
+          {/* BOTÓN NUEVA PESTAÑA: '+ Buscar Asesor' */}
+          <div style={{ display: 'flex', alignItems: 'center', paddingBottom: 5, paddingLeft: 4 }}>
+            <button
+              type="button"
+              onClick={() => {
+                setDropdownSearch('');
+                setModalOpen(true);
+              }}
+              title="Abrir ficha de asesor en una nueva pestaña"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+                height: 29,
+                padding: '0 12px',
+                borderRadius: 6,
+                border: '1px solid #16a34a',
+                background: '#16a34a',
+                color: '#ffffff',
+                fontSize: 12.5,
+                fontWeight: 700,
+                cursor: 'pointer',
+                transition: 'all 0.15s',
+                boxShadow: '0 1px 3px rgba(22, 163, 74, 0.3)',
+                whiteSpace: 'nowrap',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = '#15803d';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = '#16a34a';
+              }}
+            >
+              <Plus size={14} strokeWidth={3} />
+              <span>Buscar Asesor</span>
+            </button>
+          </div>
         </div>
 
-        {/* Atajo rápido a la derecha: Botón Cerrar Todas si hay más de 1 pestaña */}
-        {openAdvisorNames.length > 1 && (
-          <div style={{ marginLeft: 'auto', paddingBottom: 6 }}>
+        {/* ACCIÓN CERRAR TODAS LAS PESTAÑAS */}
+        {openAdvisorNames.length > 0 && (
+          <div style={{ display: 'flex', alignItems: 'center', paddingBottom: 5, flexShrink: 0 }}>
             <button
               type="button"
               onClick={onCloseAll}
               title="Cerrar todas las pestañas de asesores"
               style={{
-                fontSize: 11,
-                padding: '4px 8px',
-                borderRadius: 6,
-                border: '1px solid var(--border)',
-                background: 'transparent',
-                color: 'var(--text-muted)',
-                cursor: 'pointer',
-                display: 'flex',
+                display: 'inline-flex',
                 alignItems: 'center',
                 gap: 4,
+                padding: '4px 9px',
+                borderRadius: 5,
+                border: '1px solid #fca5a5',
+                background: '#fff1f2',
+                color: '#dc2626',
+                fontSize: 11,
+                fontWeight: 700,
+                cursor: 'pointer',
                 transition: 'all 0.15s',
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.color = '#ef4444';
-                e.currentTarget.style.borderColor = '#fca5a5';
+                e.currentTarget.style.background = '#fee2e2';
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.color = 'var(--text-muted)';
-                e.currentTarget.style.borderColor = 'var(--border)';
+                e.currentTarget.style.background = '#fff1f2';
               }}
             >
-              <XCircle size={12} />
-              <span>Cerrar todas ({openAdvisorNames.length})</span>
+              <XCircle size={13} />
+              <span>Cerrar pestañas ({openAdvisorNames.length})</span>
             </button>
           </div>
         )}
       </div>
+
+      {/* ── MODAL FLOTANTE / DIÁLOGO DE BÚSQUEDA DE ASESORES ── */}
+      {modalOpen && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(15, 23, 42, 0.55)',
+            backdropFilter: 'blur(3px)',
+            zIndex: 9999,
+            display: 'flex',
+            alignItems: 'flex-start',
+            justifyContent: 'center',
+            paddingTop: '80px',
+            paddingLeft: '16px',
+            paddingRight: '16px',
+          }}
+          onClick={() => setModalOpen(false)}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              width: '100%',
+              maxWidth: 480,
+              background: '#ffffff',
+              borderRadius: 14,
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(0,0,0,0.08)',
+              overflow: 'hidden',
+              display: 'flex',
+              flexDirection: 'column',
+              maxHeight: '80vh',
+            }}
+          >
+            {/* Header del buscador */}
+            <div style={{ padding: '16px 20px', borderBottom: '1px solid #e2e8f0', background: '#f8fafc' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 15, fontWeight: 800, color: '#0f172a' }}>
+                  <Users size={18} color="#16a34a" />
+                  <span>Abrir Asesor en Nueva Pestaña</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setModalOpen(false)}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    color: '#64748b',
+                    padding: 4,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    borderRadius: 6,
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.background = '#e2e8f0'}
+                  onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
+                >
+                  <X size={18} />
+                </button>
+              </div>
+
+              {/* Input con lupa */}
+              <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                <Search size={18} style={{ position: 'absolute', left: 14, color: '#16a34a' }} />
+                <input
+                  ref={searchInputRef}
+                  type="text"
+                  value={dropdownSearch}
+                  onChange={(e) => setDropdownSearch(e.target.value)}
+                  placeholder="Escribe el nombre del asesor comercial..."
+                  style={{
+                    width: '100%',
+                    padding: '11px 40px 11px 44px',
+                    borderRadius: 8,
+                    border: '2px solid #16a34a',
+                    fontSize: 14,
+                    fontWeight: 500,
+                    outline: 'none',
+                    background: '#ffffff',
+                    color: '#0f172a',
+                    boxShadow: '0 0 0 3px rgba(22, 163, 74, 0.15)',
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && filteredAsesores.length > 0) {
+                      onOpenAdvisor(filteredAsesores[0].nombre);
+                      setModalOpen(false);
+                    }
+                  }}
+                />
+                {dropdownSearch && (
+                  <button
+                    type="button"
+                    onClick={() => setDropdownSearch('')}
+                    style={{
+                      position: 'absolute',
+                      right: 12,
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      color: '#94a3b8',
+                      padding: 2,
+                    }}
+                  >
+                    <X size={16} />
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Lista de resultados */}
+            <div style={{ overflowY: 'auto', flex: 1, maxHeight: 360, padding: '6px 0' }}>
+              {filteredAsesores.length === 0 ? (
+                <div style={{ padding: '36px 20px', textAlign: 'center', color: '#64748b' }}>
+                  <Search size={32} color="#cbd5e1" style={{ margin: '0 auto 10px' }} />
+                  <div style={{ fontSize: 14, fontWeight: 700, color: '#334155' }}>
+                    No se encontraron asesores con "{dropdownSearch}"
+                  </div>
+                </div>
+              ) : (
+                filteredAsesores.map((a) => {
+                  const isOpen = openAdvisorNames.some(n => n.toUpperCase() === a.nombre.toUpperCase());
+                  return (
+                    <div
+                      key={a.nombre}
+                      onClick={() => {
+                        onOpenAdvisor(a.nombre);
+                        setModalOpen(false);
+                      }}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        padding: '11px 20px',
+                        cursor: 'pointer',
+                        background: isOpen ? '#f0fdf4' : 'transparent',
+                        borderBottom: '1px solid #f1f5f9',
+                        transition: 'background 0.12s',
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = isOpen ? '#dcfce7' : '#f8fafc';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = isOpen ? '#f0fdf4' : 'transparent';
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                        <div
+                          style={{
+                            width: 32,
+                            height: 32,
+                            borderRadius: '50%',
+                            background: '#dcfce7',
+                            color: '#15803d',
+                            fontWeight: 800,
+                            fontSize: 13,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            border: '1px solid #86efac',
+                          }}
+                        >
+                          {a.nombre.charAt(0).toUpperCase()}
+                        </div>
+                        <div>
+                          <div style={{ fontSize: 13.5, fontWeight: 700, color: '#0f172a' }}>
+                            {a.nombre}
+                          </div>
+                          <div style={{ fontSize: 12, color: '#64748b' }}>
+                            {a.totalVentas} {a.totalVentas === 1 ? 'lote vendido' : 'lotes vendidos'} · Comisiones: {formatCOP(a.totalComision)}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        {isOpen ? (
+                          <span
+                            style={{
+                              fontSize: 11,
+                              color: '#15803d',
+                              fontWeight: 800,
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 4,
+                              background: '#dcfce7',
+                              padding: '3px 8px',
+                              borderRadius: 5,
+                              border: '1px solid #86efac',
+                            }}
+                          >
+                            <Check size={12} strokeWidth={3} /> Abierto
+                          </span>
+                        ) : (
+                          <div
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 4,
+                              fontSize: 12,
+                              fontWeight: 700,
+                              color: '#16a34a',
+                              background: '#f0fdf4',
+                              padding: '4px 9px',
+                              borderRadius: 6,
+                              border: '1px solid #dcfce7',
+                            }}
+                          >
+                            <span>Abrir</span>
+                            <ChevronRight size={14} />
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+
+            {/* Footer */}
+            <div style={{ padding: '9px 20px', background: '#f8fafc', borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 11.5, color: '#64748b' }}>
+              <span>Presiona <strong>Enter</strong> para abrir</span>
+              <span><strong>Esc</strong> para cerrar</span>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

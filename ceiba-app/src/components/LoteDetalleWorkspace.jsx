@@ -130,13 +130,19 @@ export default function LoteDetalleWorkspace({
 
   // Filtrar lotes para el buscador rápido de la cabecera
   const filteredQuickLotes = allCartera.filter(v => {
-    const q = searchQuery.toLowerCase().trim();
-    if (!q) return true;
-    const l = (v.id_lote || v.lotes?.id_lote || '').toLowerCase();
+    const rawQ = searchQuery.trim();
+    if (!rawQ) return true;
+    const qLower = rawQ.toLowerCase();
+    const qNorm = qLower.replace(/[\s\-_]+/g, '');
+
+    const lRaw = (v.id_lote || v.lotes?.id_lote || '').toLowerCase();
+    const lNorm = lRaw.replace(/[\s\-_]+/g, '');
     const c = (v.cliente_nombre || v.clientes?.nombre || '').toLowerCase();
-    const d = String(v.clientes?.doc_cliente || '').toLowerCase();
-    return l.includes(q) || c.includes(q) || d.includes(q);
-  }).slice(0, 15);
+    const d = String(v.clientes?.doc_cliente || v.doc_cliente || '').toLowerCase();
+    const cel = String(v.clientes?.celular || v.celular || '');
+
+    return lNorm.includes(qNorm) || lRaw.includes(qLower) || c.includes(qLower) || d.includes(qLower) || cel.includes(qLower);
+  }).slice(0, 20);
 
   return (
     <div style={{
