@@ -85,8 +85,13 @@ export default function EstadoCuentaMatrizView({ venta: propVenta, cuotas: propC
     const est = String(c.estado_cuota || '').toUpperCase();
 
     if (est === 'PAGA') {
-      const extra = Math.max(0, vPag - vCuo);
-      acumuladoCredito += extra;
+      if (vPag >= vCuo) {
+        acumuladoCredito += (vPag - vCuo);
+      } else {
+        // Cuota paga cubierta total o parcialmente por excedentes previos
+        const consumido = vCuo - vPag;
+        acumuladoCredito = Math.max(0, acumuladoCredito - consumido);
+      }
       return { ...c, abonoPrevio: 0, saldoNeto: 0 };
     } else {
       let abonoPrevio = 0;
