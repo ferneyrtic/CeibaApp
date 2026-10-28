@@ -9,6 +9,7 @@ import {
 
 import { useAuth } from '../context/AuthContext';
 import { getCuotasByVenta } from '../lib/api/cartera';
+import { getVentaById } from '../lib/api/ventas';
 import { formatCOP, formatDate, formatTime } from '../utils/helpers';
 import { exportEstadoCuentaMatrizPDF, exportEstadoCuentaInformePDF, exportEstadoCuentaPDF } from '../utils/exportEstadoCuenta';
 import EstadoCuentaMatrizView from '../components/EstadoCuentaMatrizView';
@@ -28,6 +29,9 @@ import { useCarteraLogic } from '../hooks/useCarteraLogic';
 import ModalObservacionCobranza from '../components/ModalObservacionCobranza';
 import { buscarObservacionCobranza, normLote, obtenerObservacionEfectiva, getEstiloObservacionCobranza } from '../lib/api/cobranzaApi';
 import { ensureScrollUnlocked } from '../utils/scrollLockManager';
+import CarteraChromeTabsBar from '../components/CarteraChromeTabsBar';
+import LoteDetalleWorkspace from '../components/LoteDetalleWorkspace';
+import MultiLoteGridWorkspace from '../components/MultiLoteGridWorkspace';
 
 
 const FILTROS = ['Todos', 'Con Saldo', 'En Mora', 'Pagado', 'Sin Gestión', '🚨 Casos Críticos (>180 días)', '📌 Casos Especiales'];
@@ -274,42 +278,112 @@ export default function Cartera() {
   };
 
 
+  // Pestañas Multi-Lote tipo Chrome (Gestión de Cartera & Verificación de Mora)
+  const [openLoteIds, setOpenLoteIds] = useState(() => {
+    try {
+      const saved = localStorage.getItem('ceiba_cartera_open_lotes');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const [activeTabId, setActiveTabId] = useState(() => {
+    try {
+      const saved = localStorage.getItem('ceiba_cartera_active_tab');
+      return saved || 'general';
+    } catch {
+      return 'general';
+    }
+  });
+
+  const [viewMode, setViewMode] = useState(() => {
+    try {
+      return localStorage.getItem('ceiba_cartera_view_mode') || 'tabs';
+    } catch {
+      return 'tabs';
+    }
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('ceiba_cartera_view_mode', viewMode);
+    } catch (e) {
+      console.warn('Error guardando viewMode en localStorage:', e);
+    }
+  }, [viewMode]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('ceiba_cartera_open_lotes', JSON.stringify(openLoteIds));
+    } catch (e) {
+      console.warn('Error guardando pestañas en localStorage:', e);
+    }
+  }, [openLoteIds]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('ceiba_cartera_active_tab', activeTabId);
+    } catch (e) {
+      console.warn('Error guardando tab activa en localStorage:', e);
+    }
+  }, [activeTabId]);
+
+  const handleOpenLoteTab = (v) => {
+    if (!v) return;
+    const targetId = v.id || v.venta_id;
+    if (!targetId) return;
+    setOpenLoteIds(prev => prev.includes(targetId) ? prev : [...prev, targetId]);
+    setActiveTabId(targetId);
+  };
+
+  const handleCloseLoteTab = (targetId, e) => {
+    if (e && e.stopPropagation) e.stopPropagation();
+    setOpenLoteIds(prev => {
+      const next = prev.filter(id => id !== targetId);
+      if (activeTabId === targetId) {
+        if (next.length > 0) {
+          const closedIdx = prev.indexOf(targetId);
+          const nextActive = next[Math.max(0, closedIdx - 1)] || next[0];
+          setActiveTabId(nextActive);
+        } else {
+          setActiveTabId('general');
+        }
+      }
+      return next;
+    });
+  };
+
+  const handleCloseAllLoteTabs = () => {
+    setOpenLoteIds([]);
+    setActiveTabId('general');
+  };
+
   const openDetalle = async (v, force = false) => {
     // Si el usuario estaba seleccionando o copiando texto y no es clic explícito en botón, no abrir ni interrumpir la selección
     if (!force && typeof window !== 'undefined' && window.getSelection()?.toString().trim().length > 0) {
       return;
     }
-    setSelected(v);
-    setActiveTab('resumen');
-    setLoadingCuotas(true);
-    const targetId = v?.id || v?.venta_id;
-    try {
-      const [cuotasRes, recsRes] = await Promise.allSettled([
-        getCuotasByVenta(targetId),
-        obtenerRecibosPorVenta(targetId)
-      ]);
-      const cuotas = cuotasRes.status === 'fulfilled' ? cuotasRes.value : [];
-      const recs = recsRes.status === 'fulfilled' ? recsRes.value : [];
-      setCuotasVenta(cuotas || []);
-      setRecibosVenta(recs || []);
-    } catch (e) {
-      console.error('Error abriendo detalle de contrato:', e);
-    } finally {
-      setLoadingCuotas(false);
-    }
+    handleOpenLoteTab(v);
   };
 
   const refreshCuotas = async (ventaId) => {
     if (!ventaId) return;
     try {
-      const [cuotasRes, recsRes] = await Promise.allSettled([
+      const [cuotasRes, recsRes, vRes] = await Promise.allSettled([
         getCuotasByVenta(ventaId),
-        obtenerRecibosPorVenta(ventaId)
+        obtenerRecibosPorVenta(ventaId),
+        getVentaById(ventaId)
       ]);
       const cuotas = cuotasRes.status === 'fulfilled' ? cuotasRes.value : [];
       const recs = recsRes.status === 'fulfilled' ? recsRes.value : [];
+      const freshVenta = vRes.status === 'fulfilled' ? vRes.value : null;
       setCuotasVenta(cuotas || []);
       setRecibosVenta(recs || []);
+      if (freshVenta) {
+        setSelected(prev => ({ ...prev, ...freshVenta }));
+      }
+      load(false);
     } catch (e) {
       console.error('Error refrescando cuotas:', e);
     }
@@ -338,6 +412,93 @@ export default function Cartera() {
           </button>
         </div>
       </div>
+
+      {/* Barra de Pestañas Multi-Lote Estilo Chrome */}
+      <CarteraChromeTabsBar
+        activeTabId={activeTabId}
+        openLoteIds={openLoteIds}
+        allCartera={allCartera}
+        onSelectTab={setActiveTabId}
+        onCloseTab={handleCloseLoteTab}
+        onOpenLote={handleOpenLoteTab}
+        onCloseAll={handleCloseAllLoteTabs}
+        viewMode={viewMode}
+        onChangeViewMode={setViewMode}
+      />
+
+      {/* Si hay una pestaña de lote activa o modo multi-cliente activo */}
+      {activeTabId !== 'general' ? (
+        ((viewMode === 'split2' || viewMode === 'grid') && openLoteIds.length >= 2) ? (
+          <MultiLoteGridWorkspace
+            openLoteIds={openLoteIds}
+            allCartera={allCartera}
+            casosEspeciales={casosEspeciales}
+            observacionesCobranza={observacionesCobranza}
+            activeTabId={activeTabId}
+            viewMode={viewMode}
+            onSelectTab={(id, mode) => {
+              setActiveTabId(id);
+              if (mode) setViewMode(mode);
+            }}
+            onCloseTab={handleCloseLoteTab}
+            onAbonar={(v, c) => {
+              setPagoReciboVenta(v);
+              setPagoReciboCuota(c || null);
+              setShowModalPagoRecibo(true);
+            }}
+            onEditarCuota={(c) => setEditingCuota(c)}
+            onObservacionModal={(v, obs) => openObservacionModal(v, obs)}
+            onVerRecibo={(r) => setReciboParaVer(r)}
+            onVerMatriz={(v) => {
+              setActiveTabId(v.id || v.venta_id);
+              setViewMode('tabs');
+            }}
+            onDataChanged={() => load(false)}
+          />
+        ) : (
+          (() => {
+            const activeVenta = allCartera.find(v => (v.id || v.venta_id) === activeTabId);
+            if (!activeVenta) {
+              return (
+                <div style={{ padding: 40, textAlign: 'center', background: '#fff', borderRadius: 10, border: '1px solid var(--border)' }}>
+                  <AlertTriangle size={32} color="#f59e0b" style={{ margin: '0 auto 10px' }} />
+                  <div style={{ fontSize: 16, fontWeight: 700 }}>Cargando datos del lote...</div>
+                  <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4 }}>
+                    Si el lote no aparece, es posible que se haya actualizado o cerrado.
+                  </div>
+                  <button className="btn btn-ghost" style={{ marginTop: 12, fontSize: 12 }} onClick={() => setActiveTabId('general')}>
+                    Volver a Cartera General
+                  </button>
+                </div>
+              );
+            }
+            return (
+              <LoteDetalleWorkspace
+                venta={activeVenta}
+                allCartera={allCartera}
+                casosEspeciales={casosEspeciales}
+                observacionesCobranza={observacionesCobranza}
+                permissions={permissions}
+                user={user}
+                onCloseTab={handleCloseLoteTab}
+                onOpenLote={handleOpenLoteTab}
+                onAbonar={(v, c) => {
+                  setPagoReciboVenta(v || activeVenta);
+                  setPagoReciboCuota(c || null);
+                  setShowModalPagoRecibo(true);
+                }}
+                onEditarContrato={(v) => setEditingContrato(v || activeVenta)}
+                onEditarCuota={(c) => setEditingCuota(c)}
+                onObservacionModal={(v, obs) => openObservacionModal(v || activeVenta, obs)}
+                onVerRecibo={(r) => setReciboParaVer(r)}
+                onAnularRecibo={handleAnularRecibo}
+                onDataChanged={() => load(true)}
+              />
+            );
+          })()
+        )
+      ) : (
+        <>
 
       {/* Alerta de cuotas vencidas */}
       {stats?.cuotasVencidas > 0 && (
@@ -1139,6 +1300,8 @@ export default function Cartera() {
         </div>
       )}
       </CarteraTabErrorBoundary>
+      </>
+      )}
 
 
       {/* ── Modal Detalle de Contrato ── */}
@@ -1499,6 +1662,7 @@ export default function Cartera() {
               cuotas={cuotasVenta}
               loading={loadingCuotas}
               onEditarCuota={(cuota) => setEditingCuota(cuota)}
+              onRefresh={() => refreshCuotas(selected?.id)}
             />
           )}
 
@@ -1522,49 +1686,136 @@ export default function Cartera() {
                       </tr>
                     </thead>
                     <tbody>
-                      {cuotasVenta.map((c) => {
-                        const cuotaRecs = (recibosVenta || []).filter(r => r && r.cuota_id === c.id);
-                        return (
-                          <tr key={c.id} style={{ borderBottom: '1px solid var(--border)' }}>
-                            <td style={{ padding: '6px 10px', fontWeight: 600 }}>
-                              <div>Cuota {c.numero_cuota}</div>
-                              {/* Badges de recibos emitidos en esta cuota */}
-                              {cuotaRecs.length > 0 && (
-                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 3 }}>
-                                  {cuotaRecs.map(r => (
-                                    <button
-                                      key={r.numero_recibo}
-                                      type="button"
-                                      onClick={(e) => { e.stopPropagation(); setReciboParaVer({ ...r, autoDownload: true }); }}
-                                      style={{
-                                        display: 'inline-flex', alignItems: 'center', gap: 4,
-                                        background: '#eff6ff', color: '#1d4ed8', border: '1px solid #bfdbfe',
-                                        padding: '2px 8px', borderRadius: 4, fontSize: 10.5, fontWeight: 700,
-                                        cursor: 'pointer'
-                                      }}
-                                      title="Clic para ver y descargar este Recibo Oficial en PDF"
-                                    >
-                                      <Receipt size={11} /> Recibo #{r.numero_recibo} ({formatCOP(r.valor)}) <Download size={11} color="#2563eb" style={{ marginLeft: 2 }} />
-                                    </button>
-                                  ))}
-                                </div>
-                              )}
-                            </td>
-                            <td style={{ padding: '6px 10px' }}>{formatDate(c.fecha_vencimiento)}</td>
-                            <td style={{ padding: '6px 10px', textAlign: 'right' }}>{formatCOP(c.valor_cuota)}</td>
-                            <td style={{ padding: '6px 10px', textAlign: 'right', color: '#16a34a', fontWeight: 600 }}>
-                              {formatCOP(c.valor_pagado)}
-                            </td>
-                            <td style={{ padding: '6px 10px' }}>{c.fecha_pago ? formatDate(c.fecha_pago) : '—'}</td>
-                            <td style={{ padding: '6px 10px', textAlign: 'center' }}>
-                              <span style={{
-                                padding: '2px 8px', borderRadius: 4, fontSize: 10, fontWeight: 700,
-                                background: c.estado_cuota === 'PAGA' ? '#f0f9ff' : c.estado_cuota === 'VENCIDA' ? '#fef2f2' : '#f0fdf4',
-                                color: c.estado_cuota === 'PAGA' ? '#0284c7' : c.estado_cuota === 'VENCIDA' ? '#dc2626' : '#16a34a'
-                              }}>
-                                {c.estado_cuota}
-                              </span>
-                            </td>
+                      {(() => {
+                        let acumuladoCredito = 0;
+                        const cuotasConCalculos = (cuotasVenta || []).map(c => {
+                          const vCuo = Number(c.valor_cuota) || 0;
+                          const vPag = Number(c.valor_pagado) || 0;
+                          const est = String(c.estado_cuota || '').toUpperCase();
+
+                          if (est === 'PAGA') {
+                            const extra = Math.max(0, vPag - vCuo);
+                            acumuladoCredito += extra;
+                            return { ...c, abonoPrevio: 0, saldoNeto: 0, extraGenerado: extra };
+                          } else {
+                            let abonoPrevio = 0;
+                            if (acumuladoCredito > 0) {
+                              abonoPrevio = Math.min(acumuladoCredito, Math.max(0, vCuo - vPag));
+                              acumuladoCredito -= abonoPrevio;
+                            }
+                            const saldoNeto = Math.max(0, vCuo - vPag - abonoPrevio);
+                            return { ...c, abonoPrevio, saldoNeto, extraGenerado: 0 };
+                          }
+                        });
+
+                        return cuotasConCalculos.map((c) => {
+                          const cuotaRecs = (recibosVenta || []).filter(r => r && r.cuota_id === c.id);
+                          return (
+                            <tr key={c.id} style={{ borderBottom: '1px solid var(--border)' }}>
+                              <td style={{ padding: '6px 10px', fontWeight: 600 }}>
+                                <div>Cuota {c.numero_cuota}</div>
+                                {/* Badges de recibos emitidos en esta cuota */}
+                                {cuotaRecs.length > 0 && (
+                                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 3 }}>
+                                    {cuotaRecs.map(r => (
+                                      <button
+                                        key={r.numero_recibo}
+                                        type="button"
+                                        onClick={(e) => { e.stopPropagation(); setReciboParaVer({ ...r, autoDownload: true }); }}
+                                        style={{
+                                          display: 'inline-flex', alignItems: 'center', gap: 4,
+                                          background: '#eff6ff', color: '#1d4ed8', border: '1px solid #bfdbfe',
+                                          padding: '2px 8px', borderRadius: 4, fontSize: 10.5, fontWeight: 700,
+                                          cursor: 'pointer'
+                                        }}
+                                        title="Clic para ver y descargar este Recibo Oficial en PDF"
+                                      >
+                                        <Receipt size={11} /> Recibo #{r.numero_recibo} ({formatCOP(r.valor)}) <Download size={11} color="#2563eb" style={{ marginLeft: 2 }} />
+                                      </button>
+                                    ))}
+                                  </div>
+                                )}
+                                {c.observacion && (
+                                  <div style={{ fontSize: 9.5, color: '#0369a1', marginTop: 3, fontStyle: 'italic', maxWidth: 220 }}>
+                                    💬 {c.observacion}
+                                  </div>
+                                )}
+                              </td>
+                              <td style={{ padding: '6px 10px' }}>{formatDate(c.fecha_vencimiento)}</td>
+                              <td style={{ padding: '6px 10px', textAlign: 'right' }}>
+                                <div style={{ fontWeight: 600 }}>{formatCOP(c.valor_cuota)}</div>
+                                {c.abonoPrevio > 0 && c.estado_cuota !== 'PAGA' && (
+                                  <div style={{ marginTop: 2 }}>
+                                    <span style={{
+                                      display: 'inline-block',
+                                      background: '#dcfce7',
+                                      color: '#15803d',
+                                      border: '1px solid #86efac',
+                                      fontSize: 9,
+                                      fontWeight: 700,
+                                      padding: '1px 4px',
+                                      borderRadius: 4,
+                                      whiteSpace: 'nowrap'
+                                    }}>
+                                      Abono previo: -{formatCOP(c.abonoPrevio)}
+                                    </span>
+                                    <div style={{ fontSize: 10, color: '#dc2626', fontWeight: 800, marginTop: 1 }}>
+                                      Neto: {formatCOP(c.saldoNeto)}
+                                    </div>
+                                  </div>
+                                )}
+                              </td>
+                              <td style={{ padding: '6px 10px', textAlign: 'right', color: '#16a34a', fontWeight: 600 }}>
+                                {c.estado_cuota === 'PAGA' && (!c.valor_pagado || Number(c.valor_pagado) === 0) ? (
+                                  <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>—</span>
+                                ) : (c.abonoPrevio > 0 && (!c.valor_pagado || Number(c.valor_pagado) === 0)) ? (
+                                  <span style={{ color: '#d97706', fontWeight: 700 }} title="Abono a favor acumulado de pagos anteriores">
+                                    {formatCOP(c.abonoPrevio)}
+                                  </span>
+                                ) : formatCOP(c.valor_pagado)}
+                              </td>
+                              <td style={{ padding: '6px 10px' }}>
+                                {c.fecha_pago ? formatDate(c.fecha_pago) : (c.abonoPrevio > 0 && c.estado_cuota !== 'PAGA') ? (
+                                  <span style={{ color: '#d97706', fontSize: 10.5, fontStyle: 'italic' }}>Abono previo</span>
+                                ) : '—'}
+                              </td>
+                              <td style={{ padding: '6px 10px', textAlign: 'center' }}>
+                                {(() => {
+                                  const vPag = Number(c.valor_pagado) || 0;
+                                  const vCuo = Number(c.valor_cuota) || 0;
+                                  const abonoPrev = Number(c.abonoPrevio) || 0;
+                                  const totalCubierto = vPag + abonoPrev;
+                                  const estRaw = String(c.estado_cuota || '').toUpperCase();
+                                  const todayStr = new Date().toISOString().slice(0, 10);
+                                  const fvStr = c.fecha_vencimiento ? String(c.fecha_vencimiento).slice(0, 10) : '';
+                                  const isMora = (fvStr && fvStr < todayStr) || estRaw === 'VENCIDA' || estRaw.includes('MORA');
+                                  const isAbono = estRaw.startsWith('ABONO') || (estRaw !== 'PAGA' && totalCubierto > 0 && totalCubierto < vCuo - 50);
+
+                                  if (isAbono) {
+                                    return (
+                                      <span style={{
+                                        padding: '2px 8px', borderRadius: 4, fontSize: 10, fontWeight: 700,
+                                        background: isMora ? '#fee2e2' : '#fef3c7',
+                                        color: isMora ? '#dc2626' : '#d97706',
+                                        border: isMora ? '1px solid #fca5a5' : '1px solid #fde68a',
+                                        whiteSpace: 'nowrap'
+                                      }}>
+                                        {isMora ? 'ABONO EN MORA' : 'ABONO AL DÍA'}
+                                      </span>
+                                    );
+                                  }
+
+                                  return (
+                                    <span style={{
+                                      padding: '2px 8px', borderRadius: 4, fontSize: 10, fontWeight: 700,
+                                      background: c.estado_cuota === 'PAGA' ? '#f0f9ff' : c.estado_cuota === 'VENCIDA' ? '#fef2f2' : '#f0fdf4',
+                                      color: c.estado_cuota === 'PAGA' ? '#0284c7' : c.estado_cuota === 'VENCIDA' ? '#dc2626' : '#16a34a'
+                                    }}>
+                                      {c.estado_cuota}
+                                    </span>
+                                  );
+                                })()}
+                              </td>
                             <td style={{ padding: '6px 10px', textAlign: 'center' }}>
                               <div style={{ display: 'flex', gap: 4, justifyContent: 'center' }}>
                                 <button
@@ -1596,7 +1847,8 @@ export default function Cartera() {
                             </td>
                           </tr>
                         );
-                      })}
+                      });
+                    })()}
                     </tbody>
                   </table>
                 </div>

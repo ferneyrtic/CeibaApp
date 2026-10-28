@@ -5,7 +5,7 @@ import { formatCOP } from '../utils/helpers';
 import { actualizarCuotaManual } from '../lib/api/cuotas';
 import { registrarAccion } from '../lib/api/auditApi';
 
-const ESTADOS_VALIDOS = ['AL DÍA', 'POR VENCER', 'VENCIDA', 'PAGA'];
+const ESTADOS_VALIDOS = ['AL DÍA', 'POR VENCER', 'VENCIDA', 'PAGA', 'ABONO AL DÍA', 'ABONO EN MORA'];
 const MEDIOS_PAGO = ['TRANSFERENCIA', 'EFECTIVO', 'CONSIGNACIÓN', 'CHEQUE', 'DATÁFONO', 'OTRO'];
 const MESES = ['ENERO', 'FEBRERO', 'MARZO', 'ABRIL', 'MAYO', 'JUNIO', 'JULIO', 'AGOSTO', 'SEPTIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE'];
 
@@ -21,10 +21,17 @@ export default function ModalEditarCuota({ cuota, onClose, onSuccess }) {
     }
   }
 
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const isVencidaInit = cuota?.fecha_vencimiento && String(cuota.fecha_vencimiento).slice(0, 10) < todayStr;
+  const isAbonoInicial = (cuota?.estado_cuota !== 'PAGA' && (Number(cuota?.valor_pagado) || 0) > 0);
+  const estadoInicial = isAbonoInicial
+    ? (isVencidaInit || cuota?.estado_cuota === 'VENCIDA' ? 'ABONO EN MORA' : 'ABONO AL DÍA')
+    : (cuota?.estado_cuota || 'AL DÍA');
+
   const [numeroCuota, setNumeroCuota] = useState(cuota?.numero_cuota || 1);
   const [fechaVencimiento, setFechaVencimiento] = useState(cuota?.fecha_vencimiento || '');
   const [valorCuota, setValorCuota] = useState(cuota?.valor_cuota || '');
-  const [estadoCuota, setEstadoCuota] = useState(cuota?.estado_cuota || 'AL DÍA');
+  const [estadoCuota, setEstadoCuota] = useState(estadoInicial);
   const [fechaPago, setFechaPago] = useState(cuota?.fecha_pago || '');
   const [valorPagado, setValorPagado] = useState(cuota?.valor_pagado || '');
   const [medioPago, setMedioPago] = useState(cuota?.medio_pago || 'TRANSFERENCIA');
@@ -51,11 +58,19 @@ export default function ModalEditarCuota({ cuota, onClose, onSuccess }) {
         }
       }
 
+      let estadoDb = estadoCuota;
+      if (estadoCuota === 'ABONO AL DÍA' || estadoCuota === 'ABONO') {
+        const todayStr = new Date().toISOString().slice(0, 10);
+        estadoDb = (fechaVencimiento && fechaVencimiento < todayStr) ? 'VENCIDA' : 'AL DÍA';
+      } else if (estadoCuota === 'ABONO EN MORA') {
+        estadoDb = 'VENCIDA';
+      }
+
       await actualizarCuotaManual(cuota.id, {
         numero_cuota: Number(numeroCuota),
         fecha_vencimiento: fechaVencimiento || null,
         valor_cuota: Number(valorCuota) || 0,
-        estado_cuota: estadoCuota,
+        estado_cuota: estadoDb,
         fecha_pago: fechaFinal,
         valor_pagado: Number(valorPagado) || 0,
         medio_pago: medioPago || null,
@@ -143,6 +158,56 @@ export default function ModalEditarCuota({ cuota, onClose, onSuccess }) {
           </div>
           <div>
             <label style={{ fontSize: 11, fontWeight: 600, display: 'block', marginBottom: 3 }}>Estado de la Cuota:</label>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6, marginBottom: 6 }}>
+              <button
+                type="button"
+                onClick={() => setEstadoCuota('PAGA')}
+                style={{
+                  padding: '5px 4px',
+                  fontSize: 10.5,
+                  fontWeight: 700,
+                  borderRadius: 6,
+                  cursor: 'pointer',
+                  border: estadoCuota === 'PAGA' ? '2px solid #22c55e' : '1px solid var(--border)',
+                  background: estadoCuota === 'PAGA' ? 'rgba(34, 197, 94, 0.2)' : 'var(--bg-card)',
+                  color: estadoCuota === 'PAGA' ? '#22c55e' : 'var(--text-muted)'
+                }}
+              >
+                ✓ PAGA
+              </button>
+              <button
+                type="button"
+                onClick={() => setEstadoCuota('ABONO AL DÍA')}
+                style={{
+                  padding: '5px 4px',
+                  fontSize: 10.5,
+                  fontWeight: 700,
+                  borderRadius: 6,
+                  cursor: 'pointer',
+                  border: estadoCuota === 'ABONO AL DÍA' ? '2px solid #f59e0b' : '1px solid var(--border)',
+                  background: estadoCuota === 'ABONO AL DÍA' ? 'rgba(245, 158, 11, 0.2)' : 'var(--bg-card)',
+                  color: estadoCuota === 'ABONO AL DÍA' ? '#d97706' : 'var(--text-muted)'
+                }}
+              >
+                🟡 ABONO AL DÍA
+              </button>
+              <button
+                type="button"
+                onClick={() => setEstadoCuota('ABONO EN MORA')}
+                style={{
+                  padding: '5px 4px',
+                  fontSize: 10.5,
+                  fontWeight: 700,
+                  borderRadius: 6,
+                  cursor: 'pointer',
+                  border: estadoCuota === 'ABONO EN MORA' ? '2px solid #ef4444' : '1px solid var(--border)',
+                  background: estadoCuota === 'ABONO EN MORA' ? 'rgba(239, 68, 68, 0.2)' : 'var(--bg-card)',
+                  color: estadoCuota === 'ABONO EN MORA' ? '#dc2626' : 'var(--text-muted)'
+                }}
+              >
+                🔴 ABONO EN MORA
+              </button>
+            </div>
             <select
               className="search-input"
               value={estadoCuota}

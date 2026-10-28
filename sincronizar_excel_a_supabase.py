@@ -535,14 +535,15 @@ for r in ws_p.iter_rows(min_row=4, values_only=True):
             'mp_raw': mp_raw,
         })
 
-    # Detección de abonos extraordinarios y cuotas cubiertas
+    # Detección de abonos extraordinarios y cuotas cubiertas (blindado contra redondeos hacia arriba)
     cobertura_abonos = {}
     for c in cuotas_lote_raw:
         n = c['num']
         vc = c['vc']
         if cuota_contrato > 0 and vc >= (1.5 * cuota_contrato):
             cuotas_que_cubre = vc / cuota_contrato
-            cuotas_enteras = int(round(cuotas_que_cubre))
+            # Usar floor para no asumir cuotas cubiertas que solo tienen abono parcial
+            cuotas_enteras = int(math.floor(cuotas_que_cubre))
             max_plazo = plazo_contrato if plazo_contrato > 0 else 24
             ultima_cubierta = min(n + cuotas_enteras - 1, max_plazo)
             siguiente_num = ultima_cubierta + 1
@@ -552,6 +553,10 @@ for r in ws_p.iter_rows(min_row=4, values_only=True):
             prox_fv = siguiente_c['fv_str'] if siguiente_c and siguiente_c['fv_str'] else 'próximo ciclo'
 
             for amort_n in range(n + 1, ultima_cubierta + 1):
+                # Solo considerar cubierta si esa cuota en Excel NO tiene un pago directo propio
+                amort_c = next((x for x in cuotas_lote_raw if x['num'] == amort_n), None)
+                if amort_c and (amort_c['vc'] > 0 or amort_c['fp_str']):
+                    continue
                 cobertura_abonos[amort_n] = {
                     'origen_num': n,
                     'valor_abono': vc,
@@ -570,9 +575,10 @@ for r in ws_p.iter_rows(min_row=4, values_only=True):
         est_raw = c['est_raw']
         mp_raw = c['mp_raw']
 
-        es_cubierta_por_abono = (n in cobertura_abonos)
         tiene_pago_directo = (vc > 0)
         es_paga_en_excel = bool(est_raw and 'PAG' in est_raw.upper())
+        # Nunca considerar cubierta por abono si la cuota ya tiene un pago propio explícito en Excel
+        es_cubierta_por_abono = (n in cobertura_abonos) and not tiene_pago_directo and not fp_str
 
         if plazo_contrato > 0 and n <= plazo_contrato:
             pass
@@ -589,8 +595,8 @@ for r in ws_p.iter_rows(min_row=4, values_only=True):
             estado_final = 'PAGA'
             val_programado = cuota_contrato if cuota_contrato > 0 else vc
             val_pagado = 0.0
-            fp_str = None
-            observacion = None
+            fp_str = cobertura_abonos[n].get('fecha_abono')
+            observacion = f"Cubierta por abono de Cuota {cobertura_abonos[n]['origen_num']}"
 
         elif es_paga_en_excel and not tiene_pago_directo:
             cuotas_amortizadas_total += 1
@@ -614,7 +620,8 @@ for r in ws_p.iter_rows(min_row=4, values_only=True):
 
             obs_parts = []
             if cuota_contrato > 0 and vc >= (1.5 * cuota_contrato):
-                cuotas_enteras = int(round(vc / cuota_contrato))
+                cuotas_enteras = int(math.floor(vc / cuota_contrato))
+                sobrante = vc - (cuotas_enteras * cuota_contrato)
                 max_plazo = plazo_contrato if plazo_contrato > 0 else 24
                 ult_cub = min(n + cuotas_enteras - 1, max_plazo)
                 if ult_cub >= max_plazo:
@@ -623,7 +630,10 @@ for r in ws_p.iter_rows(min_row=4, values_only=True):
                     sig_n = ult_cub + 1
                     sig_c = next((x for x in cuotas_lote_raw if x['num'] == sig_n), None)
                     sig_fv = sig_c['fv_str'] if sig_c and sig_c['fv_str'] else 'próximo ciclo'
-                    obs_parts.append(f"Abono de ${vc:,.0f} cubre {cuotas_enteras} cuotas (hasta cuota {ult_cub}) - Próximo aporte: cuota {sig_n} ({sig_fv})")
+                    if sobrante > 100:
+                        obs_parts.append(f"Abono de ${vc:,.0f} cubre {cuotas_enteras} cuotas (hasta cuota {ult_cub}) + abono parcial de ${sobrante:,.0f} a cuota {sig_n}")
+                    else:
+                        obs_parts.append(f"Abono de ${vc:,.0f} cubre {cuotas_enteras} cuotas (hasta cuota {ult_cub}) - Próximo aporte: cuota {sig_n} ({sig_fv})")
 
             if c['fp_obs']: obs_parts.append(c['fp_obs'])
             if c['fv_obs']: obs_parts.append(f"FV: {c['fv_obs']}")

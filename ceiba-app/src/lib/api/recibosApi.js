@@ -38,6 +38,11 @@ const obtenerRecibosLocales = () => {
       if (String(r.lote_id_str || '').toUpperCase().includes('TEST')) return false;
       // Limpieza de prueba previa: si hay un 3412 guardado en local que no sea del lote real (LC2 - 32 - 7)
       if (num === 3412 && !String(r.lote_id_str || '').toUpperCase().includes('32')) return false;
+      // Sincronización de recibos 3462 a 3469: limpiar caché local desactualizada de lote LC2 - 40 - 10 si tenía #3462
+      if (num === 3462 && String(r.lote_id_str || '').toUpperCase().includes('40')) {
+        modificado = true;
+        return false;
+      }
       return true;
     });
 
@@ -77,6 +82,10 @@ export const obtenerSiguienteNumeroRecibo = async () => {
   const recibosOcupados = new Set();
   // La base oficial confirmada: recibo 3436 fue saltado por error en papelería física
   recibosOcupados.add(3436);
+  // Recibo 3458 saltado: utilizado para otras arras en papelería física
+  recibosOcupados.add(3458);
+  // Recibo 3461 saltado: utilizado para cuota inicial ($1.000.000) MZ 26 LOTE 2
+  recibosOcupados.add(3461);
 
   // 1. Verificar recibos en almacenamiento local
   const locales = obtenerRecibosLocales();
@@ -411,7 +420,8 @@ export const registrarPagoConRecibo = async ({
   clienteNombre = '',
   clienteDoc = '',
   generarRecibo = true,
-  numeroReciboManual = null
+  numeroReciboManual = null,
+  forzarEstado = null
 }) => {
   const montoNum = Math.round(Number(monto) || 0);
   if (montoNum <= 0) {
@@ -620,15 +630,26 @@ export const registrarPagoConRecibo = async ({
     const difCentavos = valCuota - nuevoPagado;
     // Si el monto cubre la cuota o la diferencia es de centavos/redondeo (<= $2.000 COP o < 2%)
     esPagoCompleto = (nuevoPagado >= valCuota) || (valCuota > 0 && difCentavos <= 2000) || (valCuota > 0 && (difCentavos / valCuota) < 0.02);
+    if (forzarEstado === 'PAGA') esPagoCompleto = true;
+    if (forzarEstado === 'ABONO' || forzarEstado === 'ABONO AL DÍA' || forzarEstado === 'ABONO EN MORA') esPagoCompleto = false;
     saldoRestanteCuota = esPagoCompleto ? 0 : Math.max(0, valCuota - nuevoPagado);
 
     let nuevoEstado = cuota.estado_cuota;
+    const todayStr = new Date().toISOString().slice(0, 10);
+    const estaVencida = cuota.fecha_vencimiento && cuota.fecha_vencimiento < todayStr;
     if (esPagoCompleto) {
       nuevoEstado = 'PAGA';
     } else {
-      nuevoEstado = cuota.estado_cuota === 'VENCIDA' ? 'VENCIDA' : 'AL DÍA';
+      // Abono parcial: si se fuerza ABONO EN MORA queda VENCIDA; si se fuerza ABONO AL DÍA queda AL DÍA; de lo contrario evalúa fecha
+      if (forzarEstado === 'ABONO EN MORA') {
+        nuevoEstado = 'VENCIDA';
+      } else if (forzarEstado === 'ABONO AL DÍA') {
+        nuevoEstado = 'AL DÍA';
+      } else {
+        nuevoEstado = estaVencida ? 'VENCIDA' : 'AL DÍA';
+      }
     }
-    const valPagadoFinal = esPagoCompleto && difCentavos > 0 && difCentavos <= 2000 ? valCuota : nuevoPagado;
+    const valPagadoFinal = esPagoCompleto ? Math.max(nuevoPagado, valCuota) : nuevoPagado;
 
     const montoFormateado = montoNum.toLocaleString('es-CO');
     const notaRecibo = generarRecibo

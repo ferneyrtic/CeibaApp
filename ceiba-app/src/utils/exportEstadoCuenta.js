@@ -36,21 +36,75 @@ export const resolveCuotaDisplay = (cuota, numCuota, plazoTotal) => {
     };
   }
 
-  const valor = cuota?.valor_cuota ? formatCOP(cuota.valor_cuota) : '—';
+  const valCuotaNum = Number(cuota?.valor_cuota) || 0;
+  const valPagadoNum = Number(cuota?.valor_pagado) || 0;
+  const valor = valCuotaNum > 0 ? formatCOP(valCuotaNum) : '—';
   const fechaVenc = cuota?.fecha_vencimiento ? formatDate(cuota.fecha_vencimiento) : '—';
   const fechaPago = cuota?.fecha_pago ? formatDate(cuota.fecha_pago) : null;
 
-  // 1. Si está pagada
-  if (cuota?.estado_cuota === 'PAGA' || (cuota?.valor_pagado && cuota.valor_pagado > 0)) {
-    const tienePagoDirecto = cuota?.valor_pagado && Number(cuota.valor_pagado) > 0;
-    const valorDisplay = tienePagoDirecto ? formatCOP(cuota.valor_pagado) : '—';
+  // Evaluar vencimiento por fecha de forma determinística YYYY-MM-DD
+  let diffDays = 999;
+  let isVencida = false;
+  if (cuota?.fecha_vencimiento) {
+    const todayStr = new Date().toISOString().slice(0, 10);
+    const fvStr = String(cuota.fecha_vencimiento).slice(0, 10);
+    isVencida = fvStr < todayStr;
+
+    const todayDate = new Date(todayStr + 'T00:00:00');
+    const fvDate = new Date(fvStr + 'T00:00:00');
+    diffDays = Math.round((fvDate - todayDate) / (1000 * 60 * 60 * 24));
+  }
+
+  const estadoRaw = String(cuota?.estado_cuota || '').trim().toUpperCase();
+
+  // 1. Es PAGA completa si:
+  // - Está explícitamente marcada como 'PAGA' (cubre cuota completa, o fue cubierta por abonos previos)
+  // - O el valor pagado cubre la cuota completa (o diferencia <= $2.000 COP)
+  const esPagaCompleta = (estadoRaw === 'PAGA') ||
+                         (valPagadoNum > 0 && valCuotaNum > 0 && valPagadoNum >= (valCuotaNum - 2000));
+
+  // 2. Es ABONO parcial si:
+  // - Tiene valor pagado o abono previo acumulado mayor a 0 y menor a la cuota, Y no es paga completa
+  // - O su estado es 'ABONO', 'ABONO AL DÍA', 'ABONO EN MORA'
+  const abonoPrevioNum = Number(cuota?.abonoPrevio) || 0;
+  const totalCubiertoNum = valPagadoNum + abonoPrevioNum;
+  const esAbono = (estadoRaw.startsWith('ABONO')) ||
+                  (!esPagaCompleta && totalCubiertoNum > 0 && totalCubiertoNum < (valCuotaNum - 50));
+
+  if (esAbono) {
+    const saldoPendiente = Math.max(0, valCuotaNum - totalCubiertoNum);
+    const moraActual = isVencida || estadoRaw === 'ABONO EN MORA' || estadoRaw === 'VENCIDA' || estadoRaw.includes('MORA');
+    const estadoAbono = moraActual ? 'ABONO EN MORA' : 'ABONO AL DÍA';
+    return {
+      num: `CUOTA ${numCuota}`,
+      fecha: fechaPago || fechaVenc,
+      fechaPago,
+      fechaVenc,
+      estado: estadoAbono,
+      isAbono: true,
+      isVencida: moraActual,
+      valor: formatCOP(totalCubiertoNum),
+      saldoPendiente,
+      color: moraActual ? [220, 38, 38] : [217, 119, 6],
+      cssColor: moraActual ? '#dc2626' : '#d97706',
+      fontStyle: 'bold',
+      isExceeded: false,
+    };
+  }
+
+  if (esPagaCompleta) {
+    const tienePagoDirecto = valPagadoNum > 0;
+    // Si tiene pago directo muestra ese valor pagado; si fue cubierta por abono deja en blanco el espacio
+    const valorDisplay = tienePagoDirecto ? formatCOP(valPagadoNum) : '—';
 
     return {
       num: `CUOTA ${numCuota}`,
-      fecha: tienePagoDirecto ? (fechaPago || fechaVenc) : fechaVenc,
-      fechaPago: tienePagoDirecto ? fechaPago : null,
+      fecha: fechaPago || (tienePagoDirecto ? fechaVenc : '—'),
+      fechaPago,
       fechaVenc,
       estado: 'PAGA',
+      isAbono: false,
+      isVencida: false,
       valor: valorDisplay,
       color: [22, 163, 74],
       cssColor: '#16a34a',
@@ -59,20 +113,17 @@ export const resolveCuotaDisplay = (cuota, numCuota, plazoTotal) => {
     };
   }
 
-  // 2. Si tiene fecha de vencimiento, evaluar si es actual, vencida o futura
+  // 3. Si no tiene pago, evaluar por fecha de vencimiento
   if (cuota?.fecha_vencimiento) {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const fv = new Date(cuota.fecha_vencimiento + 'T12:00:00');
-    const diffDays = Math.round((fv - today) / (1000 * 60 * 60 * 24));
-
-    if (diffDays < 0 || cuota.estado_cuota === 'VENCIDA') {
+    if (isVencida || estadoRaw === 'VENCIDA') {
       return {
         num: `CUOTA ${numCuota}`,
         fecha: fechaVenc,
         fechaPago: null,
         fechaVenc,
         estado: 'VENCIDA',
+        isAbono: false,
+        isVencida: true,
         valor,
         color: [220, 38, 38],
         cssColor: '#dc2626',
@@ -81,13 +132,15 @@ export const resolveCuotaDisplay = (cuota, numCuota, plazoTotal) => {
       };
     }
 
-    if (diffDays <= 7 || cuota.estado_cuota === 'POR VENCER') {
+    if (!isVencida && (diffDays <= 7 || estadoRaw === 'POR VENCER')) {
       return {
         num: `CUOTA ${numCuota}`,
         fecha: fechaVenc,
         fechaPago: null,
         fechaVenc,
         estado: 'POR VENCER',
+        isAbono: false,
+        isVencida: false,
         valor,
         color: [217, 119, 6],
         cssColor: '#d97706',
@@ -103,6 +156,8 @@ export const resolveCuotaDisplay = (cuota, numCuota, plazoTotal) => {
         fechaPago: null,
         fechaVenc,
         estado: 'AL DÍA',
+        isAbono: false,
+        isVencida: false,
         valor,
         color: [37, 99, 235],
         cssColor: '#2563eb',
@@ -117,6 +172,8 @@ export const resolveCuotaDisplay = (cuota, numCuota, plazoTotal) => {
       fechaPago: null,
       fechaVenc,
       estado: 'PROGRAMADA',
+      isAbono: false,
+      isVencida: false,
       valor,
       color: [148, 163, 184],
       cssColor: '#94a3b8',
@@ -255,20 +312,47 @@ export const exportEstadoCuentaMatrizPDF = async (venta, cuotas = []) => {
   const ROWS_COUNT = 12;
   const matrixRows = [];
 
+  // Calcular excedentes de cuotas previas para cuotas pendientes
+  let acumuladoCredito = 0;
+  const cuotasConCalculos = (cuotas || []).map(c => {
+    const vCuo = Number(c.valor_cuota) || 0;
+    const vPag = Number(c.valor_pagado) || 0;
+    const est = String(c.estado_cuota || '').toUpperCase();
+
+    if (est === 'PAGA') {
+      const extra = Math.max(0, vPag - vCuo);
+      acumuladoCredito += extra;
+      return { ...c, abonoPrevio: 0, saldoNeto: 0 };
+    } else {
+      let abonoPrevio = 0;
+      if (acumuladoCredito > 0) {
+        abonoPrevio = Math.min(acumuladoCredito, Math.max(0, vCuo - vPag));
+        acumuladoCredito -= abonoPrevio;
+      }
+      const saldoNeto = Math.max(0, vCuo - vPag - abonoPrevio);
+      return { ...c, abonoPrevio, saldoNeto };
+    }
+  });
+
+  const formatValorConNeto = (c, d) => {
+    if (!c || c.estado_cuota === 'PAGA' || !c.abonoPrevio) return d.valor;
+    return `${d.valor} (Neto: ${formatCOP(c.saldoNeto)})`;
+  };
+
   for (let r = 0; r < ROWS_COUNT; r++) {
-    const c1 = cuotas.find(c => c.numero_cuota === r + 1);
+    const c1 = cuotasConCalculos.find(c => c.numero_cuota === r + 1);
     const d1 = resolveCuotaDisplay(c1, r + 1, plazoTotal);
 
-    const c2 = cuotas.find(c => c.numero_cuota === r + 13);
+    const c2 = cuotasConCalculos.find(c => c.numero_cuota === r + 13);
     const d2 = resolveCuotaDisplay(c2, r + 13, plazoTotal);
 
-    const c3 = cuotas.find(c => c.numero_cuota === r + 25);
+    const c3 = cuotasConCalculos.find(c => c.numero_cuota === r + 25);
     const d3 = resolveCuotaDisplay(c3, r + 25, plazoTotal);
 
     matrixRows.push([
-      d1.num, d1.fecha, d1.estado, d1.valor,
-      d2.num, d2.fecha, d2.estado, d2.valor,
-      d3.num, d3.fecha, d3.estado, d3.valor
+      d1.num, d1.fecha, d1.estado, formatValorConNeto(c1, d1),
+      d2.num, d2.fecha, d2.estado, formatValorConNeto(c2, d2),
+      d3.num, d3.fecha, d3.estado, formatValorConNeto(c3, d3)
     ]);
   }
 
@@ -319,16 +403,18 @@ export const exportEstadoCuentaMatrizPDF = async (venta, cuotas = []) => {
     margin: { left: 14, right: 14 },
     didParseCell: (data) => {
       if (data.section === 'body' && (data.column.index === 2 || data.column.index === 6 || data.column.index === 10)) {
-        const val = data.cell.raw;
+        const val = String(data.cell.raw || '');
         if (val === 'PAGA') {
           data.cell.styles.textColor = [22, 163, 74];
           data.cell.styles.fontStyle = 'bold';
-        } else if (val === 'VENCIDA') {
+        } else if (val === 'VENCIDA' || val === 'ABONO EN MORA' || val.includes('MORA')) {
           data.cell.styles.textColor = [220, 38, 38];
           data.cell.styles.fontStyle = 'bold';
-        } else if (val === 'POR VENCER') {
+          if (val.startsWith('ABONO')) data.cell.styles.fontSize = 5.2;
+        } else if (val === 'POR VENCER' || val === 'ABONO AL DÍA' || val.includes('ABONO')) {
           data.cell.styles.textColor = [217, 119, 6];
           data.cell.styles.fontStyle = 'bold';
+          if (val.startsWith('ABONO')) data.cell.styles.fontSize = 5.2;
         } else if (val === 'AL DÍA') {
           data.cell.styles.textColor = [37, 99, 235];
         } else if (val === 'PROGRAMADA') {

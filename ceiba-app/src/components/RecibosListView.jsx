@@ -12,12 +12,84 @@ const sanitizarRegistradoPor = (str) => {
   return str ? String(str).trim() : 'Secretaría';
 };
 
+/**
+ * Determina el tipo de recibo y los estilos visuales asociados según el código de colores:
+ * - Recibos normales (cuotas / abonos de cartera): VERDE (#ecfdf5, #065f46, #a7f3d0)
+ * - Arras (apartados temporales de lote): AMARILLO (#fef3c7, #92400e, #fde68a)
+ * - Cuota Inicial (separación de contrato): MORADO (#f3e8ff, #6b21a8, #d8b4fe)
+ * - Anulado: ROJO (#fef2f2, #991b1b, #fecaca)
+ */
+export const getTipoReciboInfo = (r) => {
+  const estado = String(r?.estado || r?.estado_recibo || '').toUpperCase();
+  const concepto = String(r?.concepto || '').toUpperCase();
+  const motivo = String(r?.motivo || '').toUpperCase();
+  const lote = String(r?.lote_id_str || '').toUpperCase();
+
+  if (estado === 'ANULADO') {
+    return {
+      tipo: 'ANULADO',
+      label: '(ANULADO)',
+      badgeText: 'ANULADO',
+      bgBadge: '#fef2f2',
+      colorBadge: '#991b1b',
+      borderBadge: '#fecaca',
+      colorValor: '#991b1b',
+      valorDisplay: 'ANULADO'
+    };
+  }
+
+  if (estado === 'ARRAS' || concepto.includes('ARRAS') || motivo.includes('ARRAS') || lote.includes('ARRAS')) {
+    return {
+      tipo: 'ARRAS',
+      label: '(ARRAS)',
+      badgeText: 'ARRAS',
+      bgBadge: '#fef3c7',     // Amarillo fondo
+      colorBadge: '#92400e',  // Amarillo texto
+      borderBadge: '#fde68a', // Amarillo borde
+      colorValor: '#b45309',  // Amarillo/ámbar valor
+      valorDisplay: (Number(r?.valor || r?.valor_pagado || 0) === 0) ? 'ARRAS' : null
+    };
+  }
+
+  if (
+    estado === 'CUOTA_INICIAL' ||
+    concepto.includes('CUOTA INICIAL') ||
+    concepto.includes('INICIAL') ||
+    motivo.includes('CUOTA INICIAL') ||
+    motivo.includes('INICIAL')
+  ) {
+    return {
+      tipo: 'CUOTA_INICIAL',
+      label: '(INICIAL)',
+      badgeText: 'CUOTA INICIAL',
+      bgBadge: '#f3e8ff',     // Morado fondo
+      colorBadge: '#6b21a8',  // Morado texto
+      borderBadge: '#d8b4fe', // Morado borde
+      colorValor: '#7e22ce',  // Morado valor
+      valorDisplay: null
+    };
+  }
+
+  // Recibo normal (Cuota de cartera / abono recurrente) - VERDE
+  return {
+    tipo: 'NORMAL',
+    label: '',
+    badgeText: 'NORMAL',
+    bgBadge: '#ecfdf5',     // Verde fondo
+    colorBadge: '#065f46',  // Verde texto
+    borderBadge: '#a7f3d0', // Verde borde
+    colorValor: '#15803d',  // Verde valor
+    valorDisplay: null
+  };
+};
+
 export default function RecibosListView({ onVerRecibo, onVerExtracto }) {
   const [recibos, setRecibos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [filtroCiclo, setFiltroCiclo] = useState('ciclo_actual'); // 'ciclo_actual' (#3398+) | 'todos'
   const [filtroMedio, setFiltroMedio] = useState('TODOS'); // 'TODOS' | 'TRANSFERENCIA' | 'EFECTIVO'
+  const [filtroTipo, setFiltroTipo] = useState('TODOS'); // 'TODOS' | 'NORMAL' | 'ARRAS' | 'CUOTA_INICIAL'
   const [proximoNumero, setProximoNumero] = useState(null);
   const [copiedId, setCopiedId] = useState(null);
 
@@ -50,6 +122,27 @@ export default function RecibosListView({ onVerRecibo, onVerExtracto }) {
     cargarRecibos();
   }, [cargarRecibos]);
 
+  // Conteo de recibos por categoría según ciclo seleccionado
+  const conteoTipos = useMemo(() => {
+    let normales = 0;
+    let arras = 0;
+    let iniciales = 0;
+    let anulados = 0;
+
+    (recibos || []).forEach(r => {
+      const num = Number(r.numero_recibo || r.recibo_numero || 0);
+      if (filtroCiclo === 'ciclo_actual' && num < 3398) return;
+
+      const t = getTipoReciboInfo(r).tipo;
+      if (t === 'NORMAL') normales++;
+      else if (t === 'ARRAS') arras++;
+      else if (t === 'CUOTA_INICIAL') iniciales++;
+      else if (t === 'ANULADO') anulados++;
+    });
+
+    return { normales, arras, iniciales, anulados };
+  }, [recibos, filtroCiclo]);
+
   // Filtrado de recibos
   const recibosFiltrados = useMemo(() => {
     return (recibos || []).filter(r => {
@@ -58,6 +151,12 @@ export default function RecibosListView({ onVerRecibo, onVerExtracto }) {
       // Filtro de ciclo: por defecto mostrar ciclo actual (3398 en adelante)
       if (filtroCiclo === 'ciclo_actual' && num < 3398) {
         return false;
+      }
+
+      // Filtro de tipo de recibo (Normal, Arras, Cuota Inicial)
+      if (filtroTipo !== 'TODOS') {
+        const info = getTipoReciboInfo(r);
+        if (info.tipo !== filtroTipo) return false;
       }
 
       // Filtro de medio de pago
@@ -85,7 +184,7 @@ export default function RecibosListView({ onVerRecibo, onVerExtracto }) {
 
       return true;
     });
-  }, [recibos, filtroCiclo, filtroMedio, search]);
+  }, [recibos, filtroCiclo, filtroTipo, filtroMedio, search]);
 
   // Paginación de resultados
   const paginatedRecibos = useMemo(() => {
@@ -436,6 +535,144 @@ export default function RecibosListView({ onVerRecibo, onVerExtracto }) {
             Solo Efectivo
           </button>
         </div>
+
+        {/* Píldoras de Filtro por Categoría con Código de Colores */}
+        <div style={{
+          display: 'flex',
+          gap: 8,
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          fontSize: 12,
+          paddingTop: 8,
+          borderTop: '1px dashed var(--border)'
+        }}>
+          <span style={{ fontWeight: 700, color: 'var(--text-muted)', marginRight: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
+            <Tag size={13} /> Tipo de Recibo:
+          </span>
+
+          {/* Todos */}
+          <button
+            type="button"
+            onClick={() => { setFiltroTipo('TODOS'); setPage(1); }}
+            style={{
+              padding: '3px 10px',
+              borderRadius: 20,
+              fontSize: 11.5,
+              fontWeight: 700,
+              cursor: 'pointer',
+              border: filtroTipo === 'TODOS' ? '1.5px solid #64748b' : '1px solid var(--border)',
+              background: filtroTipo === 'TODOS' ? '#f1f5f9' : 'var(--bg-card)',
+              color: filtroTipo === 'TODOS' ? '#0f172a' : 'var(--text-secondary)'
+            }}
+          >
+            Todos ({conteoTipos.normales + conteoTipos.arras + conteoTipos.iniciales + conteoTipos.anulados})
+          </button>
+
+          {/* Normales (Verde) */}
+          <button
+            type="button"
+            onClick={() => { setFiltroTipo('NORMAL'); setPage(1); }}
+            style={{
+              padding: '3px 10px',
+              borderRadius: 20,
+              fontSize: 11.5,
+              fontWeight: 700,
+              cursor: 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 5,
+              border: filtroTipo === 'NORMAL' ? '1.5px solid #059669' : '1px solid #a7f3d0',
+              background: filtroTipo === 'NORMAL' ? '#d1fae5' : '#ecfdf5',
+              color: '#065f46'
+            }}
+            title="Recibos normales de cuotas recurrentes y abonos de cartera (Verde)"
+          >
+            <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#059669', display: 'inline-block' }} />
+            Normales ({conteoTipos.normales})
+          </button>
+
+          {/* Arras (Amarillo) */}
+          <button
+            type="button"
+            onClick={() => { setFiltroTipo('ARRAS'); setPage(1); }}
+            style={{
+              padding: '3px 10px',
+              borderRadius: 20,
+              fontSize: 11.5,
+              fontWeight: 700,
+              cursor: 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 5,
+              border: filtroTipo === 'ARRAS' ? '1.5px solid #d97706' : '1px solid #fde68a',
+              background: filtroTipo === 'ARRAS' ? '#fde68a' : '#fef3c7',
+              color: '#92400e'
+            }}
+            title="Recibos de arras expedidos para apartar lote temporalmente (Amarillo)"
+          >
+            <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#d97706', display: 'inline-block' }} />
+            Arras ({conteoTipos.arras})
+          </button>
+
+          {/* Cuota Inicial (Morado) */}
+          <button
+            type="button"
+            onClick={() => { setFiltroTipo('CUOTA_INICIAL'); setPage(1); }}
+            style={{
+              padding: '3px 10px',
+              borderRadius: 20,
+              fontSize: 11.5,
+              fontWeight: 700,
+              cursor: 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 5,
+              border: filtroTipo === 'CUOTA_INICIAL' ? '1.5px solid #9333ea' : '1px solid #d8b4fe',
+              background: filtroTipo === 'CUOTA_INICIAL' ? '#e9d5ff' : '#f3e8ff',
+              color: '#6b21a8'
+            }}
+            title="Recibos de cuota inicial expedidos en talonario físico (Morado)"
+          >
+            <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#9333ea', display: 'inline-block' }} />
+            Cuota Inicial ({conteoTipos.iniciales})
+          </button>
+        </div>
+      </div>
+
+      {/* ── Barra de Leyenda de Colores ── */}
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        flexWrap: 'wrap',
+        gap: 10,
+        padding: '8px 14px',
+        background: 'var(--bg-card)',
+        borderRadius: 8,
+        border: '1px solid var(--border)',
+        fontSize: 11.5
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 700, color: 'var(--text-muted)' }}>
+          <Tag size={13} />
+          <span>Convención de Colores:</span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+            <span style={{ width: 10, height: 10, borderRadius: 3, background: '#10b981', display: 'inline-block' }} />
+            <strong style={{ color: '#065f46' }}>Verde:</strong>
+            <span style={{ color: 'var(--text-secondary)' }}>Recibos normales (Cuotas / Cartera)</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+            <span style={{ width: 10, height: 10, borderRadius: 3, background: '#f59e0b', display: 'inline-block' }} />
+            <strong style={{ color: '#92400e' }}>Amarillo:</strong>
+            <span style={{ color: 'var(--text-secondary)' }}>Arras (Apartados temporales)</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+            <span style={{ width: 10, height: 10, borderRadius: 3, background: '#9333ea', display: 'inline-block' }} />
+            <strong style={{ color: '#6b21a8' }}>Morado:</strong>
+            <span style={{ color: 'var(--text-secondary)' }}>Cuota Inicial (Separación contrato)</span>
+          </div>
+        </div>
       </div>
 
       {/* ── Tabla de Recibos ── */}
@@ -485,11 +722,20 @@ export default function RecibosListView({ onVerRecibo, onVerExtracto }) {
                   const isCopied = copiedId === numRecibo;
                   const medioStr = (r.medio_pago || 'TRANSFERENCIA').toUpperCase();
                   const isTransfer = medioStr.includes('TRANSF');
+                  const tipoInfo = getTipoReciboInfo(r);
 
                   return (
                     <tr
                       key={numRecibo}
-                      style={{ cursor: 'pointer', transition: 'background 0.15s ease' }}
+                      style={{
+                        cursor: 'pointer',
+                        transition: 'background 0.15s ease',
+                        borderLeft: tipoInfo.tipo === 'CUOTA_INICIAL'
+                          ? '3.5px solid #9333ea'
+                          : (tipoInfo.tipo === 'ARRAS'
+                            ? '3.5px solid #d97706'
+                            : (tipoInfo.tipo === 'ANULADO' ? '3.5px solid #ef4444' : '3.5px solid #10b981'))
+                      }}
                       onClick={() => {
                         if (typeof window !== 'undefined' && window.getSelection()?.toString().trim().length > 0) return;
                         if (onVerRecibo) onVerRecibo(r);
@@ -507,11 +753,11 @@ export default function RecibosListView({ onVerRecibo, onVerExtracto }) {
                           fontFamily: 'monospace',
                           padding: '3px 8px',
                           borderRadius: 6,
-                          background: r.estado === 'ANULADO' ? '#fef2f2' : (r.estado === 'ARRAS' ? '#fef3c7' : '#ecfdf5'),
-                          color: r.estado === 'ANULADO' ? '#991b1b' : (r.estado === 'ARRAS' ? '#92400e' : '#065f46'),
-                          border: `1px solid ${r.estado === 'ANULADO' ? '#fecaca' : (r.estado === 'ARRAS' ? '#fde68a' : '#a7f3d0')}`
+                          background: tipoInfo.bgBadge,
+                          color: tipoInfo.colorBadge,
+                          border: `1px solid ${tipoInfo.borderBadge}`
                         }}>
-                          #{numRecibo} {r.estado === 'ANULADO' ? '(ANULADO)' : (r.estado === 'ARRAS' ? '(ARRAS)' : '')}
+                          #{numRecibo} {tipoInfo.label}
                         </span>
                       </td>
 
@@ -560,8 +806,36 @@ export default function RecibosListView({ onVerRecibo, onVerExtracto }) {
 
                       {/* Concepto / Cuota */}
                       <td>
-                        <div style={{ fontSize: 12, color: 'var(--text-primary)', fontWeight: 600 }}>
-                          {r.concepto || (r.numero_cuota ? `Pago Cuota #${r.numero_cuota}` : 'Abono a contrato')}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                          <span style={{ fontSize: 12, color: 'var(--text-primary)', fontWeight: 600 }}>
+                            {r.concepto || (r.numero_cuota ? `Pago Cuota #${r.numero_cuota}` : 'Abono a contrato')}
+                          </span>
+                          {tipoInfo.tipo === 'CUOTA_INICIAL' && (
+                            <span style={{
+                              fontSize: 10,
+                              fontWeight: 800,
+                              padding: '1px 6px',
+                              borderRadius: 4,
+                              background: '#f3e8ff',
+                              color: '#6b21a8',
+                              border: '1px solid #d8b4fe'
+                            }}>
+                              CUOTA INICIAL
+                            </span>
+                          )}
+                          {tipoInfo.tipo === 'ARRAS' && (
+                            <span style={{
+                              fontSize: 10,
+                              fontWeight: 800,
+                              padding: '1px 6px',
+                              borderRadius: 4,
+                              background: '#fef3c7',
+                              color: '#92400e',
+                              border: '1px solid #fde68a'
+                            }}>
+                              ARRAS
+                            </span>
+                          )}
                         </div>
                         {r.numero_cuota && (
                           <div style={{ fontSize: 10.5, color: 'var(--text-muted)', marginTop: 2 }}>
@@ -575,12 +849,12 @@ export default function RecibosListView({ onVerRecibo, onVerExtracto }) {
                         <span style={{
                           fontWeight: 800,
                           fontSize: 13,
-                          color: r.estado === 'ARRAS' ? '#92400e' : (r.estado === 'ANULADO' ? '#991b1b' : '#15803d'),
+                          color: tipoInfo.colorValor,
                           fontFamily: 'monospace'
                         }}>
-                          {r.estado === 'ARRAS' && valNum === 0
+                          {tipoInfo.tipo === 'ARRAS' && valNum === 0
                             ? 'ARRAS'
-                            : (r.estado === 'ANULADO' ? 'ANULADO' : formatCOP(valNum))}
+                            : (tipoInfo.tipo === 'ANULADO' ? 'ANULADO' : formatCOP(valNum))}
                         </span>
                       </td>
 

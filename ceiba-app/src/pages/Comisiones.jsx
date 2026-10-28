@@ -3,12 +3,14 @@ import {
   DollarSign, Users, Plus, Search, RefreshCw, Calendar,
   CreditCard, FileText, FileSpreadsheet, CheckCircle2,
   Clock, AlertCircle, ArrowUpRight, UserCheck, Receipt,
-  Building2, Filter, X
+  Building2, Filter, X, ExternalLink, FolderOpen
 } from 'lucide-react';
 import { getComisionesData, registrarPagoComision } from '../lib/api/comisionesApi';
 import { clearCierreCache } from '../lib/api/cierreApi';
 import { formatCOP, formatDate } from '../utils/helpers';
 import Modal from '../components/Modal';
+import ChromeTabsBar from '../components/ChromeTabsBar';
+import AsesorDetalleView from '../components/AsesorDetalleView';
 import { useAuth } from '../context/AuthContext';
 
 export default function Comisiones() {
@@ -23,6 +25,78 @@ export default function Comisiones() {
   const [modalOpen, setModalOpen] = useState(false);
   const [preselectedAsesor, setPreselectedAsesor] = useState('');
   const [exporting, setExporting] = useState(false);
+
+  // Estados para el sistema de pestañas estilo Chrome (Multi-Asesor)
+  const [openAdvisorNames, setOpenAdvisorNames] = useState(() => {
+    try {
+      const saved = localStorage.getItem('ceiba_comisiones_open_tabs');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const [activeTabId, setActiveTabId] = useState(() => {
+    try {
+      return localStorage.getItem('ceiba_comisiones_active_tab') || 'general';
+    } catch {
+      return 'general';
+    }
+  });
+
+  // Persistir pestañas en localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem('ceiba_comisiones_open_tabs', JSON.stringify(openAdvisorNames));
+    } catch (e) {
+      console.error('Error guardando pestañas en localStorage:', e);
+    }
+  }, [openAdvisorNames]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('ceiba_comisiones_active_tab', activeTabId);
+    } catch (e) {
+      console.error('Error guardando pestaña activa en localStorage:', e);
+    }
+  }, [activeTabId]);
+
+  // Manejadores de pestañas
+  const handleSelectTab = (tabId) => {
+    setActiveTabId(tabId);
+  };
+
+  const handleOpenAdvisor = (asesorNombre) => {
+    if (!asesorNombre) return;
+    const trimmed = asesorNombre.trim();
+    setOpenAdvisorNames((prev) => {
+      const exists = prev.some(n => n.toUpperCase() === trimmed.toUpperCase());
+      if (exists) return prev;
+      return [...prev, trimmed];
+    });
+    setActiveTabId(trimmed);
+  };
+
+  const handleCloseTab = (asesorNombre, e) => {
+    if (e && e.stopPropagation) e.stopPropagation();
+    const nextTabs = openAdvisorNames.filter(n => n.toUpperCase() !== asesorNombre.toUpperCase());
+    setOpenAdvisorNames(nextTabs);
+
+    if (activeTabId.toUpperCase() === asesorNombre.toUpperCase()) {
+      const index = openAdvisorNames.findIndex(n => n.toUpperCase() === asesorNombre.toUpperCase());
+      if (nextTabs.length > 0) {
+        const newActive = nextTabs[Math.max(0, index - 1)];
+        setActiveTabId(newActive);
+      } else {
+        setActiveTabId('general');
+      }
+    }
+  };
+
+  const handleCloseAllTabs = () => {
+    setOpenAdvisorNames([]);
+    setActiveTabId('general');
+  };
 
   const loadData = async (force = false) => {
     setLoading(true);
@@ -274,8 +348,29 @@ export default function Comisiones() {
         </div>
       </div>
 
-      {/* KPI Cards */}
-      <div className="kpi-grid" style={{ marginBottom: 24 }}>
+      {/* BARRA DE PESTAÑAS ESTILO CHROME PARA GESTIÓN MULTI-ASESOR */}
+      <ChromeTabsBar
+        activeTabId={activeTabId}
+        openAdvisorNames={openAdvisorNames}
+        asesores={asesores}
+        onSelectTab={handleSelectTab}
+        onCloseTab={handleCloseTab}
+        onOpenAdvisor={handleOpenAdvisor}
+        onCloseAll={handleCloseAllTabs}
+      />
+
+      {/* VISTA DETALLADA DEL ASESOR ACTIVO (SI HAY PESTAÑA DE ASESOR SELECCIONADA) */}
+      {activeTabId !== 'general' ? (
+        <AsesorDetalleView
+          asesor={asesores.find(a => a.nombre.toUpperCase() === activeTabId.toUpperCase())}
+          canDisburse={permissions?.canDisburseCommissions}
+          onRegistrarPago={(nom) => handleOpenModal(nom)}
+          onClose={() => handleCloseTab(activeTabId)}
+        />
+      ) : (
+        <>
+          {/* KPI Cards */}
+          <div className="kpi-grid" style={{ marginBottom: 24 }}>
         <div className="kpi-card blue">
           <div className="kpi-icon blue"><DollarSign size={18} /></div>
           <div className="kpi-value" style={{ fontSize: 20 }}>{formatCOP(kpis.totalComisionesProyecto || 0)}</div>
@@ -508,8 +603,20 @@ export default function Comisiones() {
                           {formatDate(p.fecha_pago)}
                         </td>
                         <td>
-                          <div style={{ fontWeight: 700, color: 'var(--text-primary)' }}>
-                            {p.vendedor_nombre}
+                          <div
+                            onClick={() => handleOpenAdvisor(p.vendedor_nombre)}
+                            style={{
+                              fontWeight: 700,
+                              color: 'var(--text-primary)',
+                              cursor: 'pointer',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: 6,
+                            }}
+                            title={`Abrir pestaña de ${p.vendedor_nombre}`}
+                          >
+                            <span>{p.vendedor_nombre}</span>
+                            <ExternalLink size={11} color="var(--accent)" style={{ opacity: 0.6 }} />
                           </div>
                         </td>
                         <td style={{ textAlign: 'right' }}>
@@ -579,7 +686,7 @@ export default function Comisiones() {
                   <th style={{ textAlign: 'right' }}>Total Pagado</th>
                   <th style={{ textAlign: 'right' }}>Saldo Pendiente</th>
                   <th style={{ width: 140, textAlign: 'center' }}>% Liquidado</th>
-                  <th style={{ width: 120, textAlign: 'center' }}>Acción</th>
+                  <th style={{ width: 150, textAlign: 'center' }}>Acciones</th>
                 </tr>
               </thead>
               <tbody>
@@ -593,8 +700,21 @@ export default function Comisiones() {
                   filteredAsesores.map((a) => (
                     <tr key={a.nombre}>
                       <td>
-                        <div style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: 13 }}>
-                          {a.nombre}
+                        <div
+                          onClick={() => handleOpenAdvisor(a.nombre)}
+                          style={{
+                            fontWeight: 700,
+                            color: 'var(--text-primary)',
+                            fontSize: 13,
+                            cursor: 'pointer',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 6,
+                          }}
+                          title={`Clic para abrir la ficha de ${a.nombre} en una nueva pestaña`}
+                        >
+                          <span>{a.nombre}</span>
+                          <ExternalLink size={12} color="var(--accent)" style={{ opacity: 0.7 }} />
                         </div>
                         <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>
                           Comisión contractual: ~{a.porcentaje}%
@@ -638,18 +758,26 @@ export default function Comisiones() {
                         </div>
                       </td>
                       <td style={{ textAlign: 'center' }}>
-                        {permissions?.canDisburseCommissions ? (
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
                           <button
-                            className="btn btn-primary"
-                            onClick={() => handleOpenModal(a.nombre)}
-                            style={{ fontSize: 11, padding: '5px 10px', gap: 4 }}
-                            title={`Registrar pago a ${a.nombre}`}
+                            className="btn btn-secondary"
+                            onClick={() => handleOpenAdvisor(a.nombre)}
+                            style={{ fontSize: 11, padding: '4px 8px', gap: 4 }}
+                            title={`Abrir ficha de ${a.nombre} en pestaña`}
                           >
-                            <Plus size={12} /> Pagar
+                            <FolderOpen size={12} color="var(--accent)" /> Ficha
                           </button>
-                        ) : (
-                          <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>—</span>
-                        )}
+                          {permissions?.canDisburseCommissions && (
+                            <button
+                              className="btn btn-primary"
+                              onClick={() => handleOpenModal(a.nombre)}
+                              style={{ fontSize: 11, padding: '4px 8px', gap: 4 }}
+                              title={`Registrar pago a ${a.nombre}`}
+                            >
+                              <Plus size={12} /> Pagar
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))
@@ -658,6 +786,8 @@ export default function Comisiones() {
             </table>
           </div>
         </div>
+      )}
+        </>
       )}
 
       {/* MODAL REGISTRAR PAGO A COMISIONISTA */}

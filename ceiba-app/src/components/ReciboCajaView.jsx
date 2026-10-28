@@ -151,6 +151,12 @@ function ReciboCajaContent({ recibo, onClose, onPrint, autoDownload = false }) {
     : numeroALetrasCOP(valorNum);
 
   // Desglosar fecha de forma 100% segura (YYYY-MM-DD o variantes)
+  const estadoStr = String(recibo?.estado || recibo?.estado_recibo || '').toUpperCase();
+  const conceptoStr = String(recibo?.concepto || '').toUpperCase();
+  const motivoStr = String(recibo?.motivo || '').toUpperCase();
+  const esCuotaInicial = estadoStr === 'CUOTA_INICIAL' || conceptoStr.includes('CUOTA INICIAL') || motivoStr.includes('CUOTA INICIAL');
+  const esArras = estadoStr === 'ARRAS' || conceptoStr.includes('ARRAS') || motivoStr.includes('ARRAS');
+
   let fAnio = '—', fMes = '—', fDia = '—';
   try {
     const rawF = String(recibo?.fecha_pago || recibo?.created_at || '').slice(0, 10);
@@ -408,14 +414,15 @@ function ReciboCajaContent({ recibo, onClose, onPrint, autoDownload = false }) {
               </span>
             ) : (
               <span style={{
-                background: '#dcfce7',
-                color: '#15803d',
+                background: esCuotaInicial ? '#f3e8ff' : (esArras ? '#fef3c7' : '#dcfce7'),
+                color: esCuotaInicial ? '#6b21a8' : (esArras ? '#92400e' : '#15803d'),
+                border: `1px solid ${esCuotaInicial ? '#d8b4fe' : (esArras ? '#fde68a' : '#86efac')}`,
                 padding: '3px 10px',
                 borderRadius: 20,
                 fontSize: 12,
                 fontWeight: 800
               }}>
-                ✓ Recibo Registrado en el Sistema
+                {esCuotaInicial ? '🟣 Recibo Oficial de Cuota Inicial' : (esArras ? '🟡 Recibo de Arras / Apartado' : '✓ Recibo Registrado en el Sistema')}
               </span>
             )}
             <span style={{ fontSize: 13, fontWeight: 700, color: '#334155' }}>

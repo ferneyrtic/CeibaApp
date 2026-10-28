@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { formatCOP } from '../utils/helpers';
 import {
   exportEstadoCuentaMatrizPDF,
@@ -7,11 +7,52 @@ import {
   resolveCuotaDisplay
 } from '../utils/exportEstadoCuenta';
 import { guardarObservacionCuota } from '../lib/api/abonosApi';
-import { Download, FileSpreadsheet, FileText, Edit2, Save, X, MessageSquare } from 'lucide-react';
+import { getCuotasByVenta } from '../lib/api/cartera';
+import { getVentaById } from '../lib/api/ventas';
+import { Download, FileSpreadsheet, FileText, Edit2, Save, X, MessageSquare, RefreshCw, CheckCircle2 } from 'lucide-react';
 
 
-export default function EstadoCuentaMatrizView({ venta, cuotas = [] }) {
-  if (!venta) return null;
+export default function EstadoCuentaMatrizView({ venta: propVenta, cuotas: propCuotas = [], onRefresh, onEditarCuota }) {
+  if (!propVenta) return null;
+
+  const [venta, setVenta] = useState(propVenta);
+  const [cuotas, setCuotas] = useState(propCuotas);
+  const [refreshing, setRefreshing] = useState(false);
+  const [lastRefreshedAt, setLastRefreshedAt] = useState(null);
+  const [refreshSuccess, setRefreshSuccess] = useState(false);
+
+  useEffect(() => {
+    setVenta(propVenta);
+  }, [propVenta]);
+
+  useEffect(() => {
+    setCuotas(propCuotas);
+  }, [propCuotas]);
+
+  const handleRefresh = async () => {
+    const vid = venta?.id || venta?.venta_id;
+    if (!vid) return;
+    setRefreshing(true);
+    try {
+      if (typeof onRefresh === 'function') {
+        await onRefresh();
+      }
+      const [freshCuotas, freshVenta] = await Promise.all([
+        getCuotasByVenta(vid),
+        getVentaById(vid).catch(() => null)
+      ]);
+      if (freshCuotas) setCuotas(freshCuotas);
+      if (freshVenta) setVenta(freshVenta);
+      const timeStr = new Date().toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      setLastRefreshedAt(timeStr);
+      setRefreshSuccess(true);
+      setTimeout(() => setRefreshSuccess(false), 3000);
+    } catch (err) {
+      console.error('Error refrescando cuotas en Estado de Cuenta:', err);
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   const loteId = venta.lotes?.id_lote || venta.id_lote || '—';
   const docCliente = venta.clientes?.doc_cliente || '—';
@@ -36,16 +77,38 @@ export default function EstadoCuentaMatrizView({ venta, cuotas = [] }) {
   const totalPagado = totalCuotasPagadas;
   const totalRecaudadoGlobal = cuotaInicial + totalCuotasPagadas;
 
+  // Precalcular excedentes de cuotas previas para cuotas pendientes
+  let acumuladoCredito = 0;
+  const cuotasConCalculos = (cuotas || []).map(c => {
+    const vCuo = Number(c.valor_cuota) || 0;
+    const vPag = Number(c.valor_pagado) || 0;
+    const est = String(c.estado_cuota || '').toUpperCase();
+
+    if (est === 'PAGA') {
+      const extra = Math.max(0, vPag - vCuo);
+      acumuladoCredito += extra;
+      return { ...c, abonoPrevio: 0, saldoNeto: 0 };
+    } else {
+      let abonoPrevio = 0;
+      if (acumuladoCredito > 0) {
+        abonoPrevio = Math.min(acumuladoCredito, Math.max(0, vCuo - vPag));
+        acumuladoCredito -= abonoPrevio;
+      }
+      const saldoNeto = Math.max(0, vCuo - vPag - abonoPrevio);
+      return { ...c, abonoPrevio, saldoNeto };
+    }
+  });
+
   // Matriz de 12 filas con 3 bloques
   const rows = [];
   for (let r = 0; r < 12; r++) {
-    const c1 = cuotas.find(c => c.numero_cuota === r + 1);
+    const c1 = cuotasConCalculos.find(c => c.numero_cuota === r + 1);
     const d1 = resolveCuotaDisplay(c1, r + 1, plazoTotal);
 
-    const c2 = cuotas.find(c => c.numero_cuota === r + 13);
+    const c2 = cuotasConCalculos.find(c => c.numero_cuota === r + 13);
     const d2 = resolveCuotaDisplay(c2, r + 13, plazoTotal);
 
-    const c3 = cuotas.find(c => c.numero_cuota === r + 25);
+    const c3 = cuotasConCalculos.find(c => c.numero_cuota === r + 25);
     const d3 = resolveCuotaDisplay(c3, r + 25, plazoTotal);
 
     rows.push({ r: r + 1, c1, c2, c3, d1, d2, d3 });
@@ -139,6 +202,23 @@ export default function EstadoCuentaMatrizView({ venta, cuotas = [] }) {
         </span>
       );
     }
+    if (d.isAbono || String(d.estado).includes('ABONO')) {
+      const isMora = d.isVencida || String(d.estado).includes('MORA');
+      return (
+        <span style={{
+          background: isMora ? 'rgba(239, 68, 68, 0.16)' : 'rgba(245, 158, 11, 0.16)',
+          color: isMora ? '#ef4444' : '#d97706',
+          fontWeight: 700,
+          padding: '2px 5px',
+          borderRadius: 4,
+          fontSize: 8.5,
+          border: isMora ? '1px solid rgba(239, 68, 68, 0.3)' : '1px solid rgba(245, 158, 11, 0.3)',
+          whiteSpace: 'nowrap'
+        }} title={isMora ? 'Abono parcial vencido (en mora por saldo pendiente)' : 'Abono parcial al día'}>
+          {isMora ? 'ABONO EN MORA' : 'ABONO AL DÍA'}
+        </span>
+      );
+    }
     if (d.estado === 'VENCIDA') {
       return (
         <span style={{
@@ -183,10 +263,25 @@ export default function EstadoCuentaMatrizView({ venta, cuotas = [] }) {
       return (
         <div style={{ lineHeight: 1.2 }}>
           <div style={{ fontWeight: 700, color: '#22c55e', fontSize: 10 }}>
-            {d.fechaPago ? d.fechaPago : d.fecha}
+            {d.fechaPago || d.fecha}
           </div>
-          {d.fechaVenc && d.fechaPago && d.fechaVenc !== d.fechaPago && (
+          {d.fechaVenc && (
             <div style={{ fontSize: 8, color: 'var(--text-muted)' }}>
+              Venc: {d.fechaVenc}
+            </div>
+          )}
+        </div>
+      );
+    }
+    if (d.estado === 'ABONO' || d.isAbono || String(d.estado).includes('ABONO')) {
+      const isMora = d.isVencida || String(d.estado).includes('MORA');
+      return (
+        <div style={{ lineHeight: 1.2 }}>
+          <div style={{ fontWeight: 700, color: isMora ? '#dc2626' : '#d97706', fontSize: 10 }}>
+            {d.fechaPago || d.fecha}
+          </div>
+          {d.fechaVenc && (
+            <div style={{ fontSize: 8, color: isMora ? '#dc2626' : 'var(--text-muted)' }}>
               Venc: {d.fechaVenc}
             </div>
           )}
@@ -203,7 +298,47 @@ export default function EstadoCuentaMatrizView({ venta, cuotas = [] }) {
         <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
           Plazo total: <strong>{plazo} cuotas</strong> · Pagadas: <strong style={{ color: '#16a34a' }}>{cuotas.filter(c => c.estado_cuota === 'PAGA').length}</strong>
         </div>
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+          {/* Botón Refrescar en Tiempo Real sin recargar página */}
+          <button
+            type="button"
+            className="btn btn-ghost"
+            style={{
+              fontSize: 12,
+              gap: 6,
+              background: '#f0fdf4',
+              color: '#15803d',
+              border: '1.5px solid #86efac',
+              fontWeight: 700,
+              padding: '6px 12px',
+              boxShadow: '0 1px 2px rgba(22, 163, 74, 0.08)'
+            }}
+            onClick={handleRefresh}
+            disabled={refreshing}
+            title="Refrescar cuotas y pagos de este cliente en tiempo real desde la base de datos sin recargar la página"
+          >
+            <RefreshCw size={13} className={refreshing ? 'spin' : ''} />
+            <span>{refreshing ? 'Actualizando cuotas...' : 'Refrescar Cuotas'}</span>
+          </button>
+
+          {lastRefreshedAt && (
+            <span style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 4,
+              fontSize: 11,
+              color: refreshSuccess ? '#15803d' : 'var(--text-muted)',
+              fontWeight: 600,
+              padding: '2px 6px',
+              borderRadius: 4,
+              background: refreshSuccess ? '#dcfce7' : 'transparent',
+              transition: 'all 0.2s'
+            }}>
+              {refreshSuccess && <CheckCircle2 size={12} color="#16a34a" />}
+              <span>{refreshSuccess ? 'Sincronizado' : 'Última sincr:'} {lastRefreshedAt}</span>
+            </span>
+          )}
+
           <button
             className="btn btn-primary"
             style={{ fontSize: 12, gap: 6, background: '#4d8e3b', borderColor: '#4d8e3b' }}
@@ -347,7 +482,12 @@ export default function EstadoCuentaMatrizView({ venta, cuotas = [] }) {
                   {renderBadge(d1)}
                 </td>
                 <td style={{ padding: '4px', border: '1px solid var(--border)', textAlign: 'right', color: d1.isExceeded ? 'var(--text-muted)' : 'var(--text-primary)' }}>
-                  {d1.valor}
+                  <div>{d1.valor}</div>
+                  {c1?.abonoPrevio > 0 && c1?.estado_cuota !== 'PAGA' && (
+                    <div style={{ fontSize: 8, color: '#dc2626', fontWeight: 800 }} title={`Abono previo a favor: -${formatCOP(c1.abonoPrevio)}`}>
+                      Neto: {formatCOP(c1.saldoNeto)}
+                    </div>
+                  )}
                 </td>
                 <ObsCell cuota={c1} />
 
@@ -362,7 +502,12 @@ export default function EstadoCuentaMatrizView({ venta, cuotas = [] }) {
                   {renderBadge(d2)}
                 </td>
                 <td style={{ padding: '4px', border: '1px solid var(--border)', textAlign: 'right', color: d2.isExceeded ? 'var(--text-muted)' : 'var(--text-primary)' }}>
-                  {d2.valor}
+                  <div>{d2.valor}</div>
+                  {c2?.abonoPrevio > 0 && c2?.estado_cuota !== 'PAGA' && (
+                    <div style={{ fontSize: 8, color: '#dc2626', fontWeight: 800 }} title={`Abono previo a favor: -${formatCOP(c2.abonoPrevio)}`}>
+                      Neto: {formatCOP(c2.saldoNeto)}
+                    </div>
+                  )}
                 </td>
                 <ObsCell cuota={c2} />
 
@@ -377,7 +522,12 @@ export default function EstadoCuentaMatrizView({ venta, cuotas = [] }) {
                   {renderBadge(d3)}
                 </td>
                 <td style={{ padding: '4px', border: '1px solid var(--border)', textAlign: 'right', color: d3.isExceeded ? 'var(--text-muted)' : 'var(--text-primary)' }}>
-                  {d3.valor}
+                  <div>{d3.valor}</div>
+                  {c3?.abonoPrevio > 0 && c3?.estado_cuota !== 'PAGA' && (
+                    <div style={{ fontSize: 8, color: '#dc2626', fontWeight: 800 }} title={`Abono previo a favor: -${formatCOP(c3.abonoPrevio)}`}>
+                      Neto: {formatCOP(c3.saldoNeto)}
+                    </div>
+                  )}
                 </td>
                 <ObsCell cuota={c3} />
               </tr>

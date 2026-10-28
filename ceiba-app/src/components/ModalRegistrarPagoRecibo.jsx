@@ -32,7 +32,8 @@ export default function ModalRegistrarPagoRecibo({
   const [loadingCuotas, setLoadingCuotas] = useState(false);
 
   // Modo de imputación: 'cuota' (específica) o 'cascada' (automática)
-  const [modoImputacion, setModoImputacion] = useState(cuotaPreseleccionada ? 'cuota' : 'cascada');
+  // Por defecto 'cuota' para dar control manual total y evitar auto-incrementos no deseados
+  const [modoImputacion, setModoImputacion] = useState('cuota');
   const [selectedCuotaId, setSelectedCuotaId] = useState(cuotaPreseleccionada?.id || '');
 
   // Formulario
@@ -50,6 +51,9 @@ export default function ModalRegistrarPagoRecibo({
   const [observacionesManual, setObservacionesManual] = useState('');
   const [conceptoModificado, setConceptoModificado] = useState(false);
   const [obsModificada, setObsModificada] = useState(false);
+
+  // Selector visual de estado de cuota: 'PAGA' (verde) | 'ABONO' (amarilla)
+  const [forzarEstadoVisual, setForzarEstadoVisual] = useState(null);
 
   const [proximoReciboNum, setProximoReciboNum] = useState(3412);
   const [saving, setSaving] = useState(false);
@@ -93,16 +97,39 @@ export default function ModalRegistrarPagoRecibo({
         setCuotas(cData || []);
         setRecibosPrevios(rData || []);
 
-        // Si vino cuota preseleccionada, mantenerla y usar modo 'cuota'
+        // Modo por defecto siempre es cuota específica manual para evitar auto-incrementos no deseados
+        setModoImputacion('cuota');
         if (cuotaPreseleccionada?.id) {
           setSelectedCuotaId(cuotaPreseleccionada.id);
-          setModoImputacion('cuota');
+          // Calcular si hay excedente acumulado de cuotas previas
+          const num = cuotaPreseleccionada.numero_cuota;
+          const excPrev = (cData || [])
+            .filter(c => c.numero_cuota < num && String(c.estado_cuota || '').toUpperCase() === 'PAGA')
+            .reduce((s, c) => s + Math.max(0, (Number(c.valor_pagado) || 0) - (Number(c.valor_cuota) || 0)), 0);
+          
+          const pendNominal = Math.max(0, (Number(cuotaPreseleccionada.valor_cuota) || 0) - (Number(cuotaPreseleccionada.valor_pagado) || 0));
+          const pendNeto = Math.max(0, pendNominal - excPrev);
+          const pendFinal = pendNeto > 0 ? pendNeto : pendNominal;
+          if (pendFinal > 0) setMonto(String(Math.round(pendFinal)));
         } else {
-          const primeraPendiente = (cData || []).find(
-            c => c.estado_cuota !== 'PAGA' && ((Number(c.valor_cuota) || 0) - (Number(c.valor_pagado) || 0) > 2000)
-          );
+          // Seleccionar automáticamente la primera cuota pendiente (no PAGA)
+          const primeraPendiente = (cData || []).find(c => {
+            const estado = (c.estado_cuota || '').toUpperCase().trim();
+            const valCuota = Number(c.valor_cuota) || 0;
+            const valPag = Number(c.valor_pagado) || 0;
+            return estado !== 'PAGA' && (valCuota === 0 || (valCuota - valPag > 2000));
+          });
           if (primeraPendiente) {
             setSelectedCuotaId(primeraPendiente.id);
+            const num = primeraPendiente.numero_cuota;
+            const excPrev = (cData || [])
+              .filter(c => c.numero_cuota < num && String(c.estado_cuota || '').toUpperCase() === 'PAGA')
+              .reduce((s, c) => s + Math.max(0, (Number(c.valor_pagado) || 0) - (Number(c.valor_cuota) || 0)), 0);
+
+            const pendNominal = Math.max(0, (Number(primeraPendiente.valor_cuota) || 0) - (Number(primeraPendiente.valor_pagado) || 0));
+            const pendNeto = Math.max(0, pendNominal - excPrev);
+            const pendFinal = pendNeto > 0 ? pendNeto : pendNominal;
+            if (pendFinal > 0) setMonto(String(Math.round(pendFinal)));
           }
         }
       })
@@ -116,12 +143,23 @@ export default function ModalRegistrarPagoRecibo({
     return () => { active = false; };
   }, [selectedVenta, cuotaPreseleccionada]);
 
-  // Cuotas pendientes de pago ordenadas cronológicamente
+  // Cuotas pendientes de pago ordenadas cronológicamente (NUNCA mostrar cuotas ya PAGAS)
   const cuotasPendientes = useMemo(() => {
-    return cuotas
-      .filter(c => c.estado_cuota !== 'PAGA' && ((Number(c.valor_cuota) || 0) - (Number(c.valor_pagado) || 0) > 2000))
-      .sort((a, b) => a.numero_cuota - b.numero_cuota);
-  }, [cuotas]);
+    return (cuotas || [])
+      .filter(c => {
+        // Si el usuario abrió el modal haciendo clic directo en abonar esta cuota, permitir verla
+        if (cuotaPreseleccionada?.id && c.id === cuotaPreseleccionada.id) return true;
+        const estado = (c.estado_cuota || '').toUpperCase().trim();
+        const valCuota = Number(c.valor_cuota) || 0;
+        const valPag = Number(c.valor_pagado) || 0;
+        const pendiente = valCuota - valPag;
+        // Si ya está marcada como PAGA o totalmente cubierta, no mostrarla en el selector
+        if (estado === 'PAGA') return false;
+        if (valCuota > 0 && pendiente <= 2000) return false;
+        return true;
+      })
+      .sort((a, b) => (Number(a.numero_cuota) || 0) - (Number(b.numero_cuota) || 0));
+  }, [cuotas, cuotaPreseleccionada]);
 
   // Cuota seleccionada actualmente (modo cuota individual)
   const currentCuota = useMemo(() => {
@@ -162,7 +200,9 @@ export default function ModalRegistrarPagoRecibo({
         const diff = porPagar - montoNum;
         const esPocoSobrante = diff < 0 && Math.abs(diff) <= 2000;
         const abonoAEsta = esPocoSobrante ? montoNum : Math.min(montoNum, porPagar);
-        const completo = montoNum >= porPagar || (porPagar > 0 && diff <= 2000) || (porPagar > 0 && diff / porPagar < 0.02);
+        let completo = montoNum >= porPagar || (porPagar > 0 && diff <= 2000) || (porPagar > 0 && diff / porPagar < 0.02);
+        if (forzarEstadoVisual === 'PAGA') completo = true;
+        if (forzarEstadoVisual === 'ABONO' || forzarEstadoVisual === 'ABONO AL DÍA' || forzarEstadoVisual === 'ABONO EN MORA') completo = false;
 
         const afectaciones = [{
           id: currentCuota.id || 'cuota-sel',
@@ -172,7 +212,7 @@ export default function ModalRegistrarPagoRecibo({
           valor_anterior: yaPag,
           valor_abono: abonoAEsta,
           nuevo_pagado: yaPag + abonoAEsta,
-          nuevo_estado: completo ? 'PAGA' : 'AL DÍA',
+          nuevo_estado: completo ? 'PAGA' : 'ABONO',
           completo
         }];
 
@@ -306,7 +346,8 @@ export default function ModalRegistrarPagoRecibo({
         clienteNombre: cliNom,
         clienteDoc: cliDoc,
         generarRecibo: !sinRecibo,
-        numeroReciboManual: !sinRecibo && proximoReciboNum ? Number(proximoReciboNum) : null
+        numeroReciboManual: !sinRecibo && proximoReciboNum ? Number(proximoReciboNum) : null,
+        forzarEstado: forzarEstadoVisual
       });
 
       if (sinRecibo) {
@@ -601,27 +642,6 @@ export default function ModalRegistrarPagoRecibo({
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
             <button
               type="button"
-              onClick={() => setModoImputacion('cascada')}
-              style={{
-                padding: '8px 12px',
-                borderRadius: 8,
-                border: modoImputacion === 'cascada' ? '2px solid #16a34a' : '1px solid var(--border)',
-                background: modoImputacion === 'cascada' ? 'rgba(22, 163, 74, 0.15)' : 'var(--bg-card2)',
-                color: modoImputacion === 'cascada' ? '#22c55e' : 'var(--text-secondary)',
-                fontWeight: 700,
-                fontSize: 12,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 6
-              }}
-            >
-              <Layers size={14} /> Imputar en Cascada (Recomendado)
-            </button>
-
-            <button
-              type="button"
               onClick={() => setModoImputacion('cuota')}
               style={{
                 padding: '8px 12px',
@@ -638,7 +658,28 @@ export default function ModalRegistrarPagoRecibo({
                 gap: 6
               }}
             >
-              <CreditCard size={14} /> Cuota Específica
+              <CreditCard size={14} /> Cuota Específica (Directa)
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setModoImputacion('cascada')}
+              style={{
+                padding: '8px 12px',
+                borderRadius: 8,
+                border: modoImputacion === 'cascada' ? '2px solid #16a34a' : '1px solid var(--border)',
+                background: modoImputacion === 'cascada' ? 'rgba(22, 163, 74, 0.15)' : 'var(--bg-card2)',
+                color: modoImputacion === 'cascada' ? '#22c55e' : 'var(--text-secondary)',
+                fontWeight: 700,
+                fontSize: 12,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 6
+              }}
+            >
+              <Layers size={14} /> Imputar en Cascada
             </button>
           </div>
         </div>
@@ -655,26 +696,155 @@ export default function ModalRegistrarPagoRecibo({
               value={selectedCuotaId}
               onChange={e => {
                 setSelectedCuotaId(e.target.value);
+                setForzarEstadoVisual(null);
                 const cFound = cuotas.find(c => c.id === e.target.value);
                 if (cFound) {
                   const resta = Math.max(0, (Number(cFound.valor_cuota) || 0) - (Number(cFound.valor_pagado) || 0));
-                  setMonto(String(resta));
+                  setMonto(String(Math.round(resta)));
                 }
               }}
               required
             >
-              <option value="">-- Selecciona una cuota --</option>
+              {cuotasPendientes.length === 0 ? (
+                <option value="">Todas las cuotas de este contrato están PAGAS</option>
+              ) : (
+                <option value="">-- Selecciona una cuota pendiente --</option>
+              )}
               {cuotasPendientes.map(c => {
-                const pend = Math.max(0, (Number(c.valor_cuota) || 0) - (Number(c.valor_pagado) || 0));
+                const valCuota = Number(c.valor_cuota) || 0;
+                const yaPag = Number(c.valor_pagado) || 0;
+                const pend = Math.max(0, valCuota - yaPag);
+                const tagPrevio = yaPag > 0 ? ` (Abonado: ${formatCOP(yaPag)})` : '';
+                const isAbono = yaPag > 0 && pend > 0;
+                const todayStr = new Date().toISOString().slice(0, 10);
+                const isMora = c.estado_cuota === 'VENCIDA' || (c.fecha_vencimiento && c.fecha_vencimiento < todayStr);
+                const tagEstado = isAbono ? (isMora ? 'ABONO EN MORA' : 'ABONO AL DÍA') : (c.estado_cuota === 'VENCIDA' ? 'MORA' : c.estado_cuota);
                 return (
                   <option key={c.id} value={c.id}>
-                    Cuota #{c.numero_cuota} (Vence: {formatDate(c.fecha_vencimiento)}) — Saldo: {formatCOP(pend)} [{c.estado_cuota}]
+                    Cuota #{c.numero_cuota} (Vence: {formatDate(c.fecha_vencimiento)}) — Saldo: {formatCOP(pend)}{tagPrevio} [{tagEstado}]
                   </option>
                 );
               })}
             </select>
+
+            {/* Selector visual de estado de cuota */}
+            <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+              <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)' }}>Marcar cuota como:</span>
+              <button
+                type="button"
+                onClick={() => setForzarEstadoVisual('PAGA')}
+                style={{
+                  padding: '3px 10px',
+                  fontSize: 11,
+                  fontWeight: 700,
+                  borderRadius: 6,
+                  cursor: 'pointer',
+                  border: (forzarEstadoVisual === 'PAGA' || (!forzarEstadoVisual && simulacion?.afectaciones?.[0]?.completo))
+                    ? '2px solid #22c55e'
+                    : '1px solid var(--border)',
+                  background: (forzarEstadoVisual === 'PAGA' || (!forzarEstadoVisual && simulacion?.afectaciones?.[0]?.completo))
+                    ? 'rgba(34, 197, 94, 0.2)'
+                    : 'var(--bg-base)',
+                  color: (forzarEstadoVisual === 'PAGA' || (!forzarEstadoVisual && simulacion?.afectaciones?.[0]?.completo))
+                    ? '#22c55e'
+                    : 'var(--text-muted)'
+                }}
+              >
+                ✓ PAGA (Verde)
+              </button>
+              <button
+                type="button"
+                onClick={() => setForzarEstadoVisual('ABONO AL DÍA')}
+                style={{
+                  padding: '3px 10px',
+                  fontSize: 11,
+                  fontWeight: 700,
+                  borderRadius: 6,
+                  cursor: 'pointer',
+                  border: (forzarEstadoVisual === 'ABONO AL DÍA' || forzarEstadoVisual === 'ABONO' || (!forzarEstadoVisual && !simulacion?.afectaciones?.[0]?.completo))
+                    ? '2px solid #f59e0b'
+                    : '1px solid var(--border)',
+                  background: (forzarEstadoVisual === 'ABONO AL DÍA' || forzarEstadoVisual === 'ABONO' || (!forzarEstadoVisual && !simulacion?.afectaciones?.[0]?.completo))
+                    ? 'rgba(245, 158, 11, 0.2)'
+                    : 'var(--bg-base)',
+                  color: (forzarEstadoVisual === 'ABONO AL DÍA' || forzarEstadoVisual === 'ABONO' || (!forzarEstadoVisual && !simulacion?.afectaciones?.[0]?.completo))
+                    ? '#d97706'
+                    : 'var(--text-muted)'
+                }}
+              >
+                🟡 ABONO AL DÍA (Amarillo)
+              </button>
+              <button
+                type="button"
+                onClick={() => setForzarEstadoVisual('ABONO EN MORA')}
+                style={{
+                  padding: '3px 10px',
+                  fontSize: 11,
+                  fontWeight: 700,
+                  borderRadius: 6,
+                  cursor: 'pointer',
+                  border: forzarEstadoVisual === 'ABONO EN MORA'
+                    ? '2px solid #ef4444'
+                    : '1px solid var(--border)',
+                  background: forzarEstadoVisual === 'ABONO EN MORA'
+                    ? 'rgba(239, 68, 68, 0.2)'
+                    : 'var(--bg-base)',
+                  color: forzarEstadoVisual === 'ABONO EN MORA'
+                    ? '#dc2626'
+                    : 'var(--text-muted)'
+                }}
+              >
+                🔴 ABONO EN MORA (Rojo)
+              </button>
+            </div>
           </div>
         )}
+
+        {/* Banner de Excedente / Saldo a favor de cuotas previas */}
+        {(() => {
+          const selCuo = (cuotas || []).find(c => c.id === selectedCuotaId);
+          if (!selCuo) return null;
+          const num = selCuo.numero_cuota;
+          const excPrev = (cuotas || [])
+            .filter(c => c.numero_cuota < num && String(c.estado_cuota || '').toUpperCase() === 'PAGA')
+            .reduce((s, c) => s + Math.max(0, (Number(c.valor_pagado) || 0) - (Number(c.valor_cuota) || 0)), 0);
+
+          if (excPrev <= 0) return null;
+          const pendNom = Math.max(0, (Number(selCuo.valor_cuota) || 0) - (Number(selCuo.valor_pagado) || 0));
+          const netoPagar = Math.max(0, pendNom - excPrev);
+
+          return (
+            <div style={{
+              background: '#f0fdf4', border: '1px solid #86efac', borderRadius: 8,
+              padding: '10px 14px', fontSize: 12, color: '#166534', marginBottom: 14,
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10
+            }}>
+              <div>
+                <div style={{ fontWeight: 800, color: '#15803d', display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span>💡 Saldo a favor acumulado de cuotas previas:</span>
+                  <span style={{ fontSize: 13, background: '#dcfce7', padding: '1px 6px', borderRadius: 4, border: '1px solid #bbf7d0' }}>
+                    {formatCOP(excPrev)}
+                  </span>
+                </div>
+                <div style={{ fontSize: 11, color: '#166534', marginTop: 3 }}>
+                  Cuota #{num} pactada: <strong>{formatCOP(selCuo.valor_cuota)}</strong> · Neto a cobrar tras abono previo: <strong style={{ color: '#dc2626', fontSize: 12 }}>{formatCOP(netoPagar)}</strong>
+                </div>
+              </div>
+              <button
+                type="button"
+                className="btn btn-ghost"
+                style={{
+                  padding: '4px 10px', fontSize: 11.5, fontWeight: 700,
+                  background: '#16a34a', color: '#ffffff', border: 'none', borderRadius: 6,
+                  cursor: 'pointer'
+                }}
+                onClick={() => setMonto(String(Math.round(netoPagar)))}
+              >
+                Aplicar Neto ({formatCOP(netoPagar)})
+              </button>
+            </div>
+          );
+        })()}
 
         {/* 3. Monto a Pagar y Fecha */}
         <div className="grid-responsive-2" style={{ marginBottom: 14 }}>
