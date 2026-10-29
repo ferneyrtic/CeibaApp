@@ -320,8 +320,12 @@ export const exportEstadoCuentaMatrizPDF = async (venta, cuotas = []) => {
     const est = String(c.estado_cuota || '').toUpperCase();
 
     if (est === 'PAGA') {
-      const extra = Math.max(0, vPag - vCuo);
-      acumuladoCredito += extra;
+      if (vPag >= vCuo) {
+        acumuladoCredito += (vPag - vCuo);
+      } else {
+        const consumido = vCuo - vPag;
+        acumuladoCredito = Math.max(0, acumuladoCredito - consumido);
+      }
       return { ...c, abonoPrevio: 0, saldoNeto: 0 };
     } else {
       let abonoPrevio = 0;
@@ -506,20 +510,45 @@ export const exportEstadoCuentaMatrizExcel = async (venta, cuotas = []) => {
     ],
   ];
 
+  let acumuladoCredito = 0;
+  const cuotasConCalculos = (cuotas || []).map(c => {
+    const vCuo = Number(c.valor_cuota) || 0;
+    const vPag = Number(c.valor_pagado) || 0;
+    const est = String(c.estado_cuota || '').toUpperCase();
+
+    if (est === 'PAGA') {
+      if (vPag >= vCuo) {
+        acumuladoCredito += (vPag - vCuo);
+      } else {
+        const consumido = vCuo - vPag;
+        acumuladoCredito = Math.max(0, acumuladoCredito - consumido);
+      }
+      return { ...c, abonoPrevio: 0, saldoNeto: 0 };
+    } else {
+      let abonoPrevio = 0;
+      if (acumuladoCredito > 0) {
+        abonoPrevio = Math.min(acumuladoCredito, Math.max(0, vCuo - vPag));
+        acumuladoCredito -= abonoPrevio;
+      }
+      const saldoNeto = Math.max(0, vCuo - vPag - abonoPrevio);
+      return { ...c, abonoPrevio, saldoNeto };
+    }
+  });
+
   for (let r = 0; r < 12; r++) {
-    const c1 = cuotas.find(c => c.numero_cuota === r + 1);
+    const c1 = cuotasConCalculos.find(c => c.numero_cuota === r + 1);
     const d1 = resolveCuotaDisplay(c1, r + 1, plazoTotal);
 
-    const c2 = cuotas.find(c => c.numero_cuota === r + 13);
+    const c2 = cuotasConCalculos.find(c => c.numero_cuota === r + 13);
     const d2 = resolveCuotaDisplay(c2, r + 13, plazoTotal);
 
-    const c3 = cuotas.find(c => c.numero_cuota === r + 25);
+    const c3 = cuotasConCalculos.find(c => c.numero_cuota === r + 25);
     const d3 = resolveCuotaDisplay(c3, r + 25, plazoTotal);
 
     wsData.push([
-      d1.num, d1.fecha, d1.estado, d1.isExceeded ? '' : c1?.valor_cuota ?? '',
-      d2.num, d2.fecha, d2.estado, d2.isExceeded ? '' : c2?.valor_cuota ?? '',
-      d3.num, d3.fecha, d3.estado, d3.isExceeded ? '' : c3?.valor_cuota ?? ''
+      d1.num, d1.fecha, d1.estado, d1.isExceeded ? '' : d1.valor,
+      d2.num, d2.fecha, d2.estado, d2.isExceeded ? '' : d2.valor,
+      d3.num, d3.fecha, d3.estado, d3.isExceeded ? '' : d3.valor
     ]);
   }
 

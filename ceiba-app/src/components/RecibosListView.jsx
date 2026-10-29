@@ -9,7 +9,12 @@ import { obtenerTodosLosRecibos, obtenerSiguienteNumeroRecibo } from '../lib/api
 import Pagination from './Pagination';
 
 const sanitizarRegistradoPor = (str) => {
-  return str ? String(str).trim() : 'Secretaría';
+  if (!str) return 'Secretaría';
+  const s = String(str).trim();
+  if (/diana|soporte/i.test(s)) {
+    return 'Diana (Soporte)';
+  }
+  return 'Secretaría';
 };
 
 /**
@@ -90,6 +95,7 @@ export default function RecibosListView({ onVerRecibo, onVerExtracto }) {
   const [filtroCiclo, setFiltroCiclo] = useState('ciclo_actual'); // 'ciclo_actual' (#3398+) | 'todos'
   const [filtroMedio, setFiltroMedio] = useState('TODOS'); // 'TODOS' | 'TRANSFERENCIA' | 'EFECTIVO'
   const [filtroTipo, setFiltroTipo] = useState('TODOS'); // 'TODOS' | 'NORMAL' | 'ARRAS' | 'CUOTA_INICIAL'
+  const [filtroRegistrador, setFiltroRegistrador] = useState('TODOS'); // 'TODOS' | 'SECRETARIA' | 'SOPORTE'
   const [proximoNumero, setProximoNumero] = useState(null);
   const [copiedId, setCopiedId] = useState(null);
 
@@ -143,6 +149,23 @@ export default function RecibosListView({ onVerRecibo, onVerExtracto }) {
     return { normales, arras, iniciales, anulados };
   }, [recibos, filtroCiclo]);
 
+  // Conteo comparativo entre Secretaría y Diana (Soporte)
+  const conteoRegistrador = useMemo(() => {
+    let secretaria = 0;
+    let soporte = 0;
+
+    (recibos || []).forEach(r => {
+      const num = Number(r.numero_recibo || r.recibo_numero || 0);
+      if (filtroCiclo === 'ciclo_actual' && num < 3398) return;
+
+      const reg = sanitizarRegistradoPor(r.registrado_por);
+      if (reg === 'Diana (Soporte)') soporte++;
+      else secretaria++;
+    });
+
+    return { secretaria, soporte };
+  }, [recibos, filtroCiclo]);
+
   // Filtrado de recibos
   const recibosFiltrados = useMemo(() => {
     return (recibos || []).filter(r => {
@@ -166,6 +189,13 @@ export default function RecibosListView({ onVerRecibo, onVerExtracto }) {
         if (filtroMedio === 'EFECTIVO' && !medio.includes('EFECT')) return false;
       }
 
+      // Filtro por responsable de registro: Secretaría vs Diana (Soporte)
+      if (filtroRegistrador !== 'TODOS') {
+        const reg = sanitizarRegistradoPor(r.registrado_por);
+        if (filtroRegistrador === 'SECRETARIA' && reg !== 'Secretaría') return false;
+        if (filtroRegistrador === 'SOPORTE' && reg !== 'Diana (Soporte)') return false;
+      }
+
       // Búsqueda por texto (número de recibo, lote, cliente, cédula, referencia, concepto)
       if (search.trim()) {
         const s = search.trim().toLowerCase().replace(/^#/, '');
@@ -175,16 +205,16 @@ export default function RecibosListView({ onVerRecibo, onVerExtracto }) {
         const matchDoc = String(r.cliente_doc || r.cliente_cedula || '').toLowerCase().includes(s);
         const matchRef = (r.referencia || r.referencia_bancaria || '').toLowerCase().includes(s);
         const matchConcepto = (r.concepto || '').toLowerCase().includes(s);
-        const matchAsesor = (r.asesor || r.registrado_por || '').toLowerCase().includes(s);
+        const matchRegistrador = sanitizarRegistradoPor(r.registrado_por).toLowerCase().includes(s);
 
-        if (!matchNum && !matchLote && !matchCliente && !matchDoc && !matchRef && !matchConcepto && !matchAsesor) {
+        if (!matchNum && !matchLote && !matchCliente && !matchDoc && !matchRef && !matchConcepto && !matchRegistrador) {
           return false;
         }
       }
 
       return true;
     });
-  }, [recibos, filtroCiclo, filtroTipo, filtroMedio, search]);
+  }, [recibos, filtroCiclo, filtroTipo, filtroMedio, filtroRegistrador, search]);
 
   // Paginación de resultados
   const paginatedRecibos = useMemo(() => {
@@ -231,7 +261,7 @@ export default function RecibosListView({ onVerRecibo, onVerExtracto }) {
         'Medio de Pago': r.medio_pago || 'TRANSFERENCIA',
         'Banco': r.banco || '',
         'Referencia': r.referencia || r.referencia_bancaria || '',
-        'Asesor / Registrado Por': sanitizarRegistradoPor(r.asesor || r.registrado_por),
+        'Registrado Por': sanitizarRegistradoPor(r.registrado_por),
         'Observaciones': r.observaciones || ''
       }));
 
@@ -254,7 +284,7 @@ export default function RecibosListView({ onVerRecibo, onVerExtracto }) {
       `💰 Valor: ${formatCOP(Number(r.valor || r.valor_pagado || 0))}\n` +
       `📋 Concepto: ${r.concepto || ''}\n` +
       `🏦 Medio: ${r.medio_pago || 'Transferencia'} ${r.banco ? `· ${r.banco}` : ''} ${r.referencia ? `(Ref: ${r.referencia})` : ''}\n` +
-      `✍️ Registrado por: ${sanitizarRegistradoPor(r.asesor || r.registrado_por)}`;
+      `✍️ Registrado por: ${sanitizarRegistradoPor(r.registrado_por)}`;
 
     if (navigator?.clipboard?.writeText) {
       navigator.clipboard.writeText(texto).then(() => {
@@ -533,6 +563,69 @@ export default function RecibosListView({ onVerRecibo, onVerExtracto }) {
             }}
           >
             Solo Efectivo
+          </button>
+
+          <span style={{ color: 'var(--border)', margin: '0 4px' }}>|</span>
+
+          {/* Filtro Comparativo: Secretaría vs Diana (Soporte) */}
+          <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', marginLeft: 4 }}>
+            Registrado por:
+          </span>
+
+          <button
+            onClick={() => { setFiltroRegistrador('TODOS'); setPage(1); }}
+            style={{
+              padding: '4px 10px',
+              borderRadius: 6,
+              fontSize: 11.5,
+              fontWeight: 600,
+              cursor: 'pointer',
+              border: filtroRegistrador === 'TODOS' ? '1px solid #64748b' : '1px solid transparent',
+              background: filtroRegistrador === 'TODOS' ? '#f1f5f9' : 'transparent',
+              color: filtroRegistrador === 'TODOS' ? '#0f172a' : 'var(--text-muted)'
+            }}
+          >
+            Todos
+          </button>
+
+          <button
+            onClick={() => { setFiltroRegistrador('SECRETARIA'); setPage(1); }}
+            style={{
+              padding: '4px 10px',
+              borderRadius: 6,
+              fontSize: 11.5,
+              fontWeight: 600,
+              cursor: 'pointer',
+              border: filtroRegistrador === 'SECRETARIA' ? '1px solid #3b82f6' : '1px solid transparent',
+              background: filtroRegistrador === 'SECRETARIA' ? '#eff6ff' : 'transparent',
+              color: filtroRegistrador === 'SECRETARIA' ? '#1d4ed8' : 'var(--text-muted)',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 4
+            }}
+            title="Recibos emitidos y registrados por Secretaría"
+          >
+            ✍️ Secretaría ({conteoRegistrador.secretaria})
+          </button>
+
+          <button
+            onClick={() => { setFiltroRegistrador('SOPORTE'); setPage(1); }}
+            style={{
+              padding: '4px 10px',
+              borderRadius: 6,
+              fontSize: 11.5,
+              fontWeight: 600,
+              cursor: 'pointer',
+              border: filtroRegistrador === 'SOPORTE' ? '1px solid #ea580c' : '1px solid transparent',
+              background: filtroRegistrador === 'SOPORTE' ? '#fff7ed' : 'transparent',
+              color: filtroRegistrador === 'SOPORTE' ? '#c2410c' : 'var(--text-muted)',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 4
+            }}
+            title="Recibos registrados por Diana (Soporte Mora)"
+          >
+            🛡️ Diana (Soporte) ({conteoRegistrador.soporte})
           </button>
         </div>
 
@@ -886,9 +979,45 @@ export default function RecibosListView({ onVerRecibo, onVerExtracto }) {
                         </div>
                       </td>
 
-                      {/* Asesor / Registrado Por */}
-                      <td style={{ fontSize: 11.5, color: 'var(--text-secondary)' }}>
-                        {sanitizarRegistradoPor(r.asesor || r.registrado_por)}
+                      {/* Registrado Por: Secretaría vs Diana (Soporte) */}
+                      <td style={{ fontSize: 11.5 }}>
+                        {sanitizarRegistradoPor(r.registrado_por) === 'Diana (Soporte)' ? (
+                          <span
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: 4,
+                              padding: '2.5px 8px',
+                              borderRadius: 6,
+                              fontSize: 11,
+                              fontWeight: 700,
+                              background: '#fff7ed',
+                              color: '#c2410c',
+                              border: '1px solid #fed7aa'
+                            }}
+                            title="Recibo registrado por Soporte (Diana)"
+                          >
+                            🛡️ Diana (Soporte)
+                          </span>
+                        ) : (
+                          <span
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: 4,
+                              padding: '2.5px 8px',
+                              borderRadius: 6,
+                              fontSize: 11,
+                              fontWeight: 700,
+                              background: '#f8fafc',
+                              color: '#334155',
+                              border: '1px solid #e2e8f0'
+                            }}
+                            title="Recibo emitido y registrado oficialmente por Secretaría"
+                          >
+                            ✍️ Secretaría
+                          </span>
+                        )}
                       </td>
 
                       {/* Acciones */}
