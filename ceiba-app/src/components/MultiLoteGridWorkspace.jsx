@@ -111,9 +111,15 @@ function SingleLoteTile({
     const est = String(c.estado_cuota || '').toUpperCase();
 
     if (est === 'PAGA') {
-      const extra = Math.max(0, vPag - vCuo);
-      acumuladoCredito += extra;
-      return { ...c, abonoPrevio: 0, saldoNeto: 0 };
+      if (vPag >= vCuo) {
+        const extra = vPag - vCuo;
+        acumuladoCredito += extra;
+        return { ...c, abonoPrevio: 0, saldoNeto: 0 };
+      } else {
+        const consumido = vCuo - vPag;
+        acumuladoCredito = Math.max(0, acumuladoCredito - consumido);
+        return { ...c, abonoPrevio: 0, saldoNeto: 0 };
+      }
     } else {
       let abonoPrevio = 0;
       if (acumuladoCredito > 0) {
