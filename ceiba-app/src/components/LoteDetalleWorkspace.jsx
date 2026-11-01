@@ -6,7 +6,7 @@ import {
   CheckCircle2, ShieldAlert, Sparkles, RefreshCw
 } from 'lucide-react';
 import { formatCOP, formatDate, formatTime } from '../utils/helpers';
-import { exportEstadoCuentaMatrizPDF, exportEstadoCuentaInformePDF } from '../utils/exportEstadoCuenta';
+import { exportEstadoCuentaMatrizPDF, exportEstadoCuentaInformePDF, calculateCuotasCoverage } from '../utils/exportEstadoCuenta';
 import EstadoCuentaMatrizView from './EstadoCuentaMatrizView';
 import { getCuotasByVenta } from '../lib/api/cartera';
 import { getVentaById } from '../lib/api/ventas';
@@ -800,33 +800,8 @@ export default function LoteDetalleWorkspace({
                   </thead>
                   <tbody>
                     {(() => {
-                      // Calcular excedentes de cuotas previas e imputación a cuotas pendientes
-                      let acumuladoCredito = 0;
-                      const cuotasConCalculos = (cuotas || []).map(c => {
-                        const vCuo = Number(c.valor_cuota) || 0;
-                        const vPag = Number(c.valor_pagado) || 0;
-                        const est = String(c.estado_cuota || '').toUpperCase();
-
-                        if (est === 'PAGA') {
-                          if (vPag >= vCuo) {
-                            const extra = vPag - vCuo;
-                            acumuladoCredito += extra;
-                            return { ...c, abonoPrevio: 0, saldoNeto: 0, extraGenerado: extra };
-                          } else {
-                            const consumido = vCuo - vPag;
-                            acumuladoCredito = Math.max(0, acumuladoCredito - consumido);
-                            return { ...c, abonoPrevio: 0, saldoNeto: 0, extraGenerado: 0 };
-                          }
-                        } else {
-                          let abonoPrevio = 0;
-                          if (acumuladoCredito > 0) {
-                            abonoPrevio = Math.min(acumuladoCredito, Math.max(0, vCuo - vPag));
-                            acumuladoCredito -= abonoPrevio;
-                          }
-                          const saldoNeto = Math.max(0, vCuo - vPag - abonoPrevio);
-                          return { ...c, abonoPrevio, saldoNeto, extraGenerado: 0 };
-                        }
-                      });
+                      // Calcular cobertura universal limpia de cuotas
+                      const cuotasConCalculos = calculateCuotasCoverage(cuotas, currentVenta || venta);
 
                       return cuotasConCalculos.map((c) => {
                         const cuotaRecs = (recibos || []).filter(r => r && r.cuota_id === c.id);

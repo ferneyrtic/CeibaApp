@@ -4,7 +4,8 @@ import {
   exportEstadoCuentaMatrizPDF,
   exportEstadoCuentaMatrizExcel,
   exportEstadoCuentaInformePDF,
-  resolveCuotaDisplay
+  resolveCuotaDisplay,
+  calculateCuotasCoverage
 } from '../utils/exportEstadoCuenta';
 import { guardarObservacionCuota } from '../lib/api/abonosApi';
 import { getCuotasByVenta } from '../lib/api/cartera';
@@ -77,32 +78,8 @@ export default function EstadoCuentaMatrizView({ venta: propVenta, cuotas: propC
   const totalPagado = totalCuotasPagadas;
   const totalRecaudadoGlobal = cuotaInicial + totalCuotasPagadas;
 
-  // Precalcular excedentes de cuotas previas para cuotas pendientes
-  let acumuladoCredito = 0;
-  const cuotasConCalculos = (cuotas || []).map(c => {
-    const vCuo = Number(c.valor_cuota) || 0;
-    const vPag = Number(c.valor_pagado) || 0;
-    const est = String(c.estado_cuota || '').toUpperCase();
-
-    if (est === 'PAGA') {
-      if (vPag >= vCuo) {
-        acumuladoCredito += (vPag - vCuo);
-      } else {
-        // Cuota paga cubierta total o parcialmente por excedentes previos
-        const consumido = vCuo - vPag;
-        acumuladoCredito = Math.max(0, acumuladoCredito - consumido);
-      }
-      return { ...c, abonoPrevio: 0, saldoNeto: 0 };
-    } else {
-      let abonoPrevio = 0;
-      if (acumuladoCredito > 0) {
-        abonoPrevio = Math.min(acumuladoCredito, Math.max(0, vCuo - vPag));
-        acumuladoCredito -= abonoPrevio;
-      }
-      const saldoNeto = Math.max(0, vCuo - vPag - abonoPrevio);
-      return { ...c, abonoPrevio, saldoNeto };
-    }
-  });
+  // Cobertura universal exacta de cuotas
+  const cuotasConCalculos = calculateCuotasCoverage(cuotas, venta);
 
   // Matriz de 12 filas con 3 bloques
   const rows = [];
@@ -488,9 +465,9 @@ export default function EstadoCuentaMatrizView({ venta: propVenta, cuotas: propC
                 </td>
                 <td style={{ padding: '4px', border: '1px solid var(--border)', textAlign: 'right', color: d1.isExceeded ? 'var(--text-muted)' : 'var(--text-primary)' }}>
                   <div>{d1.valor}</div>
-                  {c1?.abonoPrevio > 0 && c1?.estado_cuota !== 'PAGA' && (
-                    <div style={{ fontSize: 8, color: '#dc2626', fontWeight: 800 }} title={`Abono previo a favor: -${formatCOP(c1.abonoPrevio)}`}>
-                      Neto: {formatCOP(c1.saldoNeto)}
+                  {d1.isAbono && d1.saldoPendiente > 0 && (
+                    <div style={{ fontSize: 8, color: '#dc2626', fontWeight: 800 }} title="Saldo pendiente en esta cuota">
+                      Neto: {formatCOP(d1.saldoPendiente)}
                     </div>
                   )}
                 </td>
@@ -508,9 +485,9 @@ export default function EstadoCuentaMatrizView({ venta: propVenta, cuotas: propC
                 </td>
                 <td style={{ padding: '4px', border: '1px solid var(--border)', textAlign: 'right', color: d2.isExceeded ? 'var(--text-muted)' : 'var(--text-primary)' }}>
                   <div>{d2.valor}</div>
-                  {c2?.abonoPrevio > 0 && c2?.estado_cuota !== 'PAGA' && (
-                    <div style={{ fontSize: 8, color: '#dc2626', fontWeight: 800 }} title={`Abono previo a favor: -${formatCOP(c2.abonoPrevio)}`}>
-                      Neto: {formatCOP(c2.saldoNeto)}
+                  {d2.isAbono && d2.saldoPendiente > 0 && (
+                    <div style={{ fontSize: 8, color: '#dc2626', fontWeight: 800 }} title="Saldo pendiente en esta cuota">
+                      Neto: {formatCOP(d2.saldoPendiente)}
                     </div>
                   )}
                 </td>
@@ -528,9 +505,9 @@ export default function EstadoCuentaMatrizView({ venta: propVenta, cuotas: propC
                 </td>
                 <td style={{ padding: '4px', border: '1px solid var(--border)', textAlign: 'right', color: d3.isExceeded ? 'var(--text-muted)' : 'var(--text-primary)' }}>
                   <div>{d3.valor}</div>
-                  {c3?.abonoPrevio > 0 && c3?.estado_cuota !== 'PAGA' && (
-                    <div style={{ fontSize: 8, color: '#dc2626', fontWeight: 800 }} title={`Abono previo a favor: -${formatCOP(c3.abonoPrevio)}`}>
-                      Neto: {formatCOP(c3.saldoNeto)}
+                  {d3.isAbono && d3.saldoPendiente > 0 && (
+                    <div style={{ fontSize: 8, color: '#dc2626', fontWeight: 800 }} title="Saldo pendiente en esta cuota">
+                      Neto: {formatCOP(d3.saldoPendiente)}
                     </div>
                   )}
                 </td>

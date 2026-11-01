@@ -6,6 +6,7 @@ import {
   ChevronRight, Calendar, Receipt
 } from 'lucide-react';
 import { formatCOP, formatDate } from '../utils/helpers';
+import { calculateCuotasCoverage } from '../utils/exportEstadoCuenta';
 import { getCuotasByVenta } from '../lib/api/cartera';
 import { getVentaById } from '../lib/api/ventas';
 import { obtenerRecibosPorVenta } from '../lib/api/recibosApi';
@@ -103,33 +104,8 @@ function SingleLoteTile({
     ? `https://wa.me/57${phoneClean.startsWith('57') ? phoneClean.slice(2) : phoneClean}?text=${encodeURIComponent(`Hola ${clienteNombre}, le saludamos de Soporte y Cartera de Proyecto Campestre La Ceiba sobre su lote ${loteStr}.`)}`
     : null;
 
-  // Precalcular excedentes y abonos acumulados
-  let acumuladoCredito = 0;
-  const cuotasCalculadas = (cuotas || []).map(c => {
-    const vCuo = Number(c.valor_cuota) || 0;
-    const vPag = Number(c.valor_pagado) || 0;
-    const est = String(c.estado_cuota || '').toUpperCase();
-
-    if (est === 'PAGA') {
-      if (vPag >= vCuo) {
-        const extra = vPag - vCuo;
-        acumuladoCredito += extra;
-        return { ...c, abonoPrevio: 0, saldoNeto: 0 };
-      } else {
-        const consumido = vCuo - vPag;
-        acumuladoCredito = Math.max(0, acumuladoCredito - consumido);
-        return { ...c, abonoPrevio: 0, saldoNeto: 0 };
-      }
-    } else {
-      let abonoPrevio = 0;
-      if (acumuladoCredito > 0) {
-        abonoPrevio = Math.min(acumuladoCredito, Math.max(0, vCuo - vPag));
-        acumuladoCredito -= abonoPrevio;
-      }
-      const saldoNeto = Math.max(0, vCuo - vPag - abonoPrevio);
-      return { ...c, abonoPrevio, saldoNeto };
-    }
-  });
+  // Cobertura universal de cuotas
+  const cuotasCalculadas = calculateCuotasCoverage(cuotas, venta);
 
   return (
     <div style={{

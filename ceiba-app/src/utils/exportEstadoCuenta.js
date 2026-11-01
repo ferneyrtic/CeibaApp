@@ -19,6 +19,53 @@ const getLogoBase64 = async () => {
 };
 
 /**
+ * Calcula la cobertura universal de cuotas de una venta
+ * Distribuye el recaudo total de cuotas secuencialmente (Cuota 1..N)
+ * según el valor de cuota pactado, garantizando que el abono restante caiga exactamente
+ * en la cuota fraccional correcta y no en cuotas prematuras.
+ */
+export const calculateCuotasCoverage = (cuotas = [], venta = {}) => {
+  const plazoTotal = Number(venta?.plazo_cuotas) || cuotas.length || 24;
+  const saldoFinanciado = Number(venta?.saldo_financiado) || 0;
+  const cuotaPactada = Number(venta?.valor_cuota) || (plazoTotal > 0 && saldoFinanciado > 0 ? saldoFinanciado / plazoTotal : 0);
+
+  const totalPagado = (cuotas || []).reduce((acc, c) => acc + (Number(c.valor_pagado) || 0), 0);
+  let dineroRestante = totalPagado;
+  const sorted = [...(cuotas || [])].sort((a, b) => (a.numero_cuota || 0) - (b.numero_cuota || 0));
+
+  return sorted.map((c, idx) => {
+    const num = c.numero_cuota || (idx + 1);
+    const vPagDirecto = Number(c.valor_pagado) || 0;
+
+    let nominal = Number(c.valor_cuota) || 0;
+    if (nominal <= 0 || (cuotaPactada > 0 && nominal > cuotaPactada * 1.15)) {
+      nominal = cuotaPactada;
+    }
+
+    const cubierto = Math.min(dineroRestante, nominal);
+    dineroRestante = Math.max(0, dineroRestante - cubierto);
+    const saldoNeto = Math.max(0, nominal - cubierto);
+
+    const esPaga = (cubierto >= nominal - 2000) || (String(c.estado_cuota || '').toUpperCase() === 'PAGA' && vPagDirecto === 0 && dineroRestante >= 0);
+    const esAbono = !esPaga && cubierto > 0;
+    const abonoPrevio = Math.max(0, cubierto - vPagDirecto);
+
+    let estadoCalculado = 'PROGRAMADA';
+    if (esPaga) estadoCalculado = 'PAGA';
+    else if (esAbono) estadoCalculado = 'ABONO';
+
+    return {
+      ...c,
+      nominal,
+      cubierto,
+      saldoNeto,
+      abonoPrevio,
+      estadoCalculado
+    };
+  });
+};
+
+/**
  * Resuelve el estado visual inteligente de una cuota
  */
 export const resolveCuotaDisplay = (cuota, numCuota, plazoTotal) => {
@@ -36,8 +83,10 @@ export const resolveCuotaDisplay = (cuota, numCuota, plazoTotal) => {
     };
   }
 
-  const valCuotaNum = Number(cuota?.valor_cuota) || 0;
+  const valCuotaNum = Number(cuota?.nominal) || Number(cuota?.valor_cuota) || 0;
   const valPagadoNum = Number(cuota?.valor_pagado) || 0;
+  const cubiertoNum = Number(cuota?.cubierto !== undefined ? cuota.cubierto : (cuota?.abonoPrevio ? valPagadoNum + cuota.abonoPrevio : valPagadoNum));
+  const saldoNetoNum = Number(cuota?.saldoNeto !== undefined ? cuota.saldoNeto : Math.max(0, valCuotaNum - cubiertoNum));
   const valor = valCuotaNum > 0 ? formatCOP(valCuotaNum) : '—';
   const fechaVenc = cuota?.fecha_vencimiento ? formatDate(cuota.fecha_vencimiento) : '—';
   const fechaPago = cuota?.fecha_pago ? formatDate(cuota.fecha_pago) : null;
@@ -58,21 +107,18 @@ export const resolveCuotaDisplay = (cuota, numCuota, plazoTotal) => {
   const estadoRaw = String(cuota?.estado_cuota || '').trim().toUpperCase();
 
   // 1. Es PAGA completa si:
-  // - Está explícitamente marcada como 'PAGA' (cubre cuota completa, o fue cubierta por abonos previos)
-  // - O el valor pagado cubre la cuota completa (o diferencia <= $2.000 COP)
-  const esPagaCompleta = (estadoRaw === 'PAGA') ||
-                         (valPagadoNum > 0 && valCuotaNum > 0 && valPagadoNum >= (valCuotaNum - 2000));
+  // - Está explícitamente marcada como 'PAGA' o calculada como 'PAGA'
+  // - O el cubierto alcanza la cuota (tolerancia de $2.000 COP)
+  const esPagaCompleta = (cuota?.estadoCalculado === 'PAGA') ||
+                         (estadoRaw === 'PAGA') ||
+                         (cubiertoNum >= (valCuotaNum - 2000) && valCuotaNum > 0);
 
   // 2. Es ABONO parcial si:
-  // - Tiene valor pagado o abono previo acumulado mayor a 0 y menor a la cuota, Y no es paga completa
+  // - No es paga completa y tiene abono cubierto > 0
   // - O su estado es 'ABONO', 'ABONO AL DÍA', 'ABONO EN MORA'
-  const abonoPrevioNum = Number(cuota?.abonoPrevio) || 0;
-  const totalCubiertoNum = valPagadoNum + abonoPrevioNum;
-  const esAbono = (estadoRaw.startsWith('ABONO')) ||
-                  (!esPagaCompleta && totalCubiertoNum > 0 && totalCubiertoNum < (valCuotaNum - 50));
+  const esAbono = !esPagaCompleta && (cuota?.estadoCalculado === 'ABONO' || estadoRaw.startsWith('ABONO') || cubiertoNum > 0);
 
   if (esAbono) {
-    const saldoPendiente = Math.max(0, valCuotaNum - totalCubiertoNum);
     const moraActual = isVencida || estadoRaw === 'ABONO EN MORA' || estadoRaw === 'VENCIDA' || estadoRaw.includes('MORA');
     const estadoAbono = moraActual ? 'ABONO EN MORA' : 'ABONO AL DÍA';
     return {
@@ -83,8 +129,8 @@ export const resolveCuotaDisplay = (cuota, numCuota, plazoTotal) => {
       estado: estadoAbono,
       isAbono: true,
       isVencida: moraActual,
-      valor: formatCOP(totalCubiertoNum),
-      saldoPendiente,
+      valor: formatCOP(cubiertoNum),
+      saldoPendiente: saldoNetoNum,
       color: moraActual ? [220, 38, 38] : [217, 119, 6],
       cssColor: moraActual ? '#dc2626' : '#d97706',
       fontStyle: 'bold',
@@ -312,35 +358,12 @@ export const exportEstadoCuentaMatrizPDF = async (venta, cuotas = []) => {
   const ROWS_COUNT = 12;
   const matrixRows = [];
 
-  // Calcular excedentes de cuotas previas para cuotas pendientes
-  let acumuladoCredito = 0;
-  const cuotasConCalculos = (cuotas || []).map(c => {
-    const vCuo = Number(c.valor_cuota) || 0;
-    const vPag = Number(c.valor_pagado) || 0;
-    const est = String(c.estado_cuota || '').toUpperCase();
-
-    if (est === 'PAGA') {
-      if (vPag >= vCuo) {
-        acumuladoCredito += (vPag - vCuo);
-      } else {
-        const consumido = vCuo - vPag;
-        acumuladoCredito = Math.max(0, acumuladoCredito - consumido);
-      }
-      return { ...c, abonoPrevio: 0, saldoNeto: 0 };
-    } else {
-      let abonoPrevio = 0;
-      if (acumuladoCredito > 0) {
-        abonoPrevio = Math.min(acumuladoCredito, Math.max(0, vCuo - vPag));
-        acumuladoCredito -= abonoPrevio;
-      }
-      const saldoNeto = Math.max(0, vCuo - vPag - abonoPrevio);
-      return { ...c, abonoPrevio, saldoNeto };
-    }
-  });
+  // Calcular cobertura universal limpia de cuotas
+  const cuotasConCalculos = calculateCuotasCoverage(cuotas, venta);
 
   const formatValorConNeto = (c, d) => {
-    if (!c || c.estado_cuota === 'PAGA' || !c.abonoPrevio) return d.valor;
-    return `${d.valor} (Neto: ${formatCOP(c.saldoNeto)})`;
+    if (!c || c.estadoCalculado === 'PAGA' || c.estado_cuota === 'PAGA' || !d.isAbono || !d.saldoPendiente) return d.valor;
+    return `${d.valor} (Neto: ${formatCOP(d.saldoPendiente)})`;
   };
 
   for (let r = 0; r < ROWS_COUNT; r++) {
@@ -510,30 +533,7 @@ export const exportEstadoCuentaMatrizExcel = async (venta, cuotas = []) => {
     ],
   ];
 
-  let acumuladoCredito = 0;
-  const cuotasConCalculos = (cuotas || []).map(c => {
-    const vCuo = Number(c.valor_cuota) || 0;
-    const vPag = Number(c.valor_pagado) || 0;
-    const est = String(c.estado_cuota || '').toUpperCase();
-
-    if (est === 'PAGA') {
-      if (vPag >= vCuo) {
-        acumuladoCredito += (vPag - vCuo);
-      } else {
-        const consumido = vCuo - vPag;
-        acumuladoCredito = Math.max(0, acumuladoCredito - consumido);
-      }
-      return { ...c, abonoPrevio: 0, saldoNeto: 0 };
-    } else {
-      let abonoPrevio = 0;
-      if (acumuladoCredito > 0) {
-        abonoPrevio = Math.min(acumuladoCredito, Math.max(0, vCuo - vPag));
-        acumuladoCredito -= abonoPrevio;
-      }
-      const saldoNeto = Math.max(0, vCuo - vPag - abonoPrevio);
-      return { ...c, abonoPrevio, saldoNeto };
-    }
-  });
+  const cuotasConCalculos = calculateCuotasCoverage(cuotas, venta);
 
   for (let r = 0; r < 12; r++) {
     const c1 = cuotasConCalculos.find(c => c.numero_cuota === r + 1);

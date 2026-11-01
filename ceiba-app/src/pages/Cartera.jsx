@@ -11,7 +11,7 @@ import { useAuth } from '../context/AuthContext';
 import { getCuotasByVenta } from '../lib/api/cartera';
 import { getVentaById } from '../lib/api/ventas';
 import { formatCOP, formatDate, formatTime } from '../utils/helpers';
-import { exportEstadoCuentaMatrizPDF, exportEstadoCuentaInformePDF, exportEstadoCuentaPDF } from '../utils/exportEstadoCuenta';
+import { exportEstadoCuentaMatrizPDF, exportEstadoCuentaInformePDF, exportEstadoCuentaPDF, calculateCuotasCoverage } from '../utils/exportEstadoCuenta';
 import EstadoCuentaMatrizView from '../components/EstadoCuentaMatrizView';
 import AbonosExtraordinariosView from '../components/AbonosExtraordinariosView';
 import CasosEspecialesView from '../components/CasosEspecialesView';
@@ -1687,32 +1687,8 @@ export default function Cartera() {
                     </thead>
                     <tbody>
                       {(() => {
-                        let acumuladoCredito = 0;
-                        const cuotasConCalculos = (cuotasVenta || []).map(c => {
-                          const vCuo = Number(c.valor_cuota) || 0;
-                          const vPag = Number(c.valor_pagado) || 0;
-                          const est = String(c.estado_cuota || '').toUpperCase();
-
-                          if (est === 'PAGA') {
-                            if (vPag >= vCuo) {
-                              const extra = vPag - vCuo;
-                              acumuladoCredito += extra;
-                              return { ...c, abonoPrevio: 0, saldoNeto: 0, extraGenerado: extra };
-                            } else {
-                              const consumido = vCuo - vPag;
-                              acumuladoCredito = Math.max(0, acumuladoCredito - consumido);
-                              return { ...c, abonoPrevio: 0, saldoNeto: 0, extraGenerado: 0 };
-                            }
-                          } else {
-                            let abonoPrevio = 0;
-                            if (acumuladoCredito > 0) {
-                              abonoPrevio = Math.min(acumuladoCredito, Math.max(0, vCuo - vPag));
-                              acumuladoCredito -= abonoPrevio;
-                            }
-                            const saldoNeto = Math.max(0, vCuo - vPag - abonoPrevio);
-                            return { ...c, abonoPrevio, saldoNeto, extraGenerado: 0 };
-                          }
-                        });
+                        // Calcular cobertura universal limpia de cuotas
+                        const cuotasConCalculos = calculateCuotasCoverage(cuotasVenta, currentVenta);
 
                         return cuotasConCalculos.map((c) => {
                           const cuotaRecs = (recibosVenta || []).filter(r => r && r.cuota_id === c.id);
