@@ -28,6 +28,15 @@ const OPCIONES_GESTION = [
   'NO NECESITA'
 ];
 
+// Helper para obtener la fecha local de hoy en formato YYYY-MM-DD
+const getTodayLocal = () => {
+  const d = new Date();
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 export default function ModalObservacionCobranza({
   isOpen,
   onClose,
@@ -47,20 +56,22 @@ export default function ModalObservacionCobranza({
   const [gestion, setGestion] = useState('LLAMADA TELEFONICA');
   const [respuesta, setRespuesta] = useState('SOLICITA PLAZO');
   const [respuestaCustom, setRespuestaCustom] = useState('');
-  const [fecha, setFecha] = useState(() => new Date().toISOString().slice(0, 10));
+  const [fecha, setFecha] = useState(getTodayLocal);
   const [notaDetallada, setNotaDetallada] = useState('');
   const [guardando, setGuardando] = useState(false);
   const [copiedPhone, setCopiedPhone] = useState(false);
 
   // Inicializar o sincronizar cuando cambia
   useEffect(() => {
+    // Al abrir el modal o editar cualquier observación, SIEMPRE preseleccionar la fecha de hoy
+    setFecha(getTodayLocal());
+
     if (observacionActual) {
       if (observacionActual.gestion) {
         setGestion(observacionActual.gestion);
       }
-      if (observacionActual.fecha) {
-        setFecha(observacionActual.fecha);
-      }
+      // IMPORTANTE: NO sobreescribir 'fecha' con la fecha antigua (observacionActual.fecha)
+      // para asegurar que de primera plana siempre quede la fecha de hoy y no parezca que no se hizo gestión
       const notaPrevia = observacionActual.nota || observacionActual.observacion_adicional || observacionActual.texto_resumen || '';
       setNotaDetallada(notaPrevia);
 
@@ -77,7 +88,6 @@ export default function ModalObservacionCobranza({
       setRespuesta('SOLICITA PLAZO');
       setRespuestaCustom('');
       setNotaDetallada('');
-      setFecha(new Date().toISOString().slice(0, 10));
     }
   }, [observacionActual, isOpen]);
 
@@ -315,17 +325,58 @@ export default function ModalObservacionCobranza({
             </div>
 
             <div>
-              <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#475569', marginBottom: 4 }}>
-                Fecha Realizada
-              </label>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                <label style={{ fontSize: 11, fontWeight: 600, color: '#475569' }}>
+                  Fecha Realizada
+                </label>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  {observacionActual?.fecha && observacionActual.fecha !== fecha && (
+                    <button
+                      type="button"
+                      onClick={() => setFecha(observacionActual.fecha)}
+                      title="Restaurar fecha anterior"
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: '#64748b',
+                        fontSize: 10,
+                        cursor: 'pointer',
+                        textDecoration: 'underline',
+                        padding: 0
+                      }}
+                    >
+                      Anterior ({observacionActual.fecha})
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => setFecha(getTodayLocal())}
+                    style={{
+                      background: '#ecfdf5',
+                      border: '1px solid #a7f3d0',
+                      color: '#065f46',
+                      fontSize: 10,
+                      fontWeight: 700,
+                      borderRadius: 4,
+                      padding: '1px 6px',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Hoy
+                  </button>
+                </div>
+              </div>
               <input
                 type="date"
                 className="input"
-                style={{ width: '100%', fontSize: 12 }}
+                style={{ width: '100%', fontSize: 12, fontWeight: 600, color: '#0f172a' }}
                 value={fecha}
                 onChange={e => setFecha(e.target.value)}
                 required
               />
+              <span style={{ fontSize: 10, color: '#16a34a', fontWeight: 600, marginTop: 2, display: 'block' }}>
+                ✓ Preseleccionada con la fecha de hoy
+              </span>
             </div>
           </div>
 

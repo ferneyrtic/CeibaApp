@@ -250,7 +250,31 @@ export default function ModalEditarCuota({ cuota, onClose, onSuccess }) {
             </div>
           ) : (
             <div style={{ marginBottom: 10 }}>
-              <label style={{ fontSize: 11, color: 'var(--text-muted)', display: 'block', marginBottom: 3 }}>Fecha de Pago:</label>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 3 }}>
+                <label style={{ fontSize: 11, color: 'var(--text-muted)' }}>Fecha de Pago:</label>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const d = new Date();
+                    const y = d.getFullYear();
+                    const m = String(d.getMonth() + 1).padStart(2, '0');
+                    const day = String(d.getDate()).padStart(2, '0');
+                    setFechaPago(`${y}-${m}-${day}`);
+                  }}
+                  style={{
+                    background: '#eff6ff',
+                    border: '1px solid #bfdbfe',
+                    color: '#1d4ed8',
+                    fontSize: 10,
+                    fontWeight: 700,
+                    borderRadius: 4,
+                    padding: '1px 6px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Hoy
+                </button>
+              </div>
               <input
                 type="date"
                 className="search-input"
