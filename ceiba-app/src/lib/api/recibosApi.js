@@ -86,6 +86,10 @@ export const obtenerSiguienteNumeroRecibo = async () => {
   recibosOcupados.add(3458);
   // Recibo 3461 saltado: utilizado para cuota inicial ($1.000.000) MZ 26 LOTE 2
   recibosOcupados.add(3461);
+  // Recibo 3537 saltado: anulado por equivocación de secretaría en talonario físico
+  recibosOcupados.add(3537);
+  // Recibo 3582 saltado: utilizado para cuota inicial ($1.000.000) LC2 - 40 - 11 (Ever Andres Coy)
+  recibosOcupados.add(3582);
 
   // 1. Verificar recibos en almacenamiento local
   const locales = obtenerRecibosLocales();
@@ -522,14 +526,17 @@ export const registrarPagoConRecibo = async ({
           const difCentavos = cuotaVal - valPagadoActualizar;
           const esCompleto = a.completo || valPagadoActualizar >= cuotaVal || (cuotaVal > 0 && difCentavos <= 2000) || (cuotaVal > 0 && (difCentavos / cuotaVal) < 0.02);
           estadoCuotaActualizar = esCompleto ? 'PAGA' : (cuota.estado_cuota === 'VENCIDA' ? 'VENCIDA' : 'AL DÍA');
-          if (esCompleto && difCentavos > 0 && difCentavos <= 2000) {
-            valPagadoActualizar = cuotaVal;
-          }
+          // Mantener con total transparencia el valor monetario real pagado, sin inflarlo a cuotaVal
+          // La cuota queda PAGA gracias a la tolerancia de centavos/redondeo
+          const difRedondeoCascada = cuotaVal - valPagadoActualizar;
+          const notaRedondeoCascada = (esCompleto && Math.abs(difRedondeoCascada) > 0 && Math.abs(difRedondeoCascada) <= 2000)
+            ? ` (Redondeo: ${difRedondeoCascada > 0 ? '-' : '+'}$${Math.round(Math.abs(difRedondeoCascada)).toLocaleString('es-CO')} COP)`
+            : '';
 
           const montoFormateado = (esAbonoMultiples ? montoNum : a.valor_abono).toLocaleString('es-CO');
           const notaRecibo = generarRecibo
-            ? `Recibo #${numero_recibo} ($${montoFormateado}) el ${fechaPago}`
-            : `Abono contable ($${montoFormateado}) el ${fechaPago} (Sin recibo oficial)`;
+            ? `Recibo #${numero_recibo} ($${montoFormateado}) el ${fechaPago}${notaRedondeoCascada}`
+            : `Abono contable ($${montoFormateado}) el ${fechaPago} (Sin recibo oficial)${notaRedondeoCascada}`;
           const notaCubiertas = esAbonoMultiples
             ? `Abono de $${montoNum.toLocaleString('es-CO')} cubre ${cuotasCompletadas.length} cuotas (cuotas ${cuotasCompletadas[0].numero_cuota} a ${cuotasCompletadas[cuotasCompletadas.length - 1].numero_cuota})`
             : '';
@@ -650,12 +657,18 @@ export const registrarPagoConRecibo = async ({
         nuevoEstado = estaVencida ? 'VENCIDA' : 'AL DÍA';
       }
     }
-    const valPagadoFinal = esPagoCompleto ? Math.max(nuevoPagado, valCuota) : nuevoPagado;
+    // Mantener con total transparencia el valor monetario real pagado por el cliente,
+    // sin inflarlo artificialmente a valCuota. La cuota queda PAGA gracias a la tolerancia de redondeo.
+    const valPagadoFinal = nuevoPagado;
+    const difRedondeo = valCuota - nuevoPagado;
+    const notaRedondeo = (esPagoCompleto && Math.abs(difRedondeo) > 0 && Math.abs(difRedondeo) <= 2000)
+      ? ` (Redondeo: ${difRedondeo > 0 ? '-' : '+'}$${Math.round(Math.abs(difRedondeo)).toLocaleString('es-CO')} COP)`
+      : '';
 
     const montoFormateado = montoNum.toLocaleString('es-CO');
     const notaRecibo = generarRecibo
-      ? `Recibo #${numero_recibo} ($${montoFormateado}) el ${fechaPago}`
-      : `Abono contable ($${montoFormateado}) el ${fechaPago} (Sin recibo oficial)`;
+      ? `Recibo #${numero_recibo} ($${montoFormateado}) el ${fechaPago}${notaRedondeo}`
+      : `Abono contable ($${montoFormateado}) el ${fechaPago} (Sin recibo oficial)${notaRedondeo}`;
     const obsCuota = cuota.observacion
       ? `${cuota.observacion} | ${notaRecibo}`.trim()
       : notaRecibo;
@@ -957,7 +970,7 @@ export const anularRecibo = async ({
         await supabase
           .from('cuotas')
           .update({
-            valor_pagado: valPagadoFinal,
+            valor_pagado: nuevoPagado,
             estado_cuota: estadoRestaurado,
             comprobante_url: JSON.stringify(hist),
             observacion: `${c.observacion || ''} | [ANULADO Recibo #${numRec}]`.trim()

@@ -38,7 +38,7 @@ export const calculateCuotasCoverage = (cuotas = [], venta = {}) => {
     const vPagDirecto = Number(c.valor_pagado) || 0;
 
     let nominal = Number(c.valor_cuota) || 0;
-    if (nominal <= 0 || (cuotaPactada > 0 && nominal > cuotaPactada * 1.15)) {
+    if (nominal <= 0 || (cuotaPactada > 0 && (nominal > cuotaPactada * 1.15 || nominal < cuotaPactada * 0.85))) {
       nominal = cuotaPactada;
     }
 

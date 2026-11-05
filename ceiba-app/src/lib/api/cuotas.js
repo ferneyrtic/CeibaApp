@@ -68,7 +68,7 @@ export const simularAbonoCascada = (cuotas = [], montoTotal = 0) => {
       // se absorbe en esta cuota para evitar que un residuo de $333 o $1.333 COP desborde a cuotas futuras.
       const esPocoSobrante = sobrante > 0 && sobrante <= 2000;
       const abonoReal = esPocoSobrante ? montoRestante : (montoRestante >= porPagar ? porPagar : montoRestante);
-      const nuevoPagado = esPocoSobrante ? (yaPagado + montoRestante) : valCuota;
+      const nuevoPagado = esPocoSobrante ? (yaPagado + montoRestante) : (yaPagado + abonoReal);
 
       afectaciones.push({
         id: c.id,
