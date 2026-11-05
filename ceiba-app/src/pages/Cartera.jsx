@@ -1754,7 +1754,16 @@ export default function Cartera() {
                                   <span style={{ color: '#d97706', fontWeight: 700 }} title="Abono a favor acumulado de pagos anteriores">
                                     {formatCOP(c.abonoPrevio)}
                                   </span>
-                                ) : formatCOP(c.valor_pagado)}
+                                ) : (
+                                  <div>
+                                    <div>{formatCOP(c.valor_pagado)}</div>
+                                    {Number(c.valor_cuota) > Number(c.valor_pagado) + 2000 && Number(c.valor_pagado) > 0 && (
+                                      <div style={{ fontSize: 9.5, color: '#dc2626', fontWeight: 800, marginTop: 1 }} title="Falta por pagar para completar la cuota">
+                                        Falta: {formatCOP(Number(c.valor_cuota) - Number(c.valor_pagado))}
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
                               </td>
                               <td style={{ padding: '6px 10px' }}>
                                 {c.fecha_pago ? formatDate(c.fecha_pago) : (c.abonoPrevio > 0 && c.estado_cuota !== 'PAGA') ? (
@@ -1790,8 +1799,9 @@ export default function Cartera() {
                                   return (
                                     <span style={{
                                       padding: '2px 8px', borderRadius: 4, fontSize: 10, fontWeight: 700,
-                                      background: c.estado_cuota === 'PAGA' ? '#f0f9ff' : c.estado_cuota === 'VENCIDA' ? '#fef2f2' : '#f0fdf4',
-                                      color: c.estado_cuota === 'PAGA' ? '#0284c7' : c.estado_cuota === 'VENCIDA' ? '#dc2626' : '#16a34a'
+                                      background: c.estado_cuota === 'PAGA' ? '#dcfce7' : c.estado_cuota === 'VENCIDA' ? '#fef2f2' : '#f0fdf4',
+                                      color: c.estado_cuota === 'PAGA' ? '#15803d' : c.estado_cuota === 'VENCIDA' ? '#dc2626' : '#16a34a',
+                                      border: c.estado_cuota === 'PAGA' ? '1px solid #86efac' : c.estado_cuota === 'VENCIDA' ? '1px solid #fca5a5' : '1px solid #bbf7d0'
                                     }}>
                                       {c.estado_cuota}
                                     </span>

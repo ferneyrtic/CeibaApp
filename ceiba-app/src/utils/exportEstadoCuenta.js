@@ -46,7 +46,7 @@ export const calculateCuotasCoverage = (cuotas = [], venta = {}) => {
     dineroRestante = Math.max(0, dineroRestante - cubierto);
     const saldoNeto = Math.max(0, nominal - cubierto);
 
-    const esPaga = (cubierto >= nominal - 2000) || (String(c.estado_cuota || '').toUpperCase() === 'PAGA' && vPagDirecto === 0 && dineroRestante >= 0);
+    const esPaga = (cubierto >= nominal - 2000) || (String(c.estado_cuota || '').toUpperCase() === 'PAGA');
     const esAbono = !esPaga && cubierto > 0;
     const abonoPrevio = Math.max(0, cubierto - vPagDirecto);
 
@@ -140,6 +140,7 @@ export const resolveCuotaDisplay = (cuota, numCuota, plazoTotal) => {
 
   if (esPagaCompleta) {
     const tienePagoDirecto = valPagadoNum > 0;
+    const falta = (tienePagoDirecto && valPagadoNum < valCuotaNum - 2000) ? Math.max(0, valCuotaNum - valPagadoNum) : 0;
     // Si tiene pago directo muestra ese valor pagado; si fue cubierta por abono deja en blanco el espacio
     const valorDisplay = tienePagoDirecto ? formatCOP(valPagadoNum) : '—';
 
@@ -149,7 +150,8 @@ export const resolveCuotaDisplay = (cuota, numCuota, plazoTotal) => {
       fechaPago,
       fechaVenc,
       estado: 'PAGA',
-      isAbono: false,
+      isAbono: falta > 0,
+      saldoPendiente: falta,
       isVencida: false,
       valor: valorDisplay,
       color: [22, 163, 74],
