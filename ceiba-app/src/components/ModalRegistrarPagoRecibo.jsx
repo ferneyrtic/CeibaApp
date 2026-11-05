@@ -1,14 +1,14 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import {
   DollarSign, CheckCircle2, AlertCircle, Calendar, Receipt, X, ArrowRight,
-  Eye, Download, CreditCard, Building2, Wallet, ArrowDownCircle, Layers
+  Eye, Download, CreditCard, Building2, Wallet, ArrowDownCircle
 } from 'lucide-react';
 import Modal from './Modal';
 import SelectorLoteBuscador from './SelectorLoteBuscador';
 import ReciboCajaView from './ReciboCajaView';
 import { formatCOP, formatDate } from '../utils/helpers';
 import { formatearLoteDescripcion } from '../utils/formatoLote';
-import { getCuotasByVenta, simularAbonoCascada } from '../lib/api/cuotas';
+import { getCuotasByVenta } from '../lib/api/cuotas';
 import {
   obtenerSiguienteNumeroRecibo,
   registrarPagoConRecibo,
@@ -31,9 +31,6 @@ export default function ModalRegistrarPagoRecibo({
   const [recibosPrevios, setRecibosPrevios] = useState([]);
   const [loadingCuotas, setLoadingCuotas] = useState(false);
 
-  // Modo de imputación: 'cuota' (específica) o 'cascada' (automática)
-  // Por defecto 'cuota' para dar control manual total y evitar auto-incrementos no deseados
-  const [modoImputacion, setModoImputacion] = useState('cuota');
   const [selectedCuotaId, setSelectedCuotaId] = useState(cuotaPreseleccionada?.id || '');
 
   // Formulario
@@ -97,8 +94,7 @@ export default function ModalRegistrarPagoRecibo({
         setCuotas(cData || []);
         setRecibosPrevios(rData || []);
 
-        // Modo por defecto siempre es cuota específica manual para evitar auto-incrementos no deseados
-        setModoImputacion('cuota');
+        // Asignación directa por cuota
         if (cuotaPreseleccionada?.id) {
           setSelectedCuotaId(cuotaPreseleccionada.id);
           // Calcular si hay excedente acumulado de cuotas previas
@@ -175,58 +171,53 @@ export default function ModalRegistrarPagoRecibo({
     return Math.max(0, vTotal - yaPag);
   }, [currentCuota]);
 
-  // Pre-llenar monto si está en modo cuota
+  // Pre-llenar monto de la cuota seleccionada
   useEffect(() => {
-    if (modoImputacion === 'cuota' && saldoPendienteCuota > 0 && !monto) {
+    if (saldoPendienteCuota > 0 && !monto) {
       setMonto(String(saldoPendienteCuota));
     }
-  }, [modoImputacion, saldoPendienteCuota]);
+  }, [saldoPendienteCuota]);
 
   const montoNum = Math.max(0, Math.round(Number(monto) || 0));
 
-  // Simulación en tiempo real (Modo Cascada o Modo Cuota)
+  // Simulación en tiempo real por cuota directa (sin fraccionamientos)
   const simulacion = useMemo(() => {
-    if (montoNum <= 0 || !Array.isArray(cuotas) || cuotas.length === 0) return null;
+    if (montoNum <= 0 || !Array.isArray(cuotas) || cuotas.length === 0 || !currentCuota) return null;
 
     try {
-      if (modoImputacion === 'cascada') {
-        return simularAbonoCascada(cuotas, montoNum);
-      } else {
-        // Simulación enfocada en la cuota seleccionada
-        if (!currentCuota) return null;
-        const valCuota = Number(currentCuota.valor_cuota) || 0;
-        const yaPag = Number(currentCuota.valor_pagado) || 0;
-        const porPagar = Math.max(0, valCuota - yaPag);
-        const diff = porPagar - montoNum;
-        const esPocoSobrante = diff < 0 && Math.abs(diff) <= 2000;
-        const abonoAEsta = esPocoSobrante ? montoNum : Math.min(montoNum, porPagar);
-        let completo = montoNum >= porPagar || (porPagar > 0 && diff <= 2000) || (porPagar > 0 && diff / porPagar < 0.02);
-        if (forzarEstadoVisual === 'PAGA') completo = true;
-        if (forzarEstadoVisual === 'ABONO' || forzarEstadoVisual === 'ABONO AL DÍA' || forzarEstadoVisual === 'ABONO EN MORA') completo = false;
+      const valCuota = Number(currentCuota.valor_cuota) || 0;
+      const yaPag = Number(currentCuota.valor_pagado) || 0;
+      const porPagar = Math.max(0, valCuota - yaPag);
+      const diff = porPagar - montoNum;
+      // El valor del abono es el 100% del monto digitado, completo y sin fraccionar
+      const abonoAEsta = montoNum;
+      const nuevoPagado = yaPag + abonoAEsta;
+      let completo = nuevoPagado >= valCuota || (valCuota > 0 && diff <= 2000) || (valCuota > 0 && diff / valCuota < 0.02);
+      if (forzarEstadoVisual === 'PAGA') completo = true;
+      if (forzarEstadoVisual === 'ABONO' || forzarEstadoVisual === 'ABONO AL DÍA' || forzarEstadoVisual === 'ABONO EN MORA') completo = false;
 
-        const afectaciones = [{
-          id: currentCuota.id || 'cuota-sel',
-          numero_cuota: currentCuota.numero_cuota || 1,
-          fecha_vencimiento: currentCuota.fecha_vencimiento,
-          valor_cuota: valCuota,
-          valor_anterior: yaPag,
-          valor_abono: abonoAEsta,
-          nuevo_pagado: yaPag + abonoAEsta,
-          nuevo_estado: completo ? 'PAGA' : 'ABONO',
-          completo
-        }];
+      const afectaciones = [{
+        id: currentCuota.id || 'cuota-sel',
+        numero_cuota: currentCuota.numero_cuota || 1,
+        fecha_vencimiento: currentCuota.fecha_vencimiento,
+        valor_cuota: valCuota,
+        valor_anterior: yaPag,
+        valor_abono: abonoAEsta,
+        nuevo_pagado: nuevoPagado,
+        nuevo_estado: completo ? 'PAGA' : 'ABONO',
+        completo
+      }];
 
-        return {
-          afectaciones,
-          montoAplicado: abonoAEsta,
-          montoSobrante: Math.max(0, montoNum - abonoAEsta)
-        };
-      }
+      return {
+        afectaciones,
+        montoAplicado: abonoAEsta,
+        montoSobrante: 0
+      };
     } catch (err) {
       console.warn('Aviso en simulación de abono:', err);
       return null;
     }
-  }, [cuotas, montoNum, modoImputacion, currentCuota]);
+  }, [cuotas, montoNum, currentCuota, forzarEstadoVisual]);
 
   // Generación dinámica del texto oficial de Concepto (conciso: solo cuota/abono)
   const conceptoSugerido = useMemo(() => {
@@ -331,8 +322,8 @@ export default function ModalRegistrarPagoRecibo({
 
       const res = await registrarPagoConRecibo({
         ventaId: vid,
-        cuotaId: modoImputacion === 'cuota' ? (selectedCuotaId || null) : null,
-        afectaciones: modoImputacion === 'cascada' ? simulacion?.afectaciones : null,
+        cuotaId: selectedCuotaId || null,
+        afectaciones: null,
         monto: montoNum,
         fechaPago,
         medioPago,
@@ -634,63 +625,12 @@ export default function ModalRegistrarPagoRecibo({
           )}
         </div>
 
-        {/* 2. Selector de Modo: Cascada Automática vs Cuota Específica */}
+        {/* 2. Selección de Cuota a Pagar */}
         <div style={{ marginBottom: 14 }}>
           <label style={{ fontSize: 12, fontWeight: 700, display: 'block', marginBottom: 6, color: 'var(--text-primary)' }}>
-            Destino del Abono / Pago:
+            Seleccionar Cuota a Pagar:
           </label>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-            <button
-              type="button"
-              onClick={() => setModoImputacion('cuota')}
-              style={{
-                padding: '8px 12px',
-                borderRadius: 8,
-                border: modoImputacion === 'cuota' ? '2px solid #16a34a' : '1px solid var(--border)',
-                background: modoImputacion === 'cuota' ? 'rgba(22, 163, 74, 0.15)' : 'var(--bg-card2)',
-                color: modoImputacion === 'cuota' ? '#22c55e' : 'var(--text-secondary)',
-                fontWeight: 700,
-                fontSize: 12,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 6
-              }}
-            >
-              <CreditCard size={14} /> Cuota Específica (Directa)
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setModoImputacion('cascada')}
-              style={{
-                padding: '8px 12px',
-                borderRadius: 8,
-                border: modoImputacion === 'cascada' ? '2px solid #16a34a' : '1px solid var(--border)',
-                background: modoImputacion === 'cascada' ? 'rgba(22, 163, 74, 0.15)' : 'var(--bg-card2)',
-                color: modoImputacion === 'cascada' ? '#22c55e' : 'var(--text-secondary)',
-                fontWeight: 700,
-                fontSize: 12,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 6
-              }}
-            >
-              <Layers size={14} /> Imputar en Cascada
-            </button>
-          </div>
-        </div>
-
-        {/* Dropdown de Cuota si está en modo cuota */}
-        {modoImputacion === 'cuota' && (
-          <div style={{ marginBottom: 14 }}>
-            <label style={{ fontSize: 11.5, fontWeight: 600, display: 'block', marginBottom: 4, color: 'var(--text-secondary)' }}>
-              Seleccionar Cuota a Pagar:
-            </label>
-            <select
+          <select
               className="search-input"
               style={{ width: '100%', fontSize: 13, fontWeight: 600 }}
               value={selectedCuotaId}
@@ -798,7 +738,6 @@ export default function ModalRegistrarPagoRecibo({
               </button>
             </div>
           </div>
-        )}
 
         {/* Banner de Excedente / Saldo a favor de cuotas previas */}
         {(() => {
