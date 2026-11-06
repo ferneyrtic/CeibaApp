@@ -90,6 +90,12 @@ export const obtenerSiguienteNumeroRecibo = async () => {
   recibosOcupados.add(3537);
   // Recibo 3582 saltado: utilizado para cuota inicial ($1.000.000) LC2 - 40 - 11 (Ever Andres Coy)
   recibosOcupados.add(3582);
+  // Recibo 3601 saltado: utilizado para cuota inicial ($2.000.000) LC2 - 38 - 2 (Flor Garcia)
+  recibosOcupados.add(3601);
+  // Recibo 3602 saltado: utilizado para cuota inicial ($1.000.000) LC2 - 38 - 2 (Flor Garcia)
+  recibosOcupados.add(3602);
+  // Recibo 3603 saltado: utilizado para arras ($500.000) LC2 - 24 - 6 (Jaime Saenz)
+  recibosOcupados.add(3603);
 
   // 1. Verificar recibos en almacenamiento local
   const locales = obtenerRecibosLocales();
