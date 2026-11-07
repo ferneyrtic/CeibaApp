@@ -96,6 +96,8 @@ export const obtenerSiguienteNumeroRecibo = async () => {
   recibosOcupados.add(3602);
   // Recibo 3603 saltado: utilizado para arras ($500.000) LC2 - 24 - 6 (Jaime Suarez)
   recibosOcupados.add(3603);
+  // Recibo 3615 saltado: utilizado para cuota inicial ($1.500.000) Robinson Vargas
+  recibosOcupados.add(3615);
 
   // 1. Verificar recibos en almacenamiento local
   const locales = obtenerRecibosLocales();
