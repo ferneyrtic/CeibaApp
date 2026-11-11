@@ -645,31 +645,24 @@ export const registrarPagoConRecibo = async ({
     const yaPagado = Number(cuota.valor_pagado) || 0;
     const nuevoPagado = yaPagado + montoNum;
 
-    const difCentavos = valCuota - nuevoPagado;
-    // Si el monto cubre la cuota o la diferencia es de centavos/redondeo (<= $2.000 COP o < 2%)
-    esPagoCompleto = (nuevoPagado >= valCuota) || (valCuota > 0 && difCentavos <= 2000) || (valCuota > 0 && (difCentavos / valCuota) < 0.02);
-    if (forzarEstado === 'PAGA') esPagoCompleto = true;
-    if (forzarEstado === 'ABONO' || forzarEstado === 'ABONO AL DÍA' || forzarEstado === 'ABONO EN MORA') esPagoCompleto = false;
+    // En La Ceiba, todo pago/abono aplicado a una cuota se registra con el valor efectivamente
+    // consignado y se marca como PAGA (Verde) para que el cliente vea su consignación sin mora,
+    // salvo que explícitamente se fuerce un estado de abono incompleto o mora.
+    const esForzadoIncompleto = forzarEstado === 'ABONO' || forzarEstado === 'ABONO AL DÍA' || forzarEstado === 'ABONO EN MORA';
+    esPagoCompleto = !esForzadoIncompleto;
     saldoRestanteCuota = esPagoCompleto ? 0 : Math.max(0, valCuota - nuevoPagado);
 
-    let nuevoEstado = cuota.estado_cuota;
-    const todayStr = new Date().toISOString().slice(0, 10);
-    const estaVencida = cuota.fecha_vencimiento && cuota.fecha_vencimiento < todayStr;
-    if (esPagoCompleto) {
-      nuevoEstado = 'PAGA';
-    } else {
-      // Abono parcial: si se fuerza ABONO EN MORA queda VENCIDA; si se fuerza ABONO AL DÍA queda AL DÍA; de lo contrario evalúa fecha
-      if (forzarEstado === 'ABONO EN MORA') {
-        nuevoEstado = 'VENCIDA';
-      } else if (forzarEstado === 'ABONO AL DÍA') {
-        nuevoEstado = 'AL DÍA';
-      } else {
-        nuevoEstado = estaVencida ? 'VENCIDA' : 'AL DÍA';
-      }
+    let nuevoEstado = 'PAGA';
+    if (esForzadoIncompleto) {
+      const todayStr = new Date().toISOString().slice(0, 10);
+      const estaVencida = cuota.fecha_vencimiento && cuota.fecha_vencimiento < todayStr;
+      nuevoEstado = (forzarEstado === 'ABONO EN MORA' || estaVencida) ? 'VENCIDA' : 'AL DÍA';
     }
-    // Mantener con total transparencia el valor monetario real pagado por el cliente,
-    // sin inflarlo artificialmente a valCuota. La cuota queda PAGA gracias a la tolerancia de redondeo.
+
+    // Mantener con total transparencia el valor monetario real pagado por el cliente.
+    // Si la cuota queda PAGA, se ajusta el valor_cuota a lo pagado para que el extracto visual coincida exactamente.
     const valPagadoFinal = nuevoPagado;
+    const valCuotaFinal = esPagoCompleto ? valPagadoFinal : valCuota;
     const difRedondeo = valCuota - nuevoPagado;
     const notaRedondeo = (esPagoCompleto && Math.abs(difRedondeo) > 0 && Math.abs(difRedondeo) <= 2000)
       ? ` (Redondeo: ${difRedondeo > 0 ? '-' : '+'}$${Math.round(Math.abs(difRedondeo)).toLocaleString('es-CO')} COP)`
@@ -722,6 +715,7 @@ export const registrarPagoConRecibo = async ({
     const { data: cUpdated, error: uErr } = await supabase
       .from('cuotas')
       .update({
+        valor_cuota: valCuotaFinal,
         valor_pagado: valPagadoFinal,
         estado_cuota: nuevoEstado,
         fecha_pago: fechaPago,

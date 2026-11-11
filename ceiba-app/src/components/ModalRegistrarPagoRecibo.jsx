@@ -192,15 +192,18 @@ export default function ModalRegistrarPagoRecibo({
       // El valor del abono es el 100% del monto digitado, completo y sin fraccionar
       const abonoAEsta = montoNum;
       const nuevoPagado = yaPag + abonoAEsta;
-      let completo = nuevoPagado >= valCuota || (valCuota > 0 && diff <= 2000) || (valCuota > 0 && diff / valCuota < 0.02);
-      if (forzarEstadoVisual === 'PAGA') completo = true;
-      if (forzarEstadoVisual === 'ABONO' || forzarEstadoVisual === 'ABONO AL DÍA' || forzarEstadoVisual === 'ABONO EN MORA') completo = false;
+      // En La Ceiba, cualquier pago que se registre a una cuota la marca por defecto como PAGA
+      // con el valor exacto consignado para el cliente, a menos que explícitamente se elija otro estado.
+      let completo = true;
+      if (forzarEstadoVisual === 'ABONO' || forzarEstadoVisual === 'ABONO AL DÍA' || forzarEstadoVisual === 'ABONO EN MORA') {
+        completo = false;
+      }
 
       const afectaciones = [{
         id: currentCuota.id || 'cuota-sel',
         numero_cuota: currentCuota.numero_cuota || 1,
         fecha_vencimiento: currentCuota.fecha_vencimiento,
-        valor_cuota: valCuota,
+        valor_cuota: completo ? nuevoPagado : valCuota,
         valor_anterior: yaPag,
         valor_abono: abonoAEsta,
         nuevo_pagado: nuevoPagado,
