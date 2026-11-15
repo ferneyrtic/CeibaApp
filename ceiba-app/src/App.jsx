@@ -183,7 +183,7 @@ function Topbar({ page, onToggleSidebar, theme, onToggleTheme, roleInfo }) {
   const meta = PAGE_META[page] || {};
   return (
     <header className="topbar">
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0, flex: 1 }}>
         <button
           className="mobile-hamburger-btn"
           onClick={onToggleSidebar}
@@ -191,7 +191,7 @@ function Topbar({ page, onToggleSidebar, theme, onToggleTheme, roleInfo }) {
         >
           <Menu size={20} />
         </button>
-        <div>
+        <div style={{ minWidth: 0, overflow: 'hidden' }}>
           <div className="topbar-title">{meta.title}</div>
           <div className="topbar-sub">{meta.sub}</div>
         </div>
@@ -200,7 +200,7 @@ function Topbar({ page, onToggleSidebar, theme, onToggleTheme, roleInfo }) {
       <div className="topbar-actions">
         {/* Badge de Rol actual */}
         {roleInfo && (
-          <div style={{
+          <div className="topbar-role-badge" style={{
             display: 'flex',
             alignItems: 'center',
             gap: 6,
@@ -213,7 +213,7 @@ function Topbar({ page, onToggleSidebar, theme, onToggleTheme, roleInfo }) {
             fontWeight: 700
           }}>
             <span style={{ width: 6, height: 6, borderRadius: '50%', background: roleInfo.badgeColor }} />
-            {roleInfo.label}
+            <span className="role-badge-text">{roleInfo.label}</span>
           </div>
         )}
 
@@ -264,18 +264,18 @@ function MobileBottomNav({ active, onNav, onOpenMenu }) {
         <span className="notif-dot" style={{ position: 'absolute', top: 4, right: 18 }} />
       </button>
       <button
+        className={`bottom-nav-item ${active === 'recibos' ? 'active' : ''}`}
+        onClick={() => onNav('recibos')}
+      >
+        <Receipt size={18} />
+        <span>Recibos</span>
+      </button>
+      <button
         className={`bottom-nav-item ${active === 'lotes' ? 'active' : ''}`}
         onClick={() => onNav('lotes')}
       >
         <Building2 size={18} />
         <span>Lotes</span>
-      </button>
-      <button
-        className={`bottom-nav-item ${active === 'reportes' ? 'active' : ''}`}
-        onClick={() => onNav('reportes')}
-      >
-        <BarChart3 size={18} />
-        <span>Reportes</span>
       </button>
       <button
         className="bottom-nav-item"

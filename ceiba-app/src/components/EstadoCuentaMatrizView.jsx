@@ -358,10 +358,11 @@ export default function EstadoCuentaMatrizView({ venta: propVenta, cuotas: propC
         fontFamily: 'Inter, -apple-system, sans-serif'
       }}>
         {/* Encabezado con Logo Oficial */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', marginBottom: 16, minHeight: 48 }}>
+        <div className="matriz-header-wrapper" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', marginBottom: 16, minHeight: 48 }}>
           <img
             src="/logo.png"
             alt="Logo La Ceiba"
+            className="matriz-header-logo"
             style={{ height: 46, position: 'absolute', left: 4, top: 0, objectFit: 'contain' }}
           />
           <div style={{ textAlign: 'center' }}>
@@ -380,6 +381,11 @@ export default function EstadoCuentaMatrizView({ venta: propVenta, cuotas: propC
               )}
             </div>
           </div>
+        </div>
+
+        {/* Indicador de Deslizamiento en Celulares */}
+        <div className="mobile-swipe-hint">
+          <span>↔ Desliza la tabla hacia los lados para ver todas las columnas y cuotas</span>
         </div>
 
         {/* Tabla 1: Información General */}

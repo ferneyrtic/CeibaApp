@@ -375,7 +375,7 @@ function ReciboCajaContent({ recibo, onClose, onPrint, autoDownload = false }) {
         }}
       >
         {/* BARRA SUPERIOR DE ACCIONES (NO SE IMPRIME) */}
-        <div className="no-print" style={{
+        <div className="no-print recibo-modal-topbar" style={{
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
@@ -383,7 +383,7 @@ function ReciboCajaContent({ recibo, onClose, onPrint, autoDownload = false }) {
           background: '#f8fafc',
           borderBottom: '1px solid #e2e8f0'
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
             {descargado ? (
               <span style={{
                 background: '#dcfce7',
@@ -430,7 +430,7 @@ function ReciboCajaContent({ recibo, onClose, onPrint, autoDownload = false }) {
             </span>
           </div>
 
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <div className="recibo-topbar-actions" style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
             <button
               onClick={handlePrint}
               className="btn btn-ghost"
@@ -477,9 +477,10 @@ function ReciboCajaContent({ recibo, onClose, onPrint, autoDownload = false }) {
         </div>
 
         {/* CONTENEDOR DEL RECIBO FÍSICO — RÉPLICA VECTORIAL EXACTA */}
-        <div style={{ padding: 24, background: '#f1f5f9', display: 'flex', justifyContent: 'center' }}>
+        <div className="recibo-preview-scroll-wrapper" style={{ padding: 24, background: '#f1f5f9', display: 'flex', justifyContent: 'center', overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
           <div
             id="recibo-caja-print-area"
+            className="recibo-paper-print"
             ref={reciboRef}
             style={{
               width: '100%',

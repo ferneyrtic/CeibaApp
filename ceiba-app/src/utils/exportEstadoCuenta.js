@@ -141,13 +141,15 @@ export const resolveCuotaDisplay = (cuota, numCuota, plazoTotal) => {
   if (esPagaCompleta) {
     const tienePagoDirecto = valPagadoNum > 0;
     const falta = (tienePagoDirecto && valPagadoNum < valCuotaNum - 2000) ? Math.max(0, valCuotaNum - valPagadoNum) : 0;
-    // Si tiene pago directo muestra ese valor pagado; si fue cubierta por abono deja en blanco el espacio
-    const valorDisplay = tienePagoDirecto ? formatCOP(valPagadoNum) : '—';
+    // Si tiene pago directo muestra ese valor pagado; si fue cubierta por abono muestra el valor de la cuota cubierta
+    const valorDisplay = tienePagoDirecto
+      ? formatCOP(valPagadoNum)
+      : (valCuotaNum > 0 ? formatCOP(valCuotaNum) : (cubiertoNum > 0 ? formatCOP(cubiertoNum) : '—'));
 
     return {
       num: `CUOTA ${numCuota}`,
-      fecha: fechaPago || (tienePagoDirecto ? fechaVenc : '—'),
-      fechaPago,
+      fecha: fechaPago || fechaVenc || '—',
+      fechaPago: fechaPago || (cuota?.fecha_pago ? formatDate(cuota.fecha_pago) : (fechaVenc !== '—' ? fechaVenc : null)),
       fechaVenc,
       estado: 'PAGA',
       isAbono: falta > 0,

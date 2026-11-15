@@ -145,7 +145,7 @@ export const obtenerSiguienteNumeroRecibo = async () => {
       qCuotas = qCuotas.order('created_at', { ascending: false });
     }
     if (qCuotas && typeof qCuotas.limit === 'function') {
-      qCuotas = qCuotas.limit(200);
+      qCuotas = qCuotas.limit(1000);
     }
     const { data: cuotasConRecibos } = await qCuotas;
 
