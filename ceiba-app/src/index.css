@@ -878,6 +878,7 @@ th {
   text-transform: uppercase;
   letter-spacing: 0.5px;
   border-bottom: 1px solid var(--border);
+  white-space: nowrap;
 }
 
 td {
@@ -886,6 +887,7 @@ td {
   color: var(--text-secondary);
   border-bottom: 1px solid var(--border);
   vertical-align: middle;
+  white-space: nowrap;
 }
 
 tr:last-child td { border-bottom: none; }
@@ -1371,19 +1373,69 @@ tr:hover td { background: #f6faf6; color: var(--text-primary); }
     width: 100% !important;
   }
 
-  .search-bar {
-    flex-wrap: wrap !important;
+  /* Chips de estadísticas deslizables en móvil */
+  .stats-row {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
     gap: 8px !important;
+    padding-bottom: 6px !important;
+    margin-bottom: 12px !important;
+    width: 100% !important;
+  }
+
+  .stat-chip {
+    flex-shrink: 0 !important;
+    padding: 6px 12px !important;
+    font-size: 11.5px !important;
+  }
+
+  /* Barra de búsqueda y filtros en 2 filas limpias */
+  .search-bar {
+    display: grid !important;
+    grid-template-columns: 1fr auto !important;
+    gap: 8px !important;
+    margin-bottom: 14px !important;
   }
 
   .search-bar > div:first-child {
+    grid-column: 1 / -1 !important;
     width: 100% !important;
-    flex: 1 1 100% !important;
   }
 
   .search-bar .filter-select {
     width: 100% !important;
-    flex: 1 1 auto !important;
+    min-width: 0 !important;
+  }
+
+  .search-bar button {
+    flex-shrink: 0 !important;
+    padding: 8px 14px !important;
+  }
+
+  /* Tablas adaptadas a celular */
+  .table-responsive table,
+  .table-container > table {
+    min-width: 100% !important;
+  }
+
+  th {
+    padding: 8px 10px !important;
+    font-size: 10.5px !important;
+  }
+
+  td {
+    padding: 8px 10px !important;
+    font-size: 12px !important;
+  }
+
+  .col-hide-mobile {
+    display: none !important;
+  }
+
+  .table-header {
+    padding: 10px 14px !important;
   }
 
   .cartera-tabs-selector {

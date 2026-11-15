@@ -704,11 +704,11 @@ export default function Cartera() {
                         <th>#</th>
                         <th>Lote</th>
                         <th>Cliente</th>
-                        <th>Vendedor</th>
-                        <th>Fecha Venta</th>
-                        <th>Precio Venta</th>
-                        <th>Cuota Inicial</th>
-                        <th>Saldo Financiado</th>
+                        <th className="col-hide-mobile">Vendedor</th>
+                        <th className="col-hide-mobile">Fecha Venta</th>
+                        <th className="col-hide-mobile">Precio Venta</th>
+                        <th className="col-hide-mobile">Cuota Inicial</th>
+                        <th className="col-hide-mobile">Saldo Financiado</th>
                         <th>Cuotas Pagadas</th>
                         <th>Saldo Pendiente</th>
                         <th>Estado</th>
@@ -755,11 +755,11 @@ export default function Cartera() {
                                 <div style={{ fontSize: 10, color: 'var(--text-muted)' }}>CC {v.clientes.doc_cliente}</div>
                               )}
                             </td>
-                            <td style={{ fontSize: 12 }}>{v.vendedor_nombre ?? '—'}</td>
-                            <td style={{ fontSize: 12 }}>{v.fecha_venta ? formatDate(v.fecha_venta) : <span style={{color:'#dc2626',fontSize:11}}>Sin fecha</span>}</td>
-                            <td style={{ fontSize: 12 }}>{formatCOP(v.precio_venta)}</td>
-                            <td style={{ fontSize: 12 }}>{formatCOP(v.valor_cuota_inicial)}</td>
-                            <td style={{ fontSize: 12 }}>{formatCOP(v.saldo_financiado)}</td>
+                            <td className="col-hide-mobile" style={{ fontSize: 12 }}>{v.vendedor_nombre ?? '—'}</td>
+                            <td className="col-hide-mobile" style={{ fontSize: 12 }}>{v.fecha_venta ? formatDate(v.fecha_venta) : <span style={{color:'#dc2626',fontSize:11}}>Sin fecha</span>}</td>
+                            <td className="col-hide-mobile" style={{ fontSize: 12 }}>{formatCOP(v.precio_venta)}</td>
+                            <td className="col-hide-mobile" style={{ fontSize: 12 }}>{formatCOP(v.valor_cuota_inicial)}</td>
+                            <td className="col-hide-mobile" style={{ fontSize: 12 }}>{formatCOP(v.saldo_financiado)}</td>
                             <td style={{ fontSize: 12, color: '#0284c7', fontWeight: 600 }}>
                               {formatCOP(v.cuotas_pagadas_monto)}
                               <div style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 400 }}>

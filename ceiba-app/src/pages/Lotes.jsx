@@ -262,14 +262,14 @@ export default function Lotes() {
                   <tr>
                     <th>#</th>
                     <th>ID Lote</th>
-                    <th>Etapa</th>
-                    <th>Manzana</th>
-                    <th>Lote</th>
+                    <th className="col-hide-mobile">Etapa</th>
+                    <th className="col-hide-mobile">Manzana</th>
+                    <th className="col-hide-mobile">Lote</th>
                     <th>Área</th>
-                    <th>Precio de Lista</th>
-                    <th>Precio Venta</th>
+                    <th className="col-hide-mobile">Precio de Lista</th>
+                    <th>Precio</th>
                     <th>Estado</th>
-                    <th>Acciones</th>
+                    <th className="col-hide-mobile">Acciones</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -283,7 +283,7 @@ export default function Lotes() {
                         setSelected(l);
                       }}>
                         <td style={{ color: 'var(--text-muted)', fontSize: 11 }}>{rowNum}</td>
-                        <td style={{ fontWeight: 700, fontFamily: 'monospace', color: 'var(--text-primary)' }}>
+                        <td style={{ fontWeight: 700, fontFamily: 'monospace', color: 'var(--text-primary)', whiteSpace: 'nowrap' }}>
                           <div>{l.id_lote}</div>
                           {especial && (
                             <span style={{
@@ -295,13 +295,13 @@ export default function Lotes() {
                             </span>
                           )}
                         </td>
-                        <td>{l.etapa ? `Etapa ${l.etapa}` : '—'}</td>
-                        <td>{l.manzana ? `Mz ${l.manzana}` : '—'}</td>
-                        <td>{l.lote ?? '—'}</td>
-                        <td>{l.area_m2 ? `${l.area_m2} m²` : '—'}</td>
-                        <td>{formatCOP(l.precio_lote)}</td>
-                        <td>{l.precio_venta ? formatCOP(l.precio_venta) : '—'}</td>
-                        <td onClick={e => e.stopPropagation()}>
+                        <td className="col-hide-mobile">{l.etapa ? `Etapa ${l.etapa}` : '—'}</td>
+                        <td className="col-hide-mobile">{l.manzana ? `Mz ${l.manzana}` : '—'}</td>
+                        <td className="col-hide-mobile">{l.lote ?? '—'}</td>
+                        <td style={{ whiteSpace: 'nowrap' }}>{l.area_m2 ? `${l.area_m2} m²` : '—'}</td>
+                        <td className="col-hide-mobile">{formatCOP(l.precio_lote)}</td>
+                        <td style={{ whiteSpace: 'nowrap', fontWeight: 600 }}>{l.precio_venta ? formatCOP(l.precio_venta) : formatCOP(l.precio_lote)}</td>
+                        <td onClick={e => e.stopPropagation()} style={{ whiteSpace: 'nowrap' }}>
                           <div style={{ position: 'relative', display: 'inline-block' }}>
                             <select
                               value={l.estado || 'DISPONIBLE'}
@@ -335,7 +335,7 @@ export default function Lotes() {
                             }}>▾</span>
                           </div>
                         </td>
-                        <td onClick={e => e.stopPropagation()} style={{ whiteSpace: 'nowrap' }}>
+                        <td className="col-hide-mobile" onClick={e => e.stopPropagation()} style={{ whiteSpace: 'nowrap' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                             {l.estado !== 'VENDIDO' && l.estado !== 'PAGADO EN SU TOTALIDAD' && l.estado !== 'NO APTO PARA VENTA' && (
                               <button
