@@ -106,16 +106,33 @@ export default function EstadoCuentaMatrizView({ venta: propVenta, cuotas: propC
 
     if (!editing) {
       return (
-        <td style={{ padding: '3px 5px', border: '1px solid var(--border)', maxWidth: 120 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 4, minHeight: 22 }}>
+        <td style={{
+          padding: '3px 6px',
+          border: '1px solid var(--border)',
+          overflow: 'hidden',
+          verticalAlign: 'middle',
+          background: 'var(--bg-card)'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4, minHeight: 22, minWidth: 0, overflow: 'hidden' }}>
             {texto ? (
-              <span style={{ fontSize: 9, color: 'var(--text-secondary)', flexGrow: 1, lineHeight: 1.3, wordBreak: 'break-word' }}
-                title={texto}>
-                <MessageSquare size={9} style={{ display: 'inline', marginRight: 2, color: 'var(--accent)' }} />
-                {texto.length > 40 ? texto.slice(0, 40) + '…' : texto}
+              <span
+                style={{
+                  fontSize: 9,
+                  color: 'var(--text-secondary)',
+                  flex: 1,
+                  minWidth: 0,
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                  lineHeight: 1.3
+                }}
+                title={texto}
+              >
+                <MessageSquare size={9} style={{ display: 'inline', marginRight: 3, verticalAlign: 'middle', color: 'var(--accent)', flexShrink: 0 }} />
+                {texto}
               </span>
             ) : (
-              <span style={{ fontSize: 9, color: 'var(--text-muted)', flexGrow: 1 }}>—</span>
+              <span style={{ fontSize: 9, color: 'var(--text-muted)', flex: 1, minWidth: 0 }}>—</span>
             )}
             <button
               onClick={() => setEditing(true)}
@@ -144,12 +161,12 @@ export default function EstadoCuentaMatrizView({ venta: propVenta, cuotas: propC
     };
 
     return (
-      <td style={{ padding: '3px 5px', border: '1px solid var(--accent)', background: 'var(--accent-soft)', maxWidth: 150 }}>
+      <td style={{ padding: '3px 5px', border: '1px solid var(--accent)', background: 'var(--accent-soft)', overflow: 'hidden' }}>
         <textarea
           value={texto}
           onChange={e => setTexto(e.target.value)}
           rows={2}
-          style={{ width: '100%', fontSize: 9, border: 'none', background: 'transparent', color: 'var(--text-primary)', resize: 'vertical', fontFamily: 'inherit', outline: 'none' }}
+          style={{ width: '100%', fontSize: 9, border: 'none', background: 'transparent', color: 'var(--text-primary)', resize: 'none', fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box' }}
           autoFocus
         />
         <div style={{ display: 'flex', gap: 4, justifyContent: 'flex-end', marginTop: 2 }}>
@@ -357,6 +374,7 @@ export default function EstadoCuentaMatrizView({ venta: propVenta, cuotas: propC
         overflowX: 'auto',
         fontFamily: 'Inter, -apple-system, sans-serif'
       }}>
+        <div style={{ minWidth: 1350 }}>
         {/* Encabezado con Logo Oficial */}
         <div className="matriz-header-wrapper" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', marginBottom: 16, minHeight: 48 }}>
           <img
@@ -434,33 +452,33 @@ export default function EstadoCuentaMatrizView({ venta: propVenta, cuotas: propC
         </div>
 
         {/* Tabla 2: Matriz 3 Columnas (Cuotas 1-12, 13-24, 25-36) */}
-        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 10 }}>
+        <table style={{ width: '100%', minWidth: 1350, borderCollapse: 'collapse', fontSize: 10, tableLayout: 'fixed' }}>
           <thead>
             <tr style={{ background: 'var(--bg-card2)', color: 'var(--text-secondary)', fontSize: 9, textAlign: 'center', fontWeight: 700 }}>
-              <th style={{ padding: '4px 6px', border: '1px solid var(--border)' }}># DE CUOTA</th>
-              <th style={{ padding: '4px 6px', border: '1px solid var(--border)' }}>FECHA PAGO / VENC.</th>
-              <th style={{ padding: '4px 6px', border: '1px solid var(--border)' }}>ESTADO CUOTA</th>
-              <th style={{ padding: '4px 6px', border: '1px solid var(--border)' }}>VALOR</th>
-              <th style={{ padding: '4px 6px', border: '1px solid var(--border)', background: 'var(--accent-soft)', color: 'var(--accent)' }}>OBSERVACIÓN ✏️</th>
+              <th style={{ width: 70, padding: '4px 4px', border: '1px solid var(--border)' }}># DE CUOTA</th>
+              <th style={{ width: 85, padding: '4px 4px', border: '1px solid var(--border)' }}>FECHA PAGO / VENC.</th>
+              <th style={{ width: 75, padding: '4px 4px', border: '1px solid var(--border)' }}>ESTADO CUOTA</th>
+              <th style={{ width: 88, padding: '4px 4px', border: '1px solid var(--border)' }}>VALOR</th>
+              <th style={{ width: 132, padding: '4px 4px', border: '1px solid var(--border)', background: 'var(--accent-soft)', color: 'var(--accent)' }}>OBSERVACIÓN ✏️</th>
 
-              <th style={{ padding: '4px 6px', border: '1px solid var(--border)', borderLeft: '2px solid var(--border)' }}># DE CUOTA</th>
-              <th style={{ padding: '4px 6px', border: '1px solid var(--border)' }}>FECHA PAGO / VENC.</th>
-              <th style={{ padding: '4px 6px', border: '1px solid var(--border)' }}>ESTADO CUOTA</th>
-              <th style={{ padding: '4px 6px', border: '1px solid var(--border)' }}>VALOR</th>
-              <th style={{ padding: '4px 6px', border: '1px solid var(--border)', background: 'var(--accent-soft)', color: 'var(--accent)' }}>OBSERVACIÓN ✏️</th>
+              <th style={{ width: 70, padding: '4px 4px', border: '1px solid var(--border)', borderLeft: '2px solid var(--border)' }}># DE CUOTA</th>
+              <th style={{ width: 85, padding: '4px 4px', border: '1px solid var(--border)' }}>FECHA PAGO / VENC.</th>
+              <th style={{ width: 75, padding: '4px 4px', border: '1px solid var(--border)' }}>ESTADO CUOTA</th>
+              <th style={{ width: 88, padding: '4px 4px', border: '1px solid var(--border)' }}>VALOR</th>
+              <th style={{ width: 132, padding: '4px 4px', border: '1px solid var(--border)', background: 'var(--accent-soft)', color: 'var(--accent)' }}>OBSERVACIÓN ✏️</th>
 
-              <th style={{ padding: '4px 6px', border: '1px solid var(--border)', borderLeft: '2px solid var(--border)' }}># DE CUOTA</th>
-              <th style={{ padding: '4px 6px', border: '1px solid var(--border)' }}>FECHA PAGO / VENC.</th>
-              <th style={{ padding: '4px 6px', border: '1px solid var(--border)' }}>ESTADO CUOTA</th>
-              <th style={{ padding: '4px 6px', border: '1px solid var(--border)' }}>VALOR</th>
-              <th style={{ padding: '4px 6px', border: '1px solid var(--border)', background: 'var(--accent-soft)', color: 'var(--accent)' }}>OBSERVACIÓN ✏️</th>
+              <th style={{ width: 70, padding: '4px 4px', border: '1px solid var(--border)', borderLeft: '2px solid var(--border)' }}># DE CUOTA</th>
+              <th style={{ width: 85, padding: '4px 4px', border: '1px solid var(--border)' }}>FECHA PAGO / VENC.</th>
+              <th style={{ width: 75, padding: '4px 4px', border: '1px solid var(--border)' }}>ESTADO CUOTA</th>
+              <th style={{ width: 88, padding: '4px 4px', border: '1px solid var(--border)' }}>VALOR</th>
+              <th style={{ width: 132, padding: '4px 4px', border: '1px solid var(--border)', background: 'var(--accent-soft)', color: 'var(--accent)' }}>OBSERVACIÓN ✏️</th>
             </tr>
           </thead>
           <tbody>
             {rows.map(({ r, c1, c2, c3, d1, d2, d3 }) => (
               <tr key={r} style={{ textAlign: 'center' }}>
                 {/* Bloque 1 */}
-                <td style={{ padding: '4px', border: '1px solid var(--border)', fontWeight: 600, background: d1.isExceeded ? 'var(--bg-base)' : 'var(--bg-card2)', color: d1.isExceeded ? 'var(--text-muted)' : 'var(--text-primary)' }}>
+                <td style={{ padding: '4px', border: '1px solid var(--border)', fontWeight: 600, background: d1.isExceeded ? 'var(--bg-base)' : 'var(--bg-card2)', color: d1.isExceeded ? 'var(--text-muted)' : 'var(--text-primary)', whiteSpace: 'nowrap' }}>
                   {d1.num}
                 </td>
                 <td style={{ padding: '4px', border: '1px solid var(--border)', color: 'var(--text-primary)' }}>
@@ -469,7 +487,7 @@ export default function EstadoCuentaMatrizView({ venta: propVenta, cuotas: propC
                 <td style={{ padding: '4px', border: '1px solid var(--border)' }}>
                   {renderBadge(d1)}
                 </td>
-                <td style={{ padding: '4px', border: '1px solid var(--border)', textAlign: 'right', color: d1.isExceeded ? 'var(--text-muted)' : 'var(--text-primary)' }}>
+                <td style={{ padding: '4px', border: '1px solid var(--border)', textAlign: 'right', color: d1.isExceeded ? 'var(--text-muted)' : 'var(--text-primary)', whiteSpace: 'nowrap' }}>
                   <div>{d1.valor}</div>
                   {d1.saldoPendiente > 0 && (
                     <div style={{ fontSize: 8, color: '#dc2626', fontWeight: 800 }} title="Falta por pagar para completar la cuota">
@@ -480,7 +498,7 @@ export default function EstadoCuentaMatrizView({ venta: propVenta, cuotas: propC
                 <ObsCell cuota={c1} />
 
                 {/* Bloque 2 */}
-                <td style={{ padding: '4px', border: '1px solid var(--border)', fontWeight: 600, background: d2.isExceeded ? 'var(--bg-base)' : 'var(--bg-card2)', borderLeft: '2px solid var(--border)', color: d2.isExceeded ? 'var(--text-muted)' : 'var(--text-primary)' }}>
+                <td style={{ padding: '4px', border: '1px solid var(--border)', fontWeight: 600, background: d2.isExceeded ? 'var(--bg-base)' : 'var(--bg-card2)', borderLeft: '2px solid var(--border)', color: d2.isExceeded ? 'var(--text-muted)' : 'var(--text-primary)', whiteSpace: 'nowrap' }}>
                   {d2.num}
                 </td>
                 <td style={{ padding: '4px', border: '1px solid var(--border)', color: 'var(--text-primary)' }}>
@@ -489,7 +507,7 @@ export default function EstadoCuentaMatrizView({ venta: propVenta, cuotas: propC
                 <td style={{ padding: '4px', border: '1px solid var(--border)' }}>
                   {renderBadge(d2)}
                 </td>
-                <td style={{ padding: '4px', border: '1px solid var(--border)', textAlign: 'right', color: d2.isExceeded ? 'var(--text-muted)' : 'var(--text-primary)' }}>
+                <td style={{ padding: '4px', border: '1px solid var(--border)', textAlign: 'right', color: d2.isExceeded ? 'var(--text-muted)' : 'var(--text-primary)', whiteSpace: 'nowrap' }}>
                   <div>{d2.valor}</div>
                   {d2.saldoPendiente > 0 && (
                     <div style={{ fontSize: 8, color: '#dc2626', fontWeight: 800 }} title="Falta por pagar para completar la cuota">
@@ -500,7 +518,7 @@ export default function EstadoCuentaMatrizView({ venta: propVenta, cuotas: propC
                 <ObsCell cuota={c2} />
 
                 {/* Bloque 3 */}
-                <td style={{ padding: '4px', border: '1px solid var(--border)', fontWeight: 600, background: d3.isExceeded ? 'var(--bg-base)' : 'var(--bg-card2)', borderLeft: '2px solid var(--border)', color: d3.isExceeded ? 'var(--text-muted)' : 'var(--text-primary)' }}>
+                <td style={{ padding: '4px', border: '1px solid var(--border)', fontWeight: 600, background: d3.isExceeded ? 'var(--bg-base)' : 'var(--bg-card2)', borderLeft: '2px solid var(--border)', color: d3.isExceeded ? 'var(--text-muted)' : 'var(--text-primary)', whiteSpace: 'nowrap' }}>
                   {d3.num}
                 </td>
                 <td style={{ padding: '4px', border: '1px solid var(--border)', color: 'var(--text-primary)' }}>
@@ -509,7 +527,7 @@ export default function EstadoCuentaMatrizView({ venta: propVenta, cuotas: propC
                 <td style={{ padding: '4px', border: '1px solid var(--border)' }}>
                   {renderBadge(d3)}
                 </td>
-                <td style={{ padding: '4px', border: '1px solid var(--border)', textAlign: 'right', color: d3.isExceeded ? 'var(--text-muted)' : 'var(--text-primary)' }}>
+                <td style={{ padding: '4px', border: '1px solid var(--border)', textAlign: 'right', color: d3.isExceeded ? 'var(--text-muted)' : 'var(--text-primary)', whiteSpace: 'nowrap' }}>
                   <div>{d3.valor}</div>
                   {d3.saldoPendiente > 0 && (
                     <div style={{ fontSize: 8, color: '#dc2626', fontWeight: 800 }} title="Falta por pagar para completar la cuota">
@@ -543,6 +561,7 @@ export default function EstadoCuentaMatrizView({ venta: propVenta, cuotas: propC
               </tr>
             </tbody>
           </table>
+        </div>
         </div>
       </div>
     </div>

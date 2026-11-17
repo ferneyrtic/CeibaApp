@@ -887,7 +887,6 @@ td {
   color: var(--text-secondary);
   border-bottom: 1px solid var(--border);
   vertical-align: middle;
-  white-space: nowrap;
 }
 
 tr:last-child td { border-bottom: none; }
