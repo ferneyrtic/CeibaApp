@@ -1756,12 +1756,7 @@ export default function Cartera() {
                                   </span>
                                 ) : (
                                   <div>
-                                    <div>{formatCOP(c.valor_pagado)}</div>
-                                    {Number(c.valor_cuota) > Number(c.valor_pagado) + 2000 && Number(c.valor_pagado) > 0 && (
-                                      <div style={{ fontSize: 9.5, color: '#dc2626', fontWeight: 800, marginTop: 1 }} title="Falta por pagar para completar la cuota">
-                                        Falta: {formatCOP(Number(c.valor_cuota) - Number(c.valor_pagado))}
-                                      </div>
-                                    )}
+                                    {formatCOP(c.valor_pagado)}
                                   </div>
                                 )}
                               </td>

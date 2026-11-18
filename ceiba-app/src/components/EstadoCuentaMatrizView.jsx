@@ -489,11 +489,6 @@ export default function EstadoCuentaMatrizView({ venta: propVenta, cuotas: propC
                 </td>
                 <td style={{ padding: '4px', border: '1px solid var(--border)', textAlign: 'right', color: d1.isExceeded ? 'var(--text-muted)' : 'var(--text-primary)', whiteSpace: 'nowrap' }}>
                   <div>{d1.valor}</div>
-                  {d1.saldoPendiente > 0 && (
-                    <div style={{ fontSize: 8, color: '#dc2626', fontWeight: 800 }} title="Falta por pagar para completar la cuota">
-                      Falta: {formatCOP(d1.saldoPendiente)}
-                    </div>
-                  )}
                 </td>
                 <ObsCell cuota={c1} />
 
@@ -509,11 +504,6 @@ export default function EstadoCuentaMatrizView({ venta: propVenta, cuotas: propC
                 </td>
                 <td style={{ padding: '4px', border: '1px solid var(--border)', textAlign: 'right', color: d2.isExceeded ? 'var(--text-muted)' : 'var(--text-primary)', whiteSpace: 'nowrap' }}>
                   <div>{d2.valor}</div>
-                  {d2.saldoPendiente > 0 && (
-                    <div style={{ fontSize: 8, color: '#dc2626', fontWeight: 800 }} title="Falta por pagar para completar la cuota">
-                      Falta: {formatCOP(d2.saldoPendiente)}
-                    </div>
-                  )}
                 </td>
                 <ObsCell cuota={c2} />
 
@@ -529,11 +519,6 @@ export default function EstadoCuentaMatrizView({ venta: propVenta, cuotas: propC
                 </td>
                 <td style={{ padding: '4px', border: '1px solid var(--border)', textAlign: 'right', color: d3.isExceeded ? 'var(--text-muted)' : 'var(--text-primary)', whiteSpace: 'nowrap' }}>
                   <div>{d3.valor}</div>
-                  {d3.saldoPendiente > 0 && (
-                    <div style={{ fontSize: 8, color: '#dc2626', fontWeight: 800 }} title="Falta por pagar para completar la cuota">
-                      Falta: {formatCOP(d3.saldoPendiente)}
-                    </div>
-                  )}
                 </td>
                 <ObsCell cuota={c3} />
               </tr>
