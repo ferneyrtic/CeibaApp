@@ -258,6 +258,18 @@ export default function EstadoCuentaMatrizView({ venta: propVenta, cuotas: propC
 
   const renderFecha = (d) => {
     if (d.isExceeded || d.estado === '—') return <span style={{ color: 'var(--text-muted)' }}>—</span>;
+    if (d.isSaltada) {
+      return (
+        <div style={{ lineHeight: 1.2 }}>
+          <div style={{ fontWeight: 600, color: 'var(--text-muted)', fontSize: 10 }}>—</div>
+          {d.fechaVenc && d.fechaVenc !== '—' && (
+            <div style={{ fontSize: 8, color: 'var(--text-muted)' }}>
+              Venc: {d.fechaVenc}
+            </div>
+          )}
+        </div>
+      );
+    }
     if (d.estado === 'PAGA') {
       return (
         <div style={{ lineHeight: 1.2 }}>
@@ -487,7 +499,7 @@ export default function EstadoCuentaMatrizView({ venta: propVenta, cuotas: propC
                 <td style={{ padding: '4px', border: '1px solid var(--border)' }}>
                   {renderBadge(d1)}
                 </td>
-                <td style={{ padding: '4px', border: '1px solid var(--border)', textAlign: 'right', color: d1.isExceeded ? 'var(--text-muted)' : 'var(--text-primary)', whiteSpace: 'nowrap' }}>
+                <td style={{ padding: '4px', border: '1px solid var(--border)', textAlign: 'right', color: d1.isExceeded || d1.isSaltada ? 'var(--text-muted)' : 'var(--text-primary)', whiteSpace: 'nowrap' }}>
                   <div>{d1.valor}</div>
                 </td>
                 <ObsCell cuota={c1} />
@@ -502,7 +514,7 @@ export default function EstadoCuentaMatrizView({ venta: propVenta, cuotas: propC
                 <td style={{ padding: '4px', border: '1px solid var(--border)' }}>
                   {renderBadge(d2)}
                 </td>
-                <td style={{ padding: '4px', border: '1px solid var(--border)', textAlign: 'right', color: d2.isExceeded ? 'var(--text-muted)' : 'var(--text-primary)', whiteSpace: 'nowrap' }}>
+                <td style={{ padding: '4px', border: '1px solid var(--border)', textAlign: 'right', color: d2.isExceeded || d2.isSaltada ? 'var(--text-muted)' : 'var(--text-primary)', whiteSpace: 'nowrap' }}>
                   <div>{d2.valor}</div>
                 </td>
                 <ObsCell cuota={c2} />
@@ -517,7 +529,7 @@ export default function EstadoCuentaMatrizView({ venta: propVenta, cuotas: propC
                 <td style={{ padding: '4px', border: '1px solid var(--border)' }}>
                   {renderBadge(d3)}
                 </td>
-                <td style={{ padding: '4px', border: '1px solid var(--border)', textAlign: 'right', color: d3.isExceeded ? 'var(--text-muted)' : 'var(--text-primary)', whiteSpace: 'nowrap' }}>
+                <td style={{ padding: '4px', border: '1px solid var(--border)', textAlign: 'right', color: d3.isExceeded || d3.isSaltada ? 'var(--text-muted)' : 'var(--text-primary)', whiteSpace: 'nowrap' }}>
                   <div>{d3.valor}</div>
                 </td>
                 <ObsCell cuota={c3} />

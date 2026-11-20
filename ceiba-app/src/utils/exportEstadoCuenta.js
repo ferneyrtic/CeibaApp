@@ -37,18 +37,26 @@ export const calculateCuotasCoverage = (cuotas = [], venta = {}) => {
     const num = c.numero_cuota || (idx + 1);
     const vPagDirecto = Number(c.valor_pagado) || 0;
 
+    // Detectar si la cuota es una cuota saltada (cubierta por pago previo agrupado)
+    const esSaltada = c.observacion === '---' ||
+      (String(c.estado_cuota || '').toUpperCase() === 'PAGA' && Number(c.valor_cuota || 0) === 0 && Number(c.valor_pagado || 0) === 0 && !c.fecha_pago);
+
     let nominal = Number(c.valor_cuota) || 0;
-    if (nominal <= 0 || (cuotaPactada > 0 && (nominal > cuotaPactada * 1.15 || nominal < cuotaPactada * 0.85))) {
+    if (esSaltada) {
+      nominal = 0;
+    } else if (nominal <= 0) {
       nominal = cuotaPactada;
     }
 
-    const cubierto = Math.min(dineroRestante, nominal);
-    dineroRestante = Math.max(0, dineroRestante - cubierto);
-    const saldoNeto = Math.max(0, nominal - cubierto);
+    const cubierto = esSaltada ? 0 : Math.min(dineroRestante, nominal);
+    if (!esSaltada) {
+      dineroRestante = Math.max(0, dineroRestante - cubierto);
+    }
+    const saldoNeto = esSaltada ? 0 : Math.max(0, nominal - cubierto);
 
-    const esPaga = (cubierto >= nominal - 2000) || (String(c.estado_cuota || '').toUpperCase() === 'PAGA');
+    const esPaga = esSaltada || (cubierto >= nominal - 2000 && nominal > 0) || (String(c.estado_cuota || '').toUpperCase() === 'PAGA');
     const esAbono = !esPaga && cubierto > 0;
-    const abonoPrevio = Math.max(0, cubierto - vPagDirecto);
+    const abonoPrevio = esSaltada ? 0 : Math.max(0, cubierto - vPagDirecto);
 
     let estadoCalculado = 'PROGRAMADA';
     if (esPaga) estadoCalculado = 'PAGA';
@@ -60,7 +68,8 @@ export const calculateCuotasCoverage = (cuotas = [], venta = {}) => {
       cubierto,
       saldoNeto,
       abonoPrevio,
-      estadoCalculado
+      estadoCalculado,
+      esSaltada
     };
   });
 };
@@ -83,11 +92,17 @@ export const resolveCuotaDisplay = (cuota, numCuota, plazoTotal) => {
     };
   }
 
+  const esSaltada = cuota?.esSaltada || cuota?.observacion === '---' ||
+    (String(cuota?.estado_cuota || '').trim().toUpperCase() === 'PAGA' &&
+     Number(cuota?.valor_cuota || 0) === 0 &&
+     Number(cuota?.valor_pagado || 0) === 0 &&
+     !cuota?.fecha_pago);
+
   const valCuotaNum = Number(cuota?.nominal) || Number(cuota?.valor_cuota) || 0;
   const valPagadoNum = Number(cuota?.valor_pagado) || 0;
   const cubiertoNum = Number(cuota?.cubierto !== undefined ? cuota.cubierto : (cuota?.abonoPrevio ? valPagadoNum + cuota.abonoPrevio : valPagadoNum));
   const saldoNetoNum = Number(cuota?.saldoNeto !== undefined ? cuota.saldoNeto : Math.max(0, valCuotaNum - cubiertoNum));
-  const valor = valCuotaNum > 0 ? formatCOP(valCuotaNum) : '—';
+  const valor = esSaltada ? '—' : (valCuotaNum > 0 ? formatCOP(valCuotaNum) : '—');
   const fechaVenc = cuota?.fecha_vencimiento ? formatDate(cuota.fecha_vencimiento) : '—';
   const fechaPago = cuota?.fecha_pago ? formatDate(cuota.fecha_pago) : null;
 
@@ -105,6 +120,26 @@ export const resolveCuotaDisplay = (cuota, numCuota, plazoTotal) => {
   }
 
   const estadoRaw = String(cuota?.estado_cuota || '').trim().toUpperCase();
+
+  // Caso especial: CUOTA SALTADA (cubierta por pago previo agrupado)
+  if (esSaltada) {
+    return {
+      num: `CUOTA ${numCuota}`,
+      fecha: '—',
+      fechaPago: null,
+      fechaVenc,
+      estado: 'PAGA',
+      isAbono: false,
+      saldoPendiente: 0,
+      isVencida: false,
+      valor: '—',
+      color: [22, 163, 74],
+      cssColor: '#16a34a',
+      fontStyle: 'bold',
+      isExceeded: false,
+      isSaltada: true,
+    };
+  }
 
   // 1. Es PAGA completa si:
   // - Está explícitamente marcada como 'PAGA' o calculada como 'PAGA'
