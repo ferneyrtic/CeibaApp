@@ -43,6 +43,11 @@ const obtenerRecibosLocales = () => {
         modificado = true;
         return false;
       }
+      // Sincronización recibo 3743: corregir asignación errónea de LC2 - 33 - 13 a LC2 - 33 - 11 (Sandra Escobar)
+      if (num === 3743 && String(r.lote_id_str || '').toUpperCase().includes('33 - 13')) {
+        modificado = true;
+        return false;
+      }
       return true;
     });
 
