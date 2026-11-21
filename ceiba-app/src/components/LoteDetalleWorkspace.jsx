@@ -804,7 +804,12 @@ export default function LoteDetalleWorkspace({
                       const cuotasConCalculos = calculateCuotasCoverage(cuotas, currentVenta || venta);
 
                       return cuotasConCalculos.map((c) => {
-                        const cuotaRecs = (recibos || []).filter(r => r && r.cuota_id === c.id);
+                        const cuotaRecs = (recibos || []).filter(r => r && (
+                          r.cuota_id === c.id ||
+                          (r.venta_id === (currentVenta?.id || venta?.id) && Number(r.numero_cuota) === Number(c.numero_cuota))
+                        ));
+                        const isSaltada = c.esSaltada || c.observacion === '---' ||
+                          (String(c.estado_cuota || '').toUpperCase() === 'PAGA' && Number(c.valor_cuota || 0) === 0 && Number(c.valor_pagado || 0) === 0 && !c.fecha_pago);
                         return (
                           <tr key={c.id} style={{ borderBottom: '1px solid var(--border, #f1f5f9)' }}>
                             <td style={{ padding: '8px 12px', fontWeight: 700 }}>
@@ -850,8 +855,10 @@ export default function LoteDetalleWorkspace({
                             </td>
                             <td style={{ padding: '8px 12px' }}>{formatDate(c.fecha_vencimiento)}</td>
                             <td style={{ padding: '8px 12px', textAlign: 'right' }}>
-                              <div style={{ fontWeight: 600 }}>{formatCOP(c.valor_cuota)}</div>
-                              {c.abonoPrevio > 0 && c.estado_cuota !== 'PAGA' && (
+                              <div style={{ fontWeight: 600, color: isSaltada ? 'var(--text-muted)' : 'inherit' }}>
+                                {isSaltada || Number(c.valor_cuota || 0) === 0 ? '—' : formatCOP(c.valor_cuota)}
+                              </div>
+                              {c.abonoPrevio > 0 && c.estado_cuota !== 'PAGA' && !isSaltada && (
                                 <div style={{ marginTop: 3 }}>
                                   <span style={{
                                     display: 'inline-block',
@@ -873,7 +880,7 @@ export default function LoteDetalleWorkspace({
                               )}
                             </td>
                             <td style={{ padding: '8px 12px', textAlign: 'right', color: '#16a34a', fontWeight: 700 }}>
-                              {c.estado_cuota === 'PAGA' && (!c.valor_pagado || Number(c.valor_pagado) === 0) ? (
+                              {isSaltada || (c.estado_cuota === 'PAGA' && (!c.valor_pagado || Number(c.valor_pagado) === 0)) ? (
                                 <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>—</span>
                               ) : (c.abonoPrevio > 0 && (!c.valor_pagado || Number(c.valor_pagado) === 0)) ? (
                                 <span style={{ color: '#d97706', fontWeight: 700 }} title="Abono a favor acumulado de pagos anteriores">
@@ -882,7 +889,9 @@ export default function LoteDetalleWorkspace({
                               ) : formatCOP(c.valor_pagado)}
                             </td>
                           <td style={{ padding: '8px 12px' }}>
-                            {c.fecha_pago ? formatDate(c.fecha_pago) : (c.abonoPrevio > 0 && c.estado_cuota !== 'PAGA') ? (
+                            {isSaltada ? (
+                              <span style={{ color: 'var(--text-muted)' }}>—</span>
+                            ) : c.fecha_pago ? formatDate(c.fecha_pago) : (c.abonoPrevio > 0 && c.estado_cuota !== 'PAGA') ? (
                               <span style={{ color: '#d97706', fontSize: 11, fontStyle: 'italic' }}>Abono previo</span>
                             ) : '—'}
                           </td>
