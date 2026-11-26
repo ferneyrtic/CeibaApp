@@ -10,11 +10,14 @@ export const getLotes = async ({ estado, search } = {}) => {
   const { data, error } = await query;
   if (error) throw error;
 
-  // Si la venta asociada está como PAGADO EN SU TOTALIDAD, reflejarlo en el lote
+  // Si la venta asociada está como PAGADO EN SU TOTALIDAD o CEDIDO EN FORMA DE PAGO, reflejarlo en el lote
   const mapped = (data || []).map(l => {
     const v = Array.isArray(l.ventas) ? l.ventas[0] : l.ventas;
     if (v?.estado === 'PAGADO EN SU TOTALIDAD' || v?.estado === 'PAGADO') {
       return { ...l, estado: 'PAGADO EN SU TOTALIDAD' };
+    }
+    if (v?.estado === 'CEDIDO EN FORMA DE PAGO') {
+      return { ...l, estado: 'CEDIDO EN FORMA DE PAGO' };
     }
     return l;
   });

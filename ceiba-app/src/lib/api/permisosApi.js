@@ -27,6 +27,9 @@ export const PERMISSION_CATALOG = [
   {
     category: 'Gestión Contractual & Cartera',
     items: [
+      { key: 'canManageArras', label: 'Generar Arras de Lotes', desc: 'Separar lotes disponibles con arras y emitir recibo oficial' },
+      { key: 'canGenerateContrato', label: 'Generar Contratos de Venta', desc: 'Formalizar contratos desde arras o venta directa y descargar PDF' },
+      { key: 'canLiberarLote', label: 'Liberar Lotes (Desistimiento)', desc: 'Devolver lotes apartados o vendidos a DISPONIBLE guardando histórico' },
       { key: 'canEditContrato', label: 'Editar Datos de Contrato', desc: 'Modificar condiciones de venta, precios, cuotas y plazos' },
       { key: 'canDeleteCasosEspeciales', label: 'Gestionar Casos Especiales', desc: 'Crear, editar o levantar acuerdos y notas de cobranza especial' },
     ]

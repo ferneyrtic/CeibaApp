@@ -1,21 +1,27 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { Plus, Search, X, MapPin, RefreshCw, Eye, Check, CheckCircle2, AlertCircle, Tag, DollarSign, Edit3 } from 'lucide-react';
+import { Plus, Search, X, MapPin, RefreshCw, Eye, Check, CheckCircle2, AlertCircle, Tag, DollarSign, Edit3, BookmarkCheck, FileText, RotateCcw, History } from 'lucide-react';
 import { getLotes, updateLote } from '../lib/api/lotes';
 import { getCasosEspeciales, obtenerBadgeCasoEspecial } from '../lib/api/casosEspecialesApi';
 import { registrarAccion } from '../lib/api/auditApi';
-import { formatCOP, getEstadoBadge } from '../utils/helpers';
+import { countPhysicalLots, obtenerContratoPorLoteOVenta, obtenerHistorialDesistimientos } from '../lib/api/loteLifecycleApi';
+import { formatCOP, formatDate, getEstadoBadge } from '../utils/helpers';
 import { supabase } from '../lib/supabase';
 import Modal from '../components/Modal';
 import Pagination from '../components/Pagination';
 import ModalNuevoLote from '../components/ModalNuevoLote';
 import ModalRegistrarVenta from '../components/ModalRegistrarVenta';
 import ModalEditarContrato from '../components/ModalEditarContrato';
+import ModalGenerarArras from '../components/ModalGenerarArras';
+import ModalGenerarContrato from '../components/ModalGenerarContrato';
+import ModalLiberarLote from '../components/ModalLiberarLote';
+import ModalVerContrato from '../components/ModalVerContrato';
+import EstadoCuentaMatrizView from '../components/EstadoCuentaMatrizView';
 import { useAuth } from '../context/AuthContext';
 
-const ESTADOS = ['Todos', 'VENDIDO', 'PAGADO EN SU TOTALIDAD', 'DISPONIBLE', 'EN NEGOCIACIÓN', 'APARTADO', 'NO APTO PARA VENTA'];
+const ESTADOS = ['Todos', 'DISPONIBLE', 'APARTADO', 'VENDIDO', 'PAGADO EN SU TOTALIDAD', 'CEDIDO EN FORMA DE PAGO', 'EN NEGOCIACIÓN', 'NO APTO PARA VENTA'];
 
 export default function Lotes() {
-  const { permissions } = useAuth();
+  const { permissions, user } = useAuth();
   const [allLotes, setAllLotes]     = useState([]);
   const [casosEspeciales, setCasosEspeciales] = useState([]);
   const [loading, setLoading]       = useState(true);
@@ -31,6 +37,14 @@ export default function Lotes() {
   const [loteParaVenta, setLoteParaVenta]           = useState(null);
   const [ventaParaEditar, setVentaParaEditar]       = useState(null);
   const [loadingContrato, setLoadingContrato]       = useState(false);
+
+  // Modales del ciclo estándar de lotes
+  const [loteParaArras, setLoteParaArras]           = useState(null);
+  const [loteParaContrato, setLoteParaContrato]     = useState(null);
+  const [loteParaLiberar, setLoteParaLiberar]       = useState(null);
+  const [contratoParaVer, setContratoParaVer]       = useState(null);
+  const [historialDesist, setHistorialDesist]       = useState([]);
+  const [desistDetalleSnap, setDesistDetalleSnap]   = useState(null);
 
   // Paginación
   const [page, setPage]             = useState(1);
@@ -118,13 +132,63 @@ export default function Lotes() {
   };
 
 
-  // Contadores globales exactos e independientes del filtro
+  // Contadores globales exactos (registros + lotes físicos)
   const counters = useMemo(() => {
-    return ESTADOS.slice(1).map(e => ({
-      estado: e,
-      count: allLotes.filter(l => l.estado === e).length,
-    }));
+    return ESTADOS.slice(1).map(e => {
+      const items = allLotes.filter(l => l.estado === e);
+      const physicalCount = items.reduce((acc, l) => acc + countPhysicalLots(l), 0);
+      return {
+        estado: e,
+        count: items.length,
+        physicalCount,
+      };
+    });
   }, [allLotes]);
+
+  const totalPhysicalLots = useMemo(() => (
+    allLotes.reduce((acc, l) => acc + countPhysicalLots(l), 0)
+  ), [allLotes]);
+
+  useEffect(() => {
+    if (selected?.id) {
+      obtenerHistorialDesistimientos(selected.id).then(setHistorialDesist);
+    } else {
+      setHistorialDesist([]);
+    }
+  }, [selected?.id]);
+
+  const handleVerContratoLote = async (lote) => {
+    if (!lote?.id) return;
+    setLoadingContrato(true);
+    try {
+      const { data: vData } = await supabase
+        .from('ventas')
+        .select('*, lotes(*), clientes(*)')
+        .eq('lote_id', lote.id)
+        .limit(1);
+      const venta = vData?.[0] || null;
+      const cto = await obtenerContratoPorLoteOVenta({ lote, venta, cliente: venta?.clientes });
+      setContratoParaVer(cto);
+    } catch (err) {
+      alert('Error cargando contrato: ' + err.message);
+    } finally {
+      setLoadingContrato(false);
+    }
+  };
+
+  const handleAbrirLiberarLote = async (lote) => {
+    if (!lote?.id) return;
+    try {
+      const { data: vData } = await supabase
+        .from('ventas')
+        .select('*, lotes(*), clientes(*)')
+        .eq('lote_id', lote.id)
+        .limit(1);
+      setLoteParaLiberar({ lote, venta: vData?.[0] || null });
+    } catch {
+      setLoteParaLiberar({ lote, venta: null });
+    }
+  };
 
   // Filtrado 100% en memoria
   const filteredLotes = useMemo(() => {
@@ -165,7 +229,7 @@ export default function Lotes() {
         <div>
           <div className="page-title">Gestión de Lotes</div>
           <div className="page-subtitle">
-            Proyecto La Ceiba · {allLotes.length} lotes registrados
+            Proyecto La Ceiba · {allLotes.length} registros ({totalPhysicalLots} lotes físicos)
           </div>
         </div>
         <button className="btn btn-primary" onClick={() => setShowModalNuevoLote(true)}>
@@ -183,10 +247,13 @@ export default function Lotes() {
               className="stat-chip"
               style={{ borderColor: filtroEstado === c.estado ? badge.color : undefined, cursor: 'pointer' }}
               onClick={() => handleFiltroClick(c.estado)}
+              title={c.physicalCount !== c.count ? `${c.count} registros (${c.physicalCount} lotes físicos)` : `${c.count} lotes`}
             >
               <span className="stat-dot" style={{ background: badge.color }} />
               <span className="stat-chip-val">{c.count}</span>
-              <span className="stat-chip-label">{badge.label}</span>
+              <span className="stat-chip-label">
+                {badge.label}{c.physicalCount !== c.count ? ` (${c.physicalCount} fís.)` : ''}
+              </span>
             </div>
           );
         })}
@@ -336,18 +403,45 @@ export default function Lotes() {
                           </div>
                         </td>
                         <td className="col-hide-mobile" onClick={e => e.stopPropagation()} style={{ whiteSpace: 'nowrap' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                            {l.estado !== 'VENDIDO' && l.estado !== 'PAGADO EN SU TOTALIDAD' && l.estado !== 'NO APTO PARA VENTA' && (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                            {(l.estado === 'DISPONIBLE' || l.estado === 'EN NEGOCIACIÓN') && permissions?.canManageArras && (
                               <button
                                 className="btn btn-primary"
-                                style={{ padding: '3px 8px', fontSize: 11, gap: 4, background: '#16a34a' }}
-                                title="Registrar venta de este lote"
-                                onClick={() => {
-                                  setLoteParaVenta(l);
-                                  setShowModalVenta(true);
-                                }}
+                                style={{ padding: '3px 8px', fontSize: 11, gap: 4, background: '#d97706', borderColor: '#d97706' }}
+                                title="Separar lote con Arras"
+                                onClick={() => setLoteParaArras(l)}
                               >
-                                <DollarSign size={11} /> Vender
+                                <BookmarkCheck size={11} /> Arras
+                              </button>
+                            )}
+                            {(l.estado === 'DISPONIBLE' || l.estado === 'APARTADO' || l.estado === 'EN NEGOCIACIÓN') && permissions?.canGenerateContrato && (
+                              <button
+                                className="btn btn-primary"
+                                style={{ padding: '3px 8px', fontSize: 11, gap: 4, background: '#2563eb', borderColor: '#2563eb' }}
+                                title="Generar contrato de venta y descargar PDF"
+                                onClick={() => setLoteParaContrato(l)}
+                              >
+                                <FileText size={11} /> Contrato
+                              </button>
+                            )}
+                            {(l.estado === 'VENDIDO' || l.estado === 'PAGADO EN SU TOTALIDAD') && (
+                              <button
+                                className="btn btn-ghost"
+                                style={{ padding: '3px 8px', fontSize: 11, gap: 4, color: '#2563eb', border: '1px solid #bfdbfe' }}
+                                title="Ver o descargar contrato"
+                                onClick={() => handleVerContratoLote(l)}
+                              >
+                                <FileText size={11} /> Contrato
+                              </button>
+                            )}
+                            {(l.estado === 'APARTADO' || l.estado === 'VENDIDO') && permissions?.canLiberarLote && (
+                              <button
+                                className="btn btn-ghost"
+                                style={{ padding: '3px 8px', fontSize: 11, gap: 4, color: '#dc2626', border: '1px solid #fecaca' }}
+                                title="Liberar / Devolver a Disponible"
+                                onClick={() => handleAbrirLiberarLote(l)}
+                              >
+                                <RotateCcw size={11} />
                               </button>
                             )}
                             <button
@@ -517,7 +611,67 @@ export default function Lotes() {
             </div>
           )}
 
-          <div className="modal-footer" style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 20 }}>
+          {historialDesist.length > 0 && (
+            <div style={{ marginTop: 14, padding: 12, borderRadius: 10, background: '#fff7ed', border: '1px solid #fed7aa' }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: '#9a3412', display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+                <History size={14} /> Histórico de Desistimientos / Liberaciones ({historialDesist.length})
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                {historialDesist.map((h) => (
+                  <div key={h.id} style={{
+                    display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, flexWrap: 'wrap',
+                    padding: '6px 10px', borderRadius: 6, background: '#ffffff', border: '1px solid #ffedd5', fontSize: 11.5
+                  }}>
+                    <div>
+                      <strong>{formatDate(h.fecha_liberacion)}</strong> · {h.cliente_nombre} ·{' '}
+                      <span style={{ color: '#c2410c', fontWeight: 700 }}>Valor quitado: {formatCOP(h.valor_quitado)}</span>
+                      <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>Motivo: {h.motivo}</div>
+                    </div>
+                    {h.venta_snapshot && (
+                      <button
+                        type="button"
+                        className="btn btn-ghost"
+                        style={{ padding: '3px 8px', fontSize: 11, color: '#c2410c', border: '1px solid #fdba74' }}
+                        onClick={() => setDesistDetalleSnap(h)}
+                      >
+                        <Eye size={11} /> Ver detalle
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div className="modal-footer" style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 20, flexWrap: 'wrap' }}>
+            {(selected.estado === 'DISPONIBLE' || selected.estado === 'EN NEGOCIACIÓN') && permissions?.canManageArras && (
+              <button
+                className="btn btn-primary"
+                style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#d97706', borderColor: '#d97706' }}
+                onClick={() => { setLoteParaArras(selected); setSelected(null); }}
+              >
+                <BookmarkCheck size={14} /> Generar Arras
+              </button>
+            )}
+            {(selected.estado === 'DISPONIBLE' || selected.estado === 'APARTADO' || selected.estado === 'EN NEGOCIACIÓN') && permissions?.canGenerateContrato && (
+              <button
+                className="btn btn-primary"
+                style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#2563eb', borderColor: '#2563eb' }}
+                onClick={() => { setLoteParaContrato(selected); setSelected(null); }}
+              >
+                <FileText size={14} /> Generar Contrato
+              </button>
+            )}
+            {(selected.estado === 'VENDIDO' || selected.estado === 'PAGADO EN SU TOTALIDAD') && (
+              <button
+                className="btn btn-secondary"
+                style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#2563eb', borderColor: '#bfdbfe' }}
+                onClick={() => handleVerContratoLote(selected)}
+                disabled={loadingContrato}
+              >
+                <FileText size={13} /> Ver / Descargar Contrato
+              </button>
+            )}
             {(selected.estado === 'VENDIDO' || selected.estado === 'PAGADO EN SU TOTALIDAD' || selected.propietario) && (
               permissions?.canEditContrato ? (
                 <button
@@ -525,35 +679,18 @@ export default function Lotes() {
                   style={{ display: 'flex', alignItems: 'center', gap: 6 }}
                   onClick={() => handleEditarContratoLote(selected)}
                   disabled={loadingContrato}
-                  title="Editar titular y condiciones del contrato de este lote"
                 >
-                  {loadingContrato ? <RefreshCw size={13} style={{ animation: 'spin 1s linear infinite' }} /> : <Edit3 size={13} />}
-                  Editar Contrato / Titular
+                  <Edit3 size={13} /> Editar Contrato / Titular
                 </button>
-              ) : (
-                <button
-                  className="btn btn-secondary"
-                  style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#0284c7', borderColor: '#bae6fd', background: '#f0f9ff', fontWeight: 600 }}
-                  onClick={() => handleEditarContratoLote(selected)}
-                  disabled={loadingContrato}
-                  title="Ver condiciones del contrato, fecha de venta y titular (Solo lectura)"
-                >
-                  {loadingContrato ? <RefreshCw size={13} style={{ animation: 'spin 1s linear infinite' }} /> : <Eye size={13} />}
-                  Ver Contrato / Titular
-                </button>
-              )
+              ) : null
             )}
-            {selected.estado !== 'VENDIDO' && selected.estado !== 'PAGADO EN SU TOTALIDAD' && selected.estado !== 'NO APTO PARA VENTA' && (
+            {(selected.estado === 'APARTADO' || selected.estado === 'VENDIDO') && permissions?.canLiberarLote && (
               <button
-                className="btn btn-primary"
-                style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#16a34a' }}
-                onClick={() => {
-                  setLoteParaVenta(selected);
-                  setShowModalVenta(true);
-                  setSelected(null);
-                }}
+                className="btn btn-ghost"
+                style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#dc2626', border: '1px solid #fecaca' }}
+                onClick={() => { const l = selected; setSelected(null); handleAbrirLiberarLote(l); }}
               >
-                <DollarSign size={14} /> Registrar Venta de este Lote
+                <RotateCcw size={13} /> Devolver a Disponible
               </button>
             )}
             <button className="btn btn-ghost" onClick={() => setSelected(null)}>Cerrar</button>
@@ -603,6 +740,66 @@ export default function Lotes() {
             setTimeout(() => setStatusMsg(null), 5000);
           }}
         />
+      )}
+
+      {loteParaArras && (
+        <ModalGenerarArras
+          lote={loteParaArras}
+          user={user}
+          onClose={() => setLoteParaArras(null)}
+          onSuccess={(res) => {
+            fetchLotes();
+            setStatusMsg({ type: 'success', text: `Arras generadas (Recibo #${res?.recibo?.numero_recibo}) y lote pasado a APARTADO / ARRAS.` });
+            setTimeout(() => setStatusMsg(null), 5000);
+          }}
+        />
+      )}
+
+      {loteParaContrato && (
+        <ModalGenerarContrato
+          lote={loteParaContrato}
+          user={user}
+          onClose={() => setLoteParaContrato(null)}
+          onSuccess={() => {
+            fetchLotes();
+            setStatusMsg({ type: 'success', text: 'Contrato generado, PDF descargado y lote pasado a VENDIDO.' });
+            setTimeout(() => setStatusMsg(null), 5000);
+          }}
+        />
+      )}
+
+      {loteParaLiberar && (
+        <ModalLiberarLote
+          lote={loteParaLiberar.lote}
+          venta={loteParaLiberar.venta}
+          user={user}
+          onClose={() => setLoteParaLiberar(null)}
+          onSuccess={() => {
+            fetchLotes();
+            setStatusMsg({ type: 'success', text: 'Lote liberado a DISPONIBLE y guardado en el histórico de desistimientos.' });
+            setTimeout(() => setStatusMsg(null), 5000);
+          }}
+        />
+      )}
+
+      {contratoParaVer && (
+        <ModalVerContrato
+          contrato={contratoParaVer}
+          onClose={() => setContratoParaVer(null)}
+        />
+      )}
+
+      {desistDetalleSnap && (
+        <Modal
+          title={`Histórico Desistimiento — ${desistDetalleSnap.id_lote} (${formatDate(desistDetalleSnap.fecha_liberacion)})`}
+          onClose={() => setDesistDetalleSnap(null)}
+          width="1100px"
+        >
+          <EstadoCuentaMatrizView
+            venta={desistDetalleSnap.venta_snapshot}
+            cuotas={desistDetalleSnap.cuotas_snapshot || []}
+          />
+        </Modal>
       )}
 
     </div>

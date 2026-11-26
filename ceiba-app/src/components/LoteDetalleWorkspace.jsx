@@ -3,11 +3,14 @@ import {
   FileText, Table, Calendar, Receipt, Download, Edit2, Eye,
   DollarSign, ClipboardList, Plus, Phone, PhoneCall, Copy, Check,
   AlertTriangle, Clock, Search, ChevronRight, X, ArrowLeft, Home,
-  CheckCircle2, ShieldAlert, Sparkles, RefreshCw
+  CheckCircle2, ShieldAlert, Sparkles, RefreshCw, RotateCcw
 } from 'lucide-react';
 import { formatCOP, formatDate, formatTime } from '../utils/helpers';
 import { exportEstadoCuentaMatrizPDF, exportEstadoCuentaInformePDF, calculateCuotasCoverage } from '../utils/exportEstadoCuenta';
 import EstadoCuentaMatrizView from './EstadoCuentaMatrizView';
+import ModalVerContrato from './ModalVerContrato';
+import ModalLiberarLote from './ModalLiberarLote';
+import { obtenerContratoPorLoteOVenta } from '../lib/api/loteLifecycleApi';
 import { getCuotasByVenta } from '../lib/api/cartera';
 import { getVentaById } from '../lib/api/ventas';
 import { obtenerRecibosPorVenta } from '../lib/api/recibosApi';
@@ -44,6 +47,8 @@ export default function LoteDetalleWorkspace({
   const [copiedPhone, setCopiedPhone] = useState(false);
   const [lastRefreshedAt, setLastRefreshedAt] = useState(null);
   const [refreshSuccess, setRefreshSuccess] = useState(false);
+  const [contratoModal, setContratoModal] = useState(null);
+  const [showLiberarModal, setShowLiberarModal] = useState(false);
 
   useEffect(() => {
     setLocalVenta(venta);
@@ -463,6 +468,37 @@ export default function LoteDetalleWorkspace({
               title="Visualizar condiciones del contrato, fecha de venta y titular (Solo lectura)"
             >
               <Eye size={13} /> Ver Contrato
+            </button>
+          )}
+
+          {/* Botón Ver Contrato en Tabla + Descargar PDF */}
+          <button
+            type="button"
+            className="btn btn-ghost"
+            style={{ fontSize: 12, padding: '6px 10px', gap: 6, color: '#2563eb', borderColor: '#bfdbfe', background: '#eff6ff', fontWeight: 600 }}
+            onClick={async () => {
+              const cto = await obtenerContratoPorLoteOVenta({
+                lote: currentVenta?.lotes || { id: currentVenta?.lote_id, id_lote: loteStr },
+                venta: currentVenta,
+                cliente: currentVenta?.clientes,
+              });
+              setContratoModal(cto);
+            }}
+            title="Ver ficha completa del contrato y descargar PDF"
+          >
+            <FileText size={13} /> Contrato (PDF)
+          </button>
+
+          {/* Botón Liberar / Devolver a Disponible */}
+          {permissions?.canLiberarLote && (
+            <button
+              type="button"
+              className="btn btn-ghost"
+              style={{ fontSize: 12, padding: '6px 10px', gap: 6, color: '#dc2626', borderColor: '#fecaca', background: '#fef2f2', fontWeight: 600 }}
+              onClick={() => setShowLiberarModal(true)}
+              title="Desistimiento / Devolver lote a Disponible"
+            >
+              <RotateCcw size={13} /> Liberar
             </button>
           )}
 
@@ -1123,6 +1159,29 @@ export default function LoteDetalleWorkspace({
           </div>
         )}
       </div>
+
+      {contratoModal && (
+        <ModalVerContrato
+          contrato={contratoModal}
+          onClose={() => setContratoModal(null)}
+        />
+      )}
+
+      {showLiberarModal && (
+        <ModalLiberarLote
+          lote={currentVenta?.lotes || { id: currentVenta?.lote_id, id_lote: loteStr, estado: currentVenta?.estado || 'VENDIDO' }}
+          venta={currentVenta}
+          cuotas={cuotas}
+          recibos={recibos}
+          user={user}
+          onClose={() => setShowLiberarModal(false)}
+          onSuccess={() => {
+            setShowLiberarModal(false);
+            if (typeof onDataChanged === 'function') onDataChanged();
+            if (typeof onCloseTab === 'function') onCloseTab(ventaId);
+          }}
+        />
+      )}
     </div>
   );
 }

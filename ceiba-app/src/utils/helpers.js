@@ -63,13 +63,14 @@ export const formatTime = (value) => {
  */
 export const getEstadoBadge = (estado) => {
   const map = {
-    'VENDIDO':                { color:'#16a34a', bg:'#dcfce7', label:'Vendido' },
+    'DISPONIBLE':             { color:'#16a34a', bg:'#dcfce7', label:'Disponible' },
+    'APARTADO':               { color:'#d97706', bg:'#fef3c7', label:'Apartado / Arras' },
+    'EN NEGOCIACIÓN':         { color:'#ea580c', bg:'#ffedd5', label:'En Negociación' },
+    'VENDIDO':                { color:'#2563eb', bg:'#dbeafe', label:'Vendido' },
     'PAGADO EN SU TOTALIDAD': { color:'#059669', bg:'#d1fae5', label:'Pagado en su totalidad' },
     'PAGADO':                 { color:'#059669', bg:'#d1fae5', label:'Pagado en su totalidad' },
     'SALDADO':                { color:'#059669', bg:'#d1fae5', label:'Pagado en su totalidad' },
-    'DISPONIBLE':             { color:'#2563eb', bg:'#dbeafe', label:'Disponible' },
-    'EN NEGOCIACIÓN':         { color:'#d97706', bg:'#fef3c7', label:'En Negociación' },
-    'APARTADO':               { color:'#7c3aed', bg:'#ede9fe', label:'Apartado' },
+    'CEDIDO EN FORMA DE PAGO': { color:'#9333ea', bg:'#f3e8ff', label:'Cedido en Pago' },
     'NO APTO PARA VENTA':     { color:'#dc2626', bg:'#fee2e2', label:'No Apto' },
   };
   return map[estado] || { color:'#6b7280', bg:'#f3f4f6', label: estado || 'Sin estado' };
